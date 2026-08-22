@@ -16,6 +16,12 @@ permissions:
 env:
   GO_VERSION: "1.25"
   NODE_VERSION: "24"
+  # Must stay on the v2 line: .golangci.yml uses the v2 config format.
+  GOLANGCI_VERSION: "2.13.1"
+  # golangci-lint v2.13 is built with a newer toolchain than the module
+  # requires. Only the lint job needs it; everything else builds PayMux with
+  # the version go.mod declares.
+  GOLANGCI_GO_VERSION: "1.26"
 
 jobs:
   backend-lint:
@@ -26,7 +32,7 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version: ${{ env.GOLANGCI_GO_VERSION }}
           cache: true
 
       - name: gofmt
@@ -41,11 +47,15 @@ jobs:
       - name: go vet
         run: go vet $(go list ./... | grep -v node_modules)
 
+      # Installed from the module rather than through the action, so CI runs
+      # the exact binary contributors run locally. The version is pinned
+      # because .golangci.yml uses the v2 configuration format, which the v1
+      # line cannot parse — a silent major-version bump would break the job.
+      - name: Install golangci-lint
+        run: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v${{ env.GOLANGCI_VERSION }}
+
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: latest
-          args: --timeout=5m
+        run: golangci-lint run ./...
 
   backend-test:
     name: Backend tests
