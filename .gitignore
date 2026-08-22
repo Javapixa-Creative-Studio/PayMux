@@ -1,0 +1,25 @@
+# Environment
+.env
+.env.local
+*.local
+
+# Build output
+/bin/
+/dist/
+/out/
+apps/dashboard/dist/
+apps/dashboard/node_modules/
+node_modules/
+
+# TypeScript incremental build state
+*.tsbuildinfo
+
+# Go
+*.exe
+*.test
+*.out
+coverage.out
+
+# Editors
+.DS_Store
+.vscode/
