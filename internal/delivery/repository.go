@@ -373,25 +373,6 @@ func insertAttempt(ctx context.Context, tx storage.Querier, deliveryID string, a
 	return nil
 }
 
-// prefixColumns qualifies the column list for a query with table aliases.
-func prefixColumns(alias string) string {
-	parts := strings.Split(strings.ReplaceAll(deliveryColumns, "\n", " "), ",")
-	out := make([]string, 0, len(parts))
-	for _, part := range parts {
-		part = strings.TrimSpace(part)
-		if part == "" {
-			continue
-		}
-		if strings.HasPrefix(part, "coalesce(") {
-			// coalesce(locked_by, '') -> coalesce(d.locked_by, '')
-			out = append(out, strings.Replace(part, "coalesce(", "coalesce("+alias+".", 1))
-			continue
-		}
-		out = append(out, alias+"."+part)
-	}
-	return strings.Join(out, ", ")
-}
-
 type scanner interface {
 	Scan(dest ...any) error
 }

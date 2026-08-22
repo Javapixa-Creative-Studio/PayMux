@@ -137,7 +137,11 @@ func (g *Guard) Validate(ctx context.Context, rawURL string) error {
 
 	addrs, err := net.DefaultResolver.LookupNetIP(ctx, "ip", host)
 	if err != nil {
-		return nil // unresolvable today; DialControl still guards delivery
+		// A name that will not resolve today is accepted: DNS may simply not
+		// be configured yet, and DialControl blocks it at delivery time if it
+		// later resolves somewhere unsafe. Rejecting here would make PayMux
+		// refuse valid destinations during a transient resolver outage.
+		return nil //nolint:nilerr // deliberate: DialControl is the real guard
 	}
 	for _, addr := range addrs {
 		if !g.AddrAllowed(addr) {

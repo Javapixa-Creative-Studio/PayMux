@@ -2,6 +2,7 @@ package httpx
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -106,9 +107,11 @@ func RequestLogger(next http.Handler) http.Handler {
 // connection, and logs the failure with the request identifier attached.
 func Recoverer(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer func() {
+		// The recovery runs from a defer, after the handler has returned, so
+		// there is no live request context left to propagate.
+		defer func() { //nolint:contextcheck // recovery path, no context to pass
 			if rec := recover(); rec != nil {
-				if rec == http.ErrAbortHandler {
+				if recErr, ok := rec.(error); ok && errors.Is(recErr, http.ErrAbortHandler) {
 					panic(rec) // the server's own signal; let it through
 				}
 				logging.FromContext(r.Context()).Error("panic recovered",
@@ -225,9 +228,12 @@ func Timeout(d time.Duration) func(http.Handler) http.Handler {
 	}
 }
 
-// ClientIP reports the best-known client address for logging and rate
-// limiting. Proxy headers are consulted only when TrustProxyHeaders is set,
-// because a spoofable header must never be able to evade a rate limit.
+// TrustProxyHeaders controls whether X-Forwarded-For and X-Real-Ip are
+// believed when identifying a client.
+//
+// It defaults to false because those headers are trivially spoofable, and a
+// caller that can set its own address can evade a rate limit at will. Turn it
+// on only when PayMux sits behind a proxy that overwrites them.
 var TrustProxyHeaders = false
 
 // ClientIP returns the remote address of the request.

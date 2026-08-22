@@ -1,0 +1,96 @@
+# golangci-lint configuration.
+#
+# The selection is deliberately conservative: this is payment infrastructure,
+# so linters that catch real defects are on, and stylistic ones that would
+# generate churn without changing behaviour are off.
+
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  default: none
+  enable:
+    # Correctness.
+    - errcheck # an ignored error in a payment path is how money goes missing
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - bodyclose # a leaked response body exhausts the connection pool
+    - rowserrcheck # a missed rows.Err() silently truncates a result set
+    - sqlclosecheck
+    - nilerr # returning nil after checking an error hides the failure
+    - errorlint # %v on an error breaks errors.Is for callers
+    - contextcheck
+    - noctx # an HTTP call without a context cannot be cancelled or timed out
+
+    # Security.
+    - gosec
+
+    # Clarity.
+    - misspell
+    - unconvert
+    - wastedassign
+    - copyloopvar
+    - usestdlibvars
+
+  settings:
+    errcheck:
+      # Failing to write a response body or close an idempotent reader is not
+      # actionable; these are excluded explicitly rather than by ignoring the
+      # linter at each call site.
+      exclude-functions:
+        - (net/http.ResponseWriter).Write
+        - (io.Closer).Close
+
+    contextcheck:
+      # The panic recoverer runs from a defer, where the request context may
+      # already be cancelled; passing it would defeat the point.
+      disable-default-exclusions: false
+
+    gosec:
+      excludes:
+        # Handled by internal/netsafe, which validates the destination and
+        # re-checks the resolved address at dial time.
+        - G107
+        # Integer conversions are bounded by the database schema's own limits.
+        - G115
+
+    staticcheck:
+      checks:
+        - all
+
+  exclusions:
+    paths:
+      # The dashboard's dependencies contain a stray Go file.
+      - apps/dashboard/node_modules
+
+    rules:
+      # Tests deliberately construct malformed input and ignore results that
+      # production code never would.
+      - path: _test\.go
+        linters:
+          - errcheck
+          - gosec
+          - noctx
+          # The integration tests read and close bodies through a shared
+          # helper, which bodyclose cannot see through.
+          - bodyclose
+
+      # The example is written to be copied into someone else's service, so it
+      # favours readability over the strictest lint rules.
+      - path: ^examples/
+        linters:
+          - errcheck
+          - gosec
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+formatters:
+  enable:
+    - gofmt

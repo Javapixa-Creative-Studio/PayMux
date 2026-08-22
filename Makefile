@@ -38,13 +38,17 @@ cover: ## Run tests and report coverage
 
 .PHONY: fmt
 fmt: ## Format the Go sources
-	gofmt -w apps internal migrations
+	gofmt -w apps examples internal migrations
 
 .PHONY: lint
 lint: ## Vet and format-check the Go sources
 	go vet $(GO_PACKAGES)
-	@test -z "$$(gofmt -l apps internal migrations)" || \
-		(echo "these files need gofmt:"; gofmt -l apps internal migrations; exit 1)
+	@test -z "$$(gofmt -l apps examples internal migrations)" || \
+		(echo "these files need gofmt:"; gofmt -l apps examples internal migrations; exit 1)
+
+.PHONY: lint-full
+lint-full: ## Run golangci-lint, as CI does
+	golangci-lint run ./...
 
 # ---------------------------------------------------------------------------
 # Dashboard

@@ -105,7 +105,7 @@ func applyJitter(base time.Duration) time.Duration {
 	spread := float64(base) * jitterFraction
 	// rand's global source is fine here: this only needs to break up
 	// synchronised retries, not resist prediction.
-	offset := (rand.Float64()*2 - 1) * spread
+	offset := (rand.Float64()*2 - 1) * spread //nolint:gosec // jitter, not a secret
 	delay := time.Duration(float64(base) + offset)
 	if delay < time.Second {
 		delay = time.Second

@@ -2,6 +2,7 @@ package crypto
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -41,7 +42,7 @@ func TestSealOpenRoundTrip(t *testing.T) {
 func TestOpenRejectsWrongContext(t *testing.T) {
 	s := testSealer(t)
 	sealed, _ := s.SealString("secret", "gateway_account:gwa_1:server_key")
-	if _, err := s.Open(sealed, "gateway_account:gwa_2:server_key"); err != ErrDecrypt {
+	if _, err := s.Open(sealed, "gateway_account:gwa_2:server_key"); !errors.Is(err, ErrDecrypt) {
 		t.Fatalf("Open with wrong context = %v, want ErrDecrypt", err)
 	}
 }
@@ -53,7 +54,7 @@ func TestOpenRejectsTamperedCiphertext(t *testing.T) {
 	if _, err := s.Open(tampered, "ctx"); err == nil {
 		t.Fatal("tampered ciphertext accepted")
 	}
-	if _, err := s.Open("garbage", "ctx"); err != ErrDecrypt {
+	if _, err := s.Open("garbage", "ctx"); !errors.Is(err, ErrDecrypt) {
 		t.Fatalf("garbage = %v, want ErrDecrypt", err)
 	}
 }
@@ -105,7 +106,7 @@ func TestPasswordHashing(t *testing.T) {
 	if err := VerifyPassword("correct horse battery staple", hash); err != nil {
 		t.Fatalf("VerifyPassword: %v", err)
 	}
-	if err := VerifyPassword("wrong password", hash); err != ErrMismatchedPassword {
+	if err := VerifyPassword("wrong password", hash); !errors.Is(err, ErrMismatchedPassword) {
 		t.Fatalf("VerifyPassword(wrong) = %v, want ErrMismatchedPassword", err)
 	}
 }
@@ -156,7 +157,7 @@ func TestParseAPIKeyMode(t *testing.T) {
 		t.Fatalf("ParseAPIKeyMode = %q, %v", mode, err)
 	}
 	for _, bad := range []string{"", "pmx_live", "xxx_live_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "pmx_prod_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "pmx_live_short"} {
-		if _, err := ParseAPIKeyMode(bad); err != ErrInvalidAPIKey {
+		if _, err := ParseAPIKeyMode(bad); !errors.Is(err, ErrInvalidAPIKey) {
 			t.Errorf("ParseAPIKeyMode(%q) = %v, want ErrInvalidAPIKey", bad, err)
 		}
 	}

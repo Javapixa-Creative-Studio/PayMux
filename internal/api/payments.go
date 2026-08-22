@@ -164,7 +164,9 @@ func replayStored(w http.ResponseWriter, r *http.Request, record *payment.Idempo
 	w.Header().Set("Idempotent-Replay", "true")
 	w.WriteHeader(status)
 	if len(record.ResponseBody) > 0 {
-		_, _ = w.Write(record.ResponseBody)
+		// PayMux's own stored JSON response, served as JSON. It never reaches
+		// an HTML context, so the taint warning does not apply.
+		_, _ = w.Write(record.ResponseBody) //nolint:gosec // stored JSON, served as JSON
 	}
 }
 

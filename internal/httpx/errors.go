@@ -81,7 +81,8 @@ func NewError(status int, code Code, message string) *Error {
 	return &Error{Status: status, Code: code, Message: message}
 }
 
-// Common constructors for the errors handlers raise most often.
+// ErrInvalidRequest reports a malformed request. It heads the set of
+// constructors for the errors handlers raise most often.
 func ErrInvalidRequest(message string) *Error {
 	return NewError(http.StatusBadRequest, CodeInvalidRequest, message)
 }

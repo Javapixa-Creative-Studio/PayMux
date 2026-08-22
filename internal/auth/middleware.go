@@ -114,7 +114,10 @@ func bearerToken(r *http.Request) (string, bool) {
 // HttpOnly keeps the token away from page scripts, and SameSite=Lax stops a
 // third-party site from driving the admin API with the operator's session.
 func (m *Middleware) SetSessionCookie(w http.ResponseWriter, token string, expiresAt time.Time) {
-	http.SetCookie(w, &http.Cookie{
+	// Secure is conditional so the dashboard works over plain HTTP in
+	// development; it is on in production, where the cookie must not travel
+	// in the clear.
+	http.SetCookie(w, &http.Cookie{ //nolint:gosec // Secure is set from configuration
 		Name:     SessionCookieName,
 		Value:    token,
 		Path:     "/",
@@ -128,7 +131,7 @@ func (m *Middleware) SetSessionCookie(w http.ResponseWriter, token string, expir
 
 // ClearSessionCookie removes the session cookie.
 func (m *Middleware) ClearSessionCookie(w http.ResponseWriter) {
-	http.SetCookie(w, &http.Cookie{
+	http.SetCookie(w, &http.Cookie{ //nolint:gosec // Secure is set from configuration
 		Name:     SessionCookieName,
 		Value:    "",
 		Path:     "/",

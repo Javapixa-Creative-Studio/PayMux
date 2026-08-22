@@ -149,7 +149,9 @@ func probeHealth() int {
 	}
 
 	client := &http.Client{Timeout: 3 * time.Second}
-	resp, err := client.Get("http://" + addr + "/health")
+	// The address is this process's own listener, taken from the same
+	// configuration it bound to; there is no external input here.
+	resp, err := client.Get("http://" + addr + "/health") //nolint:gosec,noctx // self-probe on a fixed local address
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "healthcheck: "+err.Error())
 		return 1

@@ -23,6 +23,7 @@ make dashboard-install && make dashboard-dev
 
 ```bash
 make lint              # go vet + gofmt
+make lint-full         # golangci-lint, as CI runs it
 make test              # unit tests
 make dashboard-lint    # eslint + typecheck
 make dashboard-test
@@ -39,6 +40,17 @@ PAYMUX_TEST_DATABASE_URL="postgres://paymux:paymux@localhost:55432/paymux?sslmod
 ```
 
 CI runs all of the above.
+
+`make lint-full` needs golangci-lint:
+
+```bash
+go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
+```
+
+The configuration in `.golangci.yml` enables the linters that catch real
+defects and leaves the stylistic ones off. Where a finding is deliberate, the
+exception carries a `//nolint` with the reason at the site rather than a
+blanket waiver in the config — if you need one, say why in the comment.
 
 ## What we look for
 

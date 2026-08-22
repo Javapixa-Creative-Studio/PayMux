@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"sync"
 	"time"
@@ -254,7 +255,7 @@ func failureReason(result Result) string {
 	switch {
 	case result.StatusCode >= 500:
 		return "destination_5xx"
-	case result.StatusCode == 429:
+	case result.StatusCode == http.StatusTooManyRequests:
 		return "rate_limited"
 	case result.StatusCode >= 400:
 		return "destination_4xx"

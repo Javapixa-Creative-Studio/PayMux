@@ -31,7 +31,7 @@ jobs:
 
       - name: gofmt
         run: |
-          unformatted=$(gofmt -l apps internal migrations)
+          unformatted=$(gofmt -l apps examples internal migrations)
           if [ -n "$unformatted" ]; then
             echo "these files need gofmt:"
             echo "$unformatted"
@@ -119,6 +119,50 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+
+  midtrans-sandbox:
+    name: Midtrans sandbox
+    runs-on: ubuntu-latest
+
+    # Gated on the secret being present, so forks and pull requests from
+    # outside the repository skip it rather than failing. Never point these at
+    # production credentials: the tests create real transactions.
+    if: github.event_name == 'push'
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: paymux
+          POSTGRES_PASSWORD: paymux
+          POSTGRES_DB: paymux_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U paymux"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Run the sandbox tests
+        env:
+          PAYMUX_TEST_DATABASE_URL: postgres://paymux:paymux@localhost:5432/paymux_test?sslmode=disable
+          MIDTRANS_SANDBOX_SERVER_KEY: ${{ secrets.MIDTRANS_SANDBOX_SERVER_KEY }}
+          MIDTRANS_SANDBOX_CLIENT_KEY: ${{ secrets.MIDTRANS_SANDBOX_CLIENT_KEY }}
+          MIDTRANS_SANDBOX_MERCHANT_ID: ${{ secrets.MIDTRANS_SANDBOX_MERCHANT_ID }}
+        run: |
+          if [ -z "$MIDTRANS_SANDBOX_SERVER_KEY" ]; then
+            echo "No sandbox credentials configured; the tests will skip."
+          fi
+          go test -count=1 -v -run TestSandbox ./internal/integration/...
 
   docker:
     name: Docker images

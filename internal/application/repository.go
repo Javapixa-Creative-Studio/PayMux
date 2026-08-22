@@ -17,7 +17,8 @@ import (
 // a duplicate can be reported against the field that actually collided.
 const (
 	ConstraintSlugUnique = "applications_slug_key"
-	ConstraintKeyHash    = "application_api_keys_key_hash_key"
+	//nolint:gosec // an index name, not a credential
+	ConstraintKeyHash = "application_api_keys_key_hash_key"
 )
 
 // Repository reads and writes applications, API keys and destinations.
@@ -135,8 +136,6 @@ func (r *Repository) UpdateApplication(ctx context.Context, id string, update Ap
 	if err != nil {
 		return nil, err
 	}
-	var disabled *bool = update.Disabled
-
 	var app Application
 	row := r.q(ctx).QueryRow(ctx, `
 		UPDATE applications SET
@@ -151,7 +150,7 @@ func (r *Repository) UpdateApplication(ctx context.Context, id string, update Ap
 			updated_at         = now()
 		WHERE id = $1
 		RETURNING `+applicationColumns,
-		id, update.Name, update.Description, update.GatewayAccountID, metadata, disabled,
+		id, update.Name, update.Description, update.GatewayAccountID, metadata, update.Disabled,
 	)
 	if err := scanApplication(row, &app); err != nil {
 		return nil, err
@@ -163,6 +162,7 @@ func (r *Repository) UpdateApplication(ctx context.Context, id string, update Ap
 // API keys
 // ---------------------------------------------------------------------------
 
+//nolint:gosec // a column list; the words "key" and "prefix" are not secrets
 const apiKeyColumns = `
 	id, application_id, name, mode, display_prefix,
 	last_used_at, expires_at, revoked_at, created_at`

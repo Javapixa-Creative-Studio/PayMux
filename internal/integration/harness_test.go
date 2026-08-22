@@ -284,15 +284,6 @@ func (s *stubMidtrans) handleCore(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// setStatus makes the stub report a status for an order on the next lookup.
-func (s *stubMidtrans) setStatus(orderID, status string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if txn, ok := s.transactions[orderID]; ok {
-		txn["transaction_status"] = status
-	}
-}
-
 func (s *stubMidtrans) snapRequestCount() int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
