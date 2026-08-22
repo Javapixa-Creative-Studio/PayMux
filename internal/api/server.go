@@ -278,6 +278,7 @@ func (s *Server) adminRoutes(r chi.Router) {
 				r.Get("/{accountID}", s.handleGetGatewayAccount)
 				r.Patch("/{accountID}", s.handleUpdateGatewayAccount)
 				r.Delete("/{accountID}", s.handleDeleteGatewayAccount)
+				r.Post("/{accountID}/test", s.handleTestGatewayAccount)
 			})
 		})
 	})

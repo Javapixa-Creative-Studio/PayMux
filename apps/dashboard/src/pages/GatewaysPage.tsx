@@ -5,6 +5,7 @@ import {
   useDeleteGatewayAccount,
   useGatewayAccounts,
   useSupportedGateways,
+  useTestGatewayAccount,
   useUpdateGatewayAccount,
 } from '../api/queries';
 import type { GatewayAccount } from '../api/types';
@@ -16,6 +17,7 @@ export function GatewaysPage() {
   const supported = useSupportedGateways();
   const update = useUpdateGatewayAccount();
   const remove = useDeleteGatewayAccount();
+  const test = useTestGatewayAccount();
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<GatewayAccount | null>(null);
 
@@ -32,10 +34,10 @@ export function GatewaysPage() {
         and are never shown again — not here, and not through the API.
       </p>
 
-      {(accounts.isError || update.isError || remove.isError) && (
+      {(accounts.isError || update.isError || remove.isError || test.isError) && (
         <ErrorNotice
-          error={accounts.error ?? update.error ?? remove.error}
-          action="That change was not saved."
+          error={accounts.error ?? update.error ?? remove.error ?? test.error}
+          action={test.isError ? 'The connection test could not run.' : 'That change was not saved.'}
         />
       )}
 
@@ -53,7 +55,7 @@ export function GatewaysPage() {
                   <th>Merchant</th>
                   <th>Server key</th>
                   <th>State</th>
-                  <th>Updated</th>
+                  <th>Connection</th>
                   <th />
                 </tr>
               </thead>
@@ -84,10 +86,20 @@ export function GatewaysPage() {
                       </Tag>
                     </td>
                     <td>
-                      <Timestamp value={account.updated_at} />
+                      <ConnectionStatus account={account} />
                     </td>
                     <td>
                       <div className="actions">
+                        <button
+                          type="button"
+                          className="button button--small"
+                          onClick={() => test.mutate(account.id)}
+                          disabled={test.isPending}
+                        >
+                          {test.isPending && test.variables === account.id
+                            ? 'Testing…'
+                            : 'Test connection'}
+                        </button>
                         <button
                           type="button"
                           className="button button--small"
@@ -156,6 +168,33 @@ export function GatewaysPage() {
       )}
       {editing && <EditAccountDialog account={editing} onClose={() => setEditing(null)} />}
     </>
+  );
+}
+
+/**
+ * Reports the last connection check.
+ *
+ * A failed check keeps the gateway's own explanation, because "rejected" and
+ * "unreachable" call for different responses from the operator.
+ */
+function ConnectionStatus({ account }: { account: GatewayAccount }) {
+  if (account.last_check_ok === null || account.last_checked_at === null) {
+    return <span className="gateway-status">not tested</span>;
+  }
+  return (
+    <div>
+      <Tag tone={account.last_check_ok ? 'settled' : 'failed'}>
+        {account.last_check_ok ? 'reachable' : 'failed'}
+      </Tag>
+      <div className="gateway-status" style={{ marginTop: 3 }}>
+        <Timestamp value={account.last_checked_at} />
+      </div>
+      {!account.last_check_ok && account.last_check_error && (
+        <div className="gateway-status" style={{ marginTop: 3, maxWidth: 280, whiteSpace: 'normal' }}>
+          {account.last_check_error}
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -393,6 +393,21 @@ export function useUpdateGatewayAccount() {
   });
 }
 
+/**
+ * Checks an account's credentials against the live gateway.
+ *
+ * The result is stored server-side, so the outcome stays visible after the
+ * page is reloaded rather than living only in this session.
+ */
+export function useTestGatewayAccount() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiFetch<GatewayAccount>(`${ADMIN}/gateways/accounts/${id}/test`, { method: 'POST' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['gateway-accounts'] }),
+  });
+}
+
 export function useDeleteGatewayAccount() {
   const queryClient = useQueryClient();
   return useMutation({

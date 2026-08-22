@@ -93,7 +93,11 @@ go run ./apps/worker         # delivers webhooks
 1. In the dashboard, open **Gateways → Add account** and enter your Midtrans
    **merchant ID**, **client key** and **server key**, choosing the **sandbox**
    or **production** environment.
-2. In the Midtrans dashboard, set the **Payment Notification URL** to:
+2. Press **Test connection** to confirm the credentials work. PayMux asks the
+   gateway for a transaction that cannot exist: an answer of "no such
+   transaction" proves the credentials were accepted, and nothing is left
+   behind in your merchant account.
+3. In the Midtrans dashboard, set the **Payment Notification URL** to:
 
    ```text
    https://your-paymux-host/webhooks/midtrans

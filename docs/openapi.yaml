@@ -507,6 +507,35 @@ paths:
               schema: { $ref: "#/components/schemas/Capabilities" }
         "401": { $ref: "#/components/responses/Unauthorized" }
 
+  /admin/api/gateways/accounts/{accountId}/test:
+    parameters:
+      - name: accountId
+        in: path
+        required: true
+        schema: { type: string, example: gwa_01ARZ3NDEKTSV4RRFFQ69G5FAV }
+    post:
+      tags: [Gateway]
+      summary: Test a gateway account's credentials
+      description: |
+        Checks whether the stored credentials can reach the gateway, and
+        records the outcome against the account.
+
+        The check asks the gateway for a transaction that cannot exist: an
+        answer of "no such transaction" proves the credentials were accepted,
+        without leaving anything behind in the merchant's account.
+
+        This is an administrator endpoint and needs a dashboard session, not an
+        API key.
+      operationId: testGatewayAccount
+      security: []
+      responses:
+        "200":
+          description: The account, with the check's outcome recorded on it.
+        "401":
+          description: Authentication is required.
+        "404":
+          description: No such gateway account.
+
   /webhooks/midtrans:
     post:
       tags: [Gateway]

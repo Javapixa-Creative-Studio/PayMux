@@ -162,6 +162,40 @@ func (s *Server) handleDeleteGatewayAccount(w http.ResponseWriter, r *http.Reque
 	httpx.NoContent(w)
 }
 
+// handleTestGatewayAccount checks an account's credentials against the live
+// gateway and records the outcome (PRD §58).
+func (s *Server) handleTestGatewayAccount(w http.ResponseWriter, r *http.Request) {
+	accountID := chi.URLParam(r, "accountID")
+
+	account, err := s.gatewayAccounts.Get(r.Context(), accountID)
+	if err != nil {
+		fail(w, r, err, genericMissing)
+		return
+	}
+	adapter, err := s.gateways.For(account)
+	if err != nil {
+		fail(w, r, err, genericMissing)
+		return
+	}
+
+	result := gateway.Probe(r.Context(), adapter)
+
+	// The outcome is stored whether or not it succeeded: a failed check is
+	// exactly what an operator needs to see later.
+	if err := s.gatewayAccounts.RecordCheck(r.Context(), accountID, result.OK, result.Message, result.Capabilities); err != nil {
+		fail(w, r, err, genericMissing)
+		return
+	}
+	s.audit(r, "gateway_account.tested", "gateway_account", accountID, map[string]any{"ok": result.OK})
+
+	updated, err := s.gatewayAccounts.Get(r.Context(), accountID)
+	if err != nil {
+		fail(w, r, err, genericMissing)
+		return
+	}
+	httpx.JSON(w, r, http.StatusOK, renderGatewayAccount(updated))
+}
+
 type gatewayListEntry struct {
 	Name string `json:"name"`
 }
