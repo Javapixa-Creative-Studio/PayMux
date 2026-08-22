@@ -56,7 +56,10 @@ type Config struct {
 	AdminBootstrapPassword string
 
 	MetricsEnabled bool
-	CORSOrigins    []string
+	// MetricsAddr is where the worker serves /metrics. The API serves it on
+	// its own listener, so this only applies to the worker.
+	MetricsAddr string
+	CORSOrigins []string
 }
 
 // Load reads configuration from the environment, applying defaults and
@@ -83,6 +86,7 @@ func Load() (*Config, error) {
 
 		AllowPrivateWebhookDestinations: getBool("PAYMUX_ALLOW_PRIVATE_WEBHOOK_DESTINATIONS", false),
 		MetricsEnabled:                  getBool("PAYMUX_METRICS_ENABLED", true),
+		MetricsAddr:                     getStr("PAYMUX_METRICS_ADDR", ":9090"),
 		CORSOrigins:                     getList("PAYMUX_CORS_ORIGINS", []string{"http://localhost:5173"}),
 	}
 	c.LogJSON = getBool("PAYMUX_LOG_JSON", c.Env.IsProduction())

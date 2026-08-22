@@ -20,6 +20,13 @@ import (
 	"github.com/anggapixa/paymux/internal/storage"
 )
 
+// MetricsRecorder observes payment creation. The domain depends on this
+// narrow interface rather than the metrics package, so instrumentation stays
+// optional and testable.
+type MetricsRecorder interface {
+	RecordPaymentCreated(gateway string, err error)
+}
+
 // Service implements PayMux's payment operations: creating payments at a
 // gateway, reading them back, and acting on them.
 type Service struct {
@@ -29,6 +36,16 @@ type Service struct {
 	registry  *gateway.Registry
 	publisher *delivery.Publisher
 	logger    *slog.Logger
+	metrics   MetricsRecorder
+}
+
+// SetMetrics attaches a recorder. A nil recorder simply disables the counters.
+func (s *Service) SetMetrics(recorder MetricsRecorder) { s.metrics = recorder }
+
+func (s *Service) recordCreated(gatewayName string, err error) {
+	if s.metrics != nil {
+		s.metrics.RecordPaymentCreated(gatewayName, err)
+	}
 }
 
 // NewService builds a Service.
@@ -123,7 +140,7 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (*Payment, error) 
 		return nil, err
 	}
 
-	created, err := adapter.CreatePayment(ctx, gateway.CreatePaymentRequest{
+	created, createErr := adapter.CreatePayment(ctx, gateway.CreatePaymentRequest{
 		OrderID:               p.GatewayOrderID,
 		Amount:                p.Amount,
 		Currency:              p.Currency,
@@ -135,7 +152,8 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (*Payment, error) 
 		CustomFields:          in.CustomFields,
 		Options:               in.GatewayOptions,
 	})
-	if err != nil {
+	s.recordCreated(account.Gateway, createErr)
+	if err := createErr; err != nil {
 		// The gateway never opened the payment, so PayMux must not keep a
 		// record implying it did.
 		if cleanupErr := s.deletePayment(ctx, p.ID); cleanupErr != nil {

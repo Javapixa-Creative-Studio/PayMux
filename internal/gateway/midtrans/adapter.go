@@ -48,6 +48,11 @@ func NewAdapter(acc *gateway.Account, client *http.Client) (gateway.Gateway, err
 	}, nil
 }
 
+// SetMetrics attaches a recorder to this adapter's client.
+func (a *Adapter) SetMetrics(recorder RequestRecorder) {
+	a.client.Metrics = recorder
+}
+
 // Name identifies the adapter.
 func (a *Adapter) Name() string { return Name }
 

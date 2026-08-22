@@ -98,6 +98,7 @@ func run() error {
 		Notifications:    container.Notifications,
 		NotificationRepo: container.NotificationRepo,
 		Subscriptions:    container.Subscriptions,
+		Metrics:          container.Metrics,
 	})
 
 	httpServer := &http.Server{

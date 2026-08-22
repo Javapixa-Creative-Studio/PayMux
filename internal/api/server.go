@@ -15,6 +15,7 @@ import (
 	"github.com/anggapixa/paymux/internal/gateway"
 	"github.com/anggapixa/paymux/internal/httpx"
 	"github.com/anggapixa/paymux/internal/logging"
+	"github.com/anggapixa/paymux/internal/metrics"
 	"github.com/anggapixa/paymux/internal/notification"
 	"github.com/anggapixa/paymux/internal/payment"
 	"github.com/anggapixa/paymux/internal/storage"
@@ -42,6 +43,7 @@ type Server struct {
 	notifications    *notification.Processor
 	notificationRepo *notification.Repository
 	subscriptions    *subscription.Service
+	metrics          *metrics.Metrics
 
 	router chi.Router
 }
@@ -66,6 +68,7 @@ type Deps struct {
 	Notifications    *notification.Processor
 	NotificationRepo *notification.Repository
 	Subscriptions    *subscription.Service
+	Metrics          *metrics.Metrics
 }
 
 // New builds a Server with its routes mounted.
@@ -88,6 +91,7 @@ func New(deps Deps) *Server {
 		notifications:    deps.Notifications,
 		notificationRepo: deps.NotificationRepo,
 		subscriptions:    deps.Subscriptions,
+		metrics:          deps.Metrics,
 	}
 	s.router = s.routes()
 	return s
@@ -113,10 +117,20 @@ func (s *Server) routes() chi.Router {
 	r.Use(httpx.SecureHeaders)
 	r.Use(httpx.CORS(s.cfg.CORSOrigins))
 	r.Use(httpx.LimitBody(s.cfg.MaxRequestBodyBytes))
+	if s.metrics != nil {
+		r.Use(httpx.Instrument(s.metrics, routePattern))
+	}
 
 	// Liveness and readiness are unauthenticated and dependency-light.
 	r.Get("/health", s.handleHealth)
 	r.Get("/ready", s.handleReady)
+
+	if s.metrics != nil {
+		// Unauthenticated by design: a metrics endpoint is scraped by the
+		// operator's own monitoring, and deployments keep it off the public
+		// network rather than behind an application credential.
+		r.Handle("/metrics", s.metrics.Handler())
+	}
 
 	// Gateway callbacks authenticate themselves with the gateway's own
 	// signature, so they sit outside the application API's auth (PRD §77).
@@ -288,6 +302,16 @@ func (s *Server) audit(r *http.Request, action, targetType, targetID string, met
 // specific constraint without importing the storage package everywhere.
 func storageIsUnique(err error, constraints ...string) bool {
 	return storage.IsUniqueViolation(err, constraints...)
+}
+
+// routePattern reports the chi route a request matched, e.g.
+// "/api/v1/payments/{paymentID}". Labelling metrics with the pattern rather
+// than the path keeps one time series per endpoint instead of one per payment.
+func routePattern(r *http.Request) string {
+	if rctx := chi.RouteContext(r.Context()); rctx != nil {
+		return rctx.RoutePattern()
+	}
+	return ""
 }
 
 // injectLogger seeds every request context with the server's base logger.

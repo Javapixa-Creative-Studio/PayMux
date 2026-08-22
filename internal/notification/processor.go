@@ -14,6 +14,11 @@ import (
 	"github.com/anggapixa/paymux/internal/storage"
 )
 
+// MetricsRecorder observes inbound gateway notifications.
+type MetricsRecorder interface {
+	RecordWebhookReceived(gateway, routing string)
+}
+
 // Processor turns a verified gateway notification into PayMux state and events.
 //
 // The pipeline is: verify, record, attribute, apply, publish (PRD §37). Each
@@ -27,6 +32,17 @@ type Processor struct {
 	publisher *delivery.Publisher
 	db        *storage.DB
 	logger    *slog.Logger
+	metrics   MetricsRecorder
+}
+
+// SetMetrics attaches a recorder. A nil recorder disables the counters.
+func (p *Processor) SetMetrics(recorder MetricsRecorder) { p.metrics = recorder }
+
+// observe records the outcome of one notification.
+func (p *Processor) observe(gatewayName string, routing Routing) {
+	if p.metrics != nil {
+		p.metrics.RecordWebhookReceived(gatewayName, string(routing))
+	}
 }
 
 // NewProcessor builds a Processor.
@@ -112,6 +128,7 @@ func (p *Processor) Process(ctx context.Context, gatewayName string, req gateway
 		}
 		p.logger.Warn("rejected a gateway notification that failed verification",
 			"gateway", gatewayName, "order_id", parsed.OrderID, "gateway_event_id", record.ID)
+		p.observe(gatewayName, RoutingRejected)
 		return &Outcome{
 			Routing:        RoutingRejected,
 			GatewayEventID: record.ID,
@@ -136,6 +153,7 @@ func (p *Processor) Process(ctx context.Context, gatewayName string, req gateway
 		if errors.Is(err, ErrDuplicate) {
 			p.logger.Debug("ignored a duplicate gateway notification",
 				"gateway", gatewayName, "order_id", parsed.OrderID)
+			p.observe(gatewayName, RoutingDuplicate)
 			return &Outcome{
 				Routing:       RoutingDuplicate,
 				PaymentID:     record.PaymentID,
@@ -151,6 +169,7 @@ func (p *Processor) Process(ctx context.Context, gatewayName string, req gateway
 			"gateway", gatewayName,
 			"order_id", parsed.OrderID,
 			"gateway_event_id", record.ID)
+		p.observe(gatewayName, RoutingUnrouted)
 		return &Outcome{
 			Routing:        RoutingUnrouted,
 			GatewayEventID: record.ID,
@@ -158,7 +177,11 @@ func (p *Processor) Process(ctx context.Context, gatewayName string, req gateway
 		}, nil
 	}
 
-	return p.apply(ctx, record, owner, parsed)
+	outcome, err := p.apply(ctx, record, owner, parsed)
+	if err == nil && outcome != nil {
+		p.observe(gatewayName, outcome.Routing)
+	}
+	return outcome, err
 }
 
 // apply moves the payment to the notified state and publishes the event.

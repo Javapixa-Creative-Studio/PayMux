@@ -179,6 +179,41 @@ func CORS(origins []string) func(http.Handler) http.Handler {
 	}
 }
 
+// RequestRecorder is implemented by the metrics collector. httpx depends on
+// this narrow interface rather than the metrics package so the HTTP layer
+// stays free of a Prometheus dependency.
+type RequestRecorder interface {
+	RecordHTTPRequest(method, route string, status int, duration time.Duration)
+}
+
+// RouteResolver reports the matched route pattern for a request.
+//
+// The pattern — not the path — is what a metric can be labelled with: a path
+// contains payment identifiers, and one time series per payment would make
+// the metric unusable.
+type RouteResolver func(*http.Request) string
+
+// Instrument records one metric sample per completed request.
+func Instrument(recorder RequestRecorder, route RouteResolver) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			start := time.Now()
+			rec := &responseRecorder{ResponseWriter: w}
+			next.ServeHTTP(rec, r)
+
+			status := rec.status
+			if status == 0 {
+				status = http.StatusOK
+			}
+			pattern := ""
+			if route != nil {
+				pattern = route(r)
+			}
+			recorder.RecordHTTPRequest(r.Method, pattern, status, time.Since(start))
+		})
+	}
+}
+
 // Timeout bounds how long a handler may run.
 func Timeout(d time.Duration) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {

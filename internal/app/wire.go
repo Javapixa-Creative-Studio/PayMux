@@ -18,6 +18,7 @@ import (
 	"github.com/anggapixa/paymux/internal/event"
 	"github.com/anggapixa/paymux/internal/gateway"
 	"github.com/anggapixa/paymux/internal/gateway/midtrans"
+	"github.com/anggapixa/paymux/internal/metrics"
 	"github.com/anggapixa/paymux/internal/netsafe"
 	"github.com/anggapixa/paymux/internal/notification"
 	"github.com/anggapixa/paymux/internal/payment"
@@ -31,8 +32,9 @@ type Container struct {
 	Logger *slog.Logger
 	DB     *storage.DB
 
-	Sealer *crypto.Sealer
-	Guard  *netsafe.Guard
+	Sealer  *crypto.Sealer
+	Guard   *netsafe.Guard
+	Metrics *metrics.Metrics
 
 	Auth            *auth.Service
 	AuthMiddleware  *auth.Middleware
@@ -73,9 +75,25 @@ func Build(cfg *config.Config, db *storage.DB, logger *slog.Logger) (*Container,
 	authService := auth.NewService(authRepo, cfg.AdminSessionTTL, logger)
 	authMiddleware := auth.NewMiddleware(authService, applications, cfg.Env.IsProduction())
 
+	// A nil collector disables instrumentation without changing any call site,
+	// so metrics can be turned off without threading a flag through the domain.
+	var collector *metrics.Metrics
+	if cfg.MetricsEnabled {
+		collector = metrics.New()
+	}
+
 	gatewayClient := gateway.NewHTTPClient(cfg.HTTPClientTimeout)
 	registry := gateway.NewRegistry(gatewayClient)
-	registry.Register(midtrans.Name, midtrans.NewAdapter)
+	registry.Register(midtrans.Name, func(acc *gateway.Account, client *http.Client) (gateway.Gateway, error) {
+		adapter, err := midtrans.NewAdapter(acc, client)
+		if err != nil {
+			return nil, err
+		}
+		if collector != nil {
+			adapter.(*midtrans.Adapter).SetMetrics(collector)
+		}
+		return adapter, nil
+	})
 
 	gatewayAccounts := gateway.NewRepository(db, sealer)
 	eventRepo := event.NewRepository(db)
@@ -89,6 +107,9 @@ func Build(cfg *config.Config, db *storage.DB, logger *slog.Logger) (*Container,
 	processor := notification.NewProcessor(db, notificationRepo, paymentRepo,
 		gatewayAccounts, registry, publisher, logger)
 
+	payments.SetMetrics(collector)
+	processor.SetMetrics(collector)
+
 	subscriptions := subscription.NewService(
 		subscription.NewRepository(db), gatewayAccounts, registry, publisher, logger)
 
@@ -100,6 +121,7 @@ func Build(cfg *config.Config, db *storage.DB, logger *slog.Logger) (*Container,
 		DB:                db,
 		Sealer:            sealer,
 		Guard:             guard,
+		Metrics:           collector,
 		Auth:              authService,
 		AuthMiddleware:    authMiddleware,
 		Applications:      applications,

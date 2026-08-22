@@ -4,8 +4,10 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
 	"sync"
@@ -64,11 +66,17 @@ func run() error {
 	if err != nil {
 		return err
 	}
+
+	var wg sync.WaitGroup
 	// The worker waits for the schema rather than applying it: the API owns
 	// migrations, and two processes racing to migrate helps nobody. The
 	// advisory lock in Migrate makes this safe either way.
 	if _, err := db.Migrate(ctx); err != nil {
 		return err
+	}
+
+	if cfg.MetricsEnabled {
+		startMetricsServer(ctx, cfg.MetricsAddr, container, logger, &wg)
 	}
 
 	worker := delivery.NewWorker(
@@ -83,7 +91,8 @@ func run() error {
 		},
 	)
 
-	var wg sync.WaitGroup
+	worker.SetMetrics(container.Metrics)
+
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -103,6 +112,44 @@ func run() error {
 	wg.Wait()
 	logger.Info("shutdown complete")
 	return nil
+}
+
+// startMetricsServer exposes the worker's metrics.
+//
+// The worker serves no API of its own, so without this its counters would be
+// invisible — which is exactly backwards, since delivery health is the thing
+// an operator most wants to watch.
+func startMetricsServer(ctx context.Context, addr string, container *app.Container, logger *slog.Logger, wg *sync.WaitGroup) {
+	mux := http.NewServeMux()
+	mux.Handle("/metrics", container.Metrics.Handler())
+	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"status":"ok"}`))
+	})
+
+	server := &http.Server{
+		Addr:              addr,
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		logger.Info("metrics server listening", "addr", addr)
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logger.Error("metrics server stopped", "error", err)
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		<-ctx.Done()
+		shutdownCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+		defer cancel()
+		_ = server.Shutdown(shutdownCtx)
+	}()
 }
 
 // runHousekeeping periodically prunes records that have outlived their use.

@@ -278,7 +278,32 @@ GET    /api/v1/gateway/capabilities
 POST   /webhooks/midtrans        # the gateway's notification URL
 GET    /health                   # liveness
 GET    /ready                    # readiness, including the database
+GET    /metrics                  # Prometheus metrics
 ```
+
+### Metrics
+
+Both the API and the worker export Prometheus metrics. The API serves them on
+its own listener; the worker serves them on `PAYMUX_METRICS_ADDR` (`:9090` by
+default), since it has no API of its own.
+
+```text
+paymux_http_requests_total{method,route,status}
+paymux_http_request_duration_seconds{method,route}
+paymux_payments_created_total{gateway,outcome}
+paymux_gateway_requests_total{gateway,operation,outcome}
+paymux_gateway_request_duration_seconds{gateway,operation}
+paymux_webhook_received_total{gateway,routing}
+paymux_delivery_total{outcome}
+paymux_delivery_failures_total{reason}
+paymux_delivery_duration_seconds{outcome}
+paymux_delivery_queue_depth{state}
+```
+
+Labels are deliberately coarse — route patterns rather than paths, status
+classes rather than codes — because a payment identifier in a label would make
+the series unbounded. Neither endpoint is authenticated, so keep them off the
+public network.
 
 The full contract is in [`docs/openapi.yaml`](docs/openapi.yaml).
 

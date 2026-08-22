@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/anggapixa/paymux/internal/crypto"
 	"github.com/anggapixa/paymux/internal/gateway"
@@ -17,6 +18,12 @@ import (
 // maxResponseBytes bounds how much of a gateway response PayMux will read, so
 // a misbehaving upstream cannot exhaust memory.
 const maxResponseBytes = 2 << 20 // 2 MiB
+
+// RequestRecorder observes calls made to the gateway. The adapter depends on
+// this narrow interface so it stays free of a metrics dependency.
+type RequestRecorder interface {
+	RecordGatewayRequest(gateway, operation string, duration time.Duration, err error)
+}
 
 // Client is the single place PayMux speaks HTTP to Midtrans (PRD §75).
 //
@@ -27,6 +34,9 @@ type Client struct {
 	CoreURL    string
 	ServerKey  crypto.Secret
 	HTTPClient *http.Client
+
+	// Metrics is optional; when nil, calls are simply not instrumented.
+	Metrics RequestRecorder
 }
 
 // NewClient builds a Client for the given environment.
@@ -52,7 +62,17 @@ func (c *Client) authorization() string {
 // Midtrans reports application-level failures in a JSON body with its own
 // status_code, sometimes alongside HTTP 200, so both the transport status and
 // the body's status code are inspected.
-func (c *Client) do(ctx context.Context, method, url string, body any, out any) error {
+func (c *Client) do(ctx context.Context, method, url string, body any, out any) (err error) {
+	if c.Metrics != nil {
+		start := time.Now()
+		operation := operationName(method, url)
+		defer func() { c.Metrics.RecordGatewayRequest(Name, operation, time.Since(start), err) }()
+	}
+	return c.exchange(ctx, method, url, body, out)
+}
+
+// exchange performs the request itself.
+func (c *Client) exchange(ctx context.Context, method, url string, body any, out any) error {
 	var payload io.Reader
 	if body != nil {
 		encoded, err := json.Marshal(body)
@@ -172,6 +192,28 @@ func statusFromCode(code string) int {
 		return http.StatusBadGateway
 	default:
 		return http.StatusBadGateway
+	}
+}
+
+// operationName labels a request by what it does rather than by its URL,
+// which carries an order identifier and would explode the metric's
+// cardinality.
+func operationName(method, url string) string {
+	switch {
+	case strings.Contains(url, "/snap/v1/transactions"):
+		return "snap.create"
+	case strings.Contains(url, "/v1/subscriptions"):
+		return "subscription." + strings.ToLower(method)
+	case strings.HasSuffix(url, "/status"):
+		return "transaction.status"
+	case strings.HasSuffix(url, "/cancel"):
+		return "transaction.cancel"
+	case strings.HasSuffix(url, "/expire"):
+		return "transaction.expire"
+	case strings.HasSuffix(url, "/refund"):
+		return "transaction.refund"
+	default:
+		return "other"
 	}
 }
 

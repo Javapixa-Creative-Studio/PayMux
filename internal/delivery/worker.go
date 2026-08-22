@@ -22,6 +22,13 @@ import (
 // take, so a slow destination is never mistaken for a dead worker.
 const staleLockAfter = 5 * time.Minute
 
+// MetricsRecorder observes delivery attempts.
+type MetricsRecorder interface {
+	RecordDelivery(result string, duration time.Duration)
+	RecordDeliveryFailure(reason string)
+	SetQueueDepth(state string, count float64)
+}
+
 // Worker drains the delivery queue.
 type Worker struct {
 	repo        *Repository
@@ -32,7 +39,11 @@ type Worker struct {
 	concurrency int
 	poll        time.Duration
 	id          string
+	metrics     MetricsRecorder
 }
+
+// SetMetrics attaches a recorder. A nil recorder disables the counters.
+func (w *Worker) SetMetrics(recorder MetricsRecorder) { w.metrics = recorder }
 
 // WorkerOptions configures a Worker.
 type WorkerOptions struct {
@@ -96,6 +107,7 @@ func (w *Worker) Run(ctx context.Context) error {
 
 		case <-recovery.C:
 			w.recoverStale(ctx)
+			w.reportQueueDepth(ctx)
 
 		case <-ticker.C:
 			processed, err := w.drain(ctx, &wg)
@@ -137,6 +149,22 @@ func (w *Worker) drain(ctx context.Context, wg *sync.WaitGroup) (int, error) {
 		}(d)
 	}
 	return len(claimed), nil
+}
+
+// reportQueueDepth publishes how much work is waiting, which is the number an
+// operator watches to know whether the worker is keeping up.
+func (w *Worker) reportQueueDepth(ctx context.Context) {
+	if w.metrics == nil {
+		return
+	}
+	stats, err := w.repo.Stats(ctx, time.Now().Add(-24*time.Hour))
+	if err != nil {
+		w.logger.Warn("could not read the delivery queue depth", "error", err)
+		return
+	}
+	w.metrics.SetQueueDepth("pending", float64(stats.Pending))
+	w.metrics.SetQueueDepth("failed", float64(stats.Failed))
+	w.metrics.SetQueueDepth("dead", float64(stats.Dead))
 }
 
 func (w *Worker) recoverStale(ctx context.Context) {
@@ -201,13 +229,38 @@ func (w *Worker) process(ctx context.Context, d *Delivery) {
 			logger.Error("could not record a successful delivery", "error", err)
 			return
 		}
+		if w.metrics != nil {
+			w.metrics.RecordDelivery("succeeded", result.Duration)
+		}
 		logger.Info("event delivered",
 			"status", result.StatusCode,
 			"duration_ms", attempt.DurationMS,
 		)
 		return
 	}
+	if w.metrics != nil {
+		w.metrics.RecordDelivery("failed", result.Duration)
+		w.metrics.RecordDeliveryFailure(failureReason(result))
+	}
 	w.recordFailure(ctx, d, attempt, result.Retryable(), logger)
+}
+
+// failureReason classifies why a delivery did not land, in terms an operator
+// can act on: a status class they can look up, or a transport problem.
+func failureReason(result Result) string {
+	if result.Err != nil {
+		return "transport"
+	}
+	switch {
+	case result.StatusCode >= 500:
+		return "destination_5xx"
+	case result.StatusCode == 429:
+		return "rate_limited"
+	case result.StatusCode >= 400:
+		return "destination_4xx"
+	default:
+		return "unexpected_status"
+	}
 }
 
 // recordFailure stores a failed attempt and reports what happens next.
