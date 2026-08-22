@@ -219,6 +219,10 @@ Reject deliveries whose timestamp is far from your clock, and treat the event
 as at-least-once: PayMux retries until you answer `2xx`, so make your handler
 idempotent on `id`.
 
+A complete, runnable integration — creating a payment and verifying the event
+that comes back — is in [`examples/merchant-go`](examples/merchant-go), along
+with a JavaScript verification snippet in [`examples/`](examples/README.md).
+
 ### Event types
 
 ```text
@@ -371,6 +375,7 @@ internal/
 migrations/     versioned SQL schema
 docs/           OpenAPI specification and operator documentation
 deployments/    Dockerfiles and nginx configuration
+examples/       worked integrations
 ```
 
 Gateway-specific code lives only in the adapter. The payment domain speaks the
