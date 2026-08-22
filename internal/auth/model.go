@@ -5,7 +5,7 @@ package auth
 import (
 	"time"
 
-	"github.com/anggapixa/paymux/internal/crypto"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/crypto"
 )
 
 // Admin is a dashboard operator.

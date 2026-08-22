@@ -5,7 +5,7 @@ package event
 import (
 	"time"
 
-	"github.com/anggapixa/paymux/internal/gateway"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/gateway"
 )
 
 // Type is a PayMux event name (PRD §42).

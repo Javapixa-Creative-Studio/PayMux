@@ -51,8 +51,8 @@ parsing, no guessing.
 Requirements: Docker, or Go 1.25+ and PostgreSQL 15+.
 
 ```bash
-git clone https://github.com/anggapixa/paymux.git
-cd paymux
+git clone https://github.com/Javapixa-Creative-Studio/PayMux.git
+cd PayMux
 cp .env.example .env
 ```
 

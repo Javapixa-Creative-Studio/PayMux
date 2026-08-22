@@ -8,9 +8,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/anggapixa/paymux/internal/crypto"
-	"github.com/anggapixa/paymux/internal/ids"
-	"github.com/anggapixa/paymux/internal/storage"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/crypto"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/ids"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/storage"
 )
 
 // Constraint names the repository interprets. They are referenced by name so

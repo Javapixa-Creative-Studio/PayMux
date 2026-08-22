@@ -9,10 +9,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/anggapixa/paymux/internal/auth"
-	"github.com/anggapixa/paymux/internal/delivery"
-	"github.com/anggapixa/paymux/internal/httpx"
-	"github.com/anggapixa/paymux/internal/payment"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/auth"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/delivery"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/httpx"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/payment"
 )
 
 // HeaderIdempotencyKey carries a caller's idempotency key (PRD §63).

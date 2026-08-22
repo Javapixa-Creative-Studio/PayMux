@@ -4,10 +4,10 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/anggapixa/paymux/internal/gateway"
-	"github.com/anggapixa/paymux/internal/httpx"
-	"github.com/anggapixa/paymux/internal/logging"
-	"github.com/anggapixa/paymux/internal/notification"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/gateway"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/httpx"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/logging"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/notification"
 )
 
 // maxNotificationBytes caps an inbound gateway notification. Midtrans payloads

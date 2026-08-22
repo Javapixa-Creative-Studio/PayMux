@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anggapixa/paymux/internal/application"
-	"github.com/anggapixa/paymux/internal/httpx"
-	"github.com/anggapixa/paymux/internal/logging"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/application"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/httpx"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/logging"
 )
 
 // SessionCookieName is the dashboard's session cookie.

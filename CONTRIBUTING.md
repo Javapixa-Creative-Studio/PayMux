@@ -8,8 +8,8 @@ bar for correctness is high — but the workflow is ordinary.
 Requirements: Go 1.25+, Node 20+, Docker.
 
 ```bash
-git clone https://github.com/anggapixa/paymux.git
-cd paymux
+git clone https://github.com/Javapixa-Creative-Studio/PayMux.git
+cd PayMux
 cp .env.example .env
 echo "PAYMUX_ENCRYPTION_KEY=$(openssl rand -hex 32)" >> .env
 

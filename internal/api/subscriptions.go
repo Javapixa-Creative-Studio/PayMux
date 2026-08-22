@@ -7,10 +7,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/anggapixa/paymux/internal/auth"
-	"github.com/anggapixa/paymux/internal/gateway"
-	"github.com/anggapixa/paymux/internal/httpx"
-	"github.com/anggapixa/paymux/internal/subscription"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/auth"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/gateway"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/httpx"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/subscription"
 )
 
 type subscriptionResponse struct {

@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anggapixa/paymux/internal/crypto"
-	"github.com/anggapixa/paymux/internal/gateway"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/crypto"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/gateway"
 )
 
 const testServerKey = "SB-Mid-server-testkey123"

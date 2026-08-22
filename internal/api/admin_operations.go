@@ -6,8 +6,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/anggapixa/paymux/internal/httpx"
-	"github.com/anggapixa/paymux/internal/notification"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/httpx"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/notification"
 )
 
 // The administrator views span every application, so these handlers pass no

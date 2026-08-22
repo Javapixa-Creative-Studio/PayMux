@@ -10,11 +10,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/anggapixa/paymux/internal/application"
-	"github.com/anggapixa/paymux/internal/crypto"
-	"github.com/anggapixa/paymux/internal/event"
-	"github.com/anggapixa/paymux/internal/ids"
-	"github.com/anggapixa/paymux/internal/storage"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/application"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/crypto"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/event"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/ids"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/storage"
 )
 
 // staleLockAfter is how long a claimed delivery may sit untouched before it is

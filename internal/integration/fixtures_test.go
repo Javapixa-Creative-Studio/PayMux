@@ -8,10 +8,10 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/anggapixa/paymux/internal/app"
-	"github.com/anggapixa/paymux/internal/application"
-	"github.com/anggapixa/paymux/internal/crypto"
-	"github.com/anggapixa/paymux/internal/delivery"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/app"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/application"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/crypto"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/delivery"
 )
 
 func applicationInput(name, slug string) application.CreateInput {

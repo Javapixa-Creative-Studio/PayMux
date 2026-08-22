@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anggapixa/paymux/internal/delivery"
-	"github.com/anggapixa/paymux/internal/event"
-	"github.com/anggapixa/paymux/internal/notification"
-	"github.com/anggapixa/paymux/internal/storage"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/delivery"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/event"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/notification"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/storage"
 )
 
 // TestPaymentCreationIsIdempotent proves that a retried creation returns the

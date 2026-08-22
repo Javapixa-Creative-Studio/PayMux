@@ -1,4 +1,4 @@
-module github.com/anggapixa/paymux
+module github.com/Javapixa-Creative-Studio/PayMux
 
 go 1.25.7
 

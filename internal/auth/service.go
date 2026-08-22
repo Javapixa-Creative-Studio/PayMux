@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anggapixa/paymux/internal/crypto"
-	"github.com/anggapixa/paymux/internal/storage"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/crypto"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/storage"
 )
 
 // Errors the auth domain reports. Handlers map these to responses.

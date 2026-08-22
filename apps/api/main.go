@@ -14,11 +14,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/anggapixa/paymux/internal/api"
-	"github.com/anggapixa/paymux/internal/app"
-	"github.com/anggapixa/paymux/internal/config"
-	"github.com/anggapixa/paymux/internal/logging"
-	"github.com/anggapixa/paymux/internal/storage"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/api"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/app"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/config"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/logging"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/storage"
 )
 
 // version is stamped at build time with -ldflags "-X main.version=...".

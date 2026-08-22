@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anggapixa/paymux/internal/crypto"
-	"github.com/anggapixa/paymux/internal/gateway"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/crypto"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/gateway"
 )
 
 // maxResponseBytes bounds how much of a gateway response PayMux will read, so

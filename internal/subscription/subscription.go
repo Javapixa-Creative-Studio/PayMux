@@ -9,7 +9,7 @@ package subscription
 import (
 	"time"
 
-	"github.com/anggapixa/paymux/internal/gateway"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/gateway"
 )
 
 // Subscription is one recurring charge PayMux manages for an application.

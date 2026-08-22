@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/anggapixa/paymux/internal/application"
-	"github.com/anggapixa/paymux/internal/event"
-	"github.com/anggapixa/paymux/internal/storage"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/application"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/event"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/storage"
 )
 
 // Publisher records an event and queues it to every destination that wants it.

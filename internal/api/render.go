@@ -3,9 +3,9 @@ package api
 import (
 	"time"
 
-	"github.com/anggapixa/paymux/internal/application"
-	"github.com/anggapixa/paymux/internal/auth"
-	"github.com/anggapixa/paymux/internal/gateway"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/application"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/auth"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/gateway"
 )
 
 // The response types below are PayMux's public wire format. They exist

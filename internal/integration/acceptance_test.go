@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anggapixa/paymux/internal/crypto"
-	"github.com/anggapixa/paymux/internal/gateway/midtrans"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/crypto"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/gateway/midtrans"
 )
 
 const millisecond = time.Millisecond

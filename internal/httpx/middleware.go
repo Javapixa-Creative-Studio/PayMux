@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anggapixa/paymux/internal/ids"
-	"github.com/anggapixa/paymux/internal/logging"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/ids"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/logging"
 )
 
 // HeaderRequestID carries the PayMux request identifier on responses and is

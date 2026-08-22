@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/anggapixa/paymux/internal/httpx"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/httpx"
 )
 
 // Version is stamped at build time with -ldflags.

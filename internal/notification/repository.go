@@ -12,8 +12,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/anggapixa/paymux/internal/ids"
-	"github.com/anggapixa/paymux/internal/storage"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/ids"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/storage"
 )
 
 // Routing describes what PayMux was able to do with an inbound notification.

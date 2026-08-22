@@ -9,9 +9,9 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/anggapixa/paymux/internal/crypto"
-	"github.com/anggapixa/paymux/internal/netsafe"
-	"github.com/anggapixa/paymux/internal/storage"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/crypto"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/netsafe"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/storage"
 )
 
 // Domain errors. Handlers map these onto the public error contract, which

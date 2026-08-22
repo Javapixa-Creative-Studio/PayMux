@@ -11,8 +11,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/anggapixa/paymux/internal/crypto"
-	"github.com/anggapixa/paymux/internal/netsafe"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/crypto"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/netsafe"
 )
 
 // Outbound signature headers (PRD §44).

@@ -5,7 +5,7 @@ package application
 import (
 	"time"
 
-	"github.com/anggapixa/paymux/internal/crypto"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/crypto"
 )
 
 // Application is one product using PayMux. It is the unit of isolation:

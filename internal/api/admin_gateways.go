@@ -5,9 +5,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/anggapixa/paymux/internal/crypto"
-	"github.com/anggapixa/paymux/internal/gateway"
-	"github.com/anggapixa/paymux/internal/httpx"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/crypto"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/gateway"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/httpx"
 )
 
 type createGatewayAccountRequest struct {

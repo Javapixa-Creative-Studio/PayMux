@@ -3,8 +3,8 @@ package api
 import (
 	"net/http"
 
-	"github.com/anggapixa/paymux/internal/auth"
-	"github.com/anggapixa/paymux/internal/httpx"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/auth"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/httpx"
 )
 
 type loginRequest struct {

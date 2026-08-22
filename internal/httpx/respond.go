@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/anggapixa/paymux/internal/logging"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/logging"
 )
 
 // JSON writes v as a JSON response with the given status.

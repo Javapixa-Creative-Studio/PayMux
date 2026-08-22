@@ -20,7 +20,7 @@ info:
     url: https://www.apache.org/licenses/LICENSE-2.0
   contact:
     name: PayMux
-    url: https://github.com/anggapixa/paymux
+    url: https://github.com/Javapixa-Creative-Studio/PayMux
 
 servers:
   - url: https://paymux.example.com

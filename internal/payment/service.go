@@ -10,14 +10,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anggapixa/paymux/internal/application"
-	"github.com/anggapixa/paymux/internal/crypto"
-	"github.com/anggapixa/paymux/internal/delivery"
-	"github.com/anggapixa/paymux/internal/event"
-	"github.com/anggapixa/paymux/internal/gateway"
-	"github.com/anggapixa/paymux/internal/ids"
-	"github.com/anggapixa/paymux/internal/money"
-	"github.com/anggapixa/paymux/internal/storage"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/application"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/crypto"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/delivery"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/event"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/gateway"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/ids"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/money"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/storage"
 )
 
 // MetricsRecorder observes payment creation. The domain depends on this

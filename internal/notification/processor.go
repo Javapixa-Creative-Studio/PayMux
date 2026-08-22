@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/anggapixa/paymux/internal/delivery"
-	"github.com/anggapixa/paymux/internal/event"
-	"github.com/anggapixa/paymux/internal/gateway"
-	"github.com/anggapixa/paymux/internal/gateway/midtrans"
-	"github.com/anggapixa/paymux/internal/payment"
-	"github.com/anggapixa/paymux/internal/storage"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/delivery"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/event"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/gateway"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/gateway/midtrans"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/payment"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/storage"
 )
 
 // MetricsRecorder observes inbound gateway notifications.

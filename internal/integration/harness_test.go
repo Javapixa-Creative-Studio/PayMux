@@ -24,13 +24,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anggapixa/paymux/internal/api"
-	"github.com/anggapixa/paymux/internal/app"
-	"github.com/anggapixa/paymux/internal/config"
-	"github.com/anggapixa/paymux/internal/crypto"
-	"github.com/anggapixa/paymux/internal/gateway"
-	"github.com/anggapixa/paymux/internal/gateway/midtrans"
-	"github.com/anggapixa/paymux/internal/storage"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/api"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/app"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/config"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/crypto"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/gateway"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/gateway/midtrans"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/storage"
 )
 
 const (

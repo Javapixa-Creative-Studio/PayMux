@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anggapixa/paymux/internal/gateway"
-	"github.com/anggapixa/paymux/internal/money"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/gateway"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/money"
 )
 
 // jakarta is the timezone Midtrans reports timestamps in.

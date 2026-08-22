@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/anggapixa/paymux/internal/delivery"
-	"github.com/anggapixa/paymux/internal/event"
-	"github.com/anggapixa/paymux/internal/gateway"
-	"github.com/anggapixa/paymux/internal/notification"
-	"github.com/anggapixa/paymux/internal/payment"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/delivery"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/event"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/gateway"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/notification"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/payment"
 )
 
 // Filters are read from the query string. An unrecognised value is left unset

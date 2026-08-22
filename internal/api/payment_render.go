@@ -3,10 +3,10 @@ package api
 import (
 	"time"
 
-	"github.com/anggapixa/paymux/internal/delivery"
-	"github.com/anggapixa/paymux/internal/event"
-	"github.com/anggapixa/paymux/internal/notification"
-	"github.com/anggapixa/paymux/internal/payment"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/delivery"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/event"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/notification"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/payment"
 )
 
 type paymentResponse struct {

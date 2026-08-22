@@ -6,8 +6,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/anggapixa/paymux/internal/gateway"
-	"github.com/anggapixa/paymux/internal/money"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/gateway"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/money"
 )
 
 // RefundTransaction refunds part or all of a settled transaction (PRD §31).

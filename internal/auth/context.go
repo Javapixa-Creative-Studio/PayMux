@@ -3,7 +3,7 @@ package auth
 import (
 	"context"
 
-	"github.com/anggapixa/paymux/internal/application"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/application"
 )
 
 // Principal is whoever a request is acting as.

@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"strings"
 
-	"github.com/anggapixa/paymux/internal/crypto"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/crypto"
 )
 
 // SignatureInput is the set of notification fields Midtrans signs.

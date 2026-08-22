@@ -8,7 +8,7 @@ applications that use it. Security reports are welcome and taken seriously.
 **Please do not open a public issue for a security problem.**
 
 Report it privately through GitHub's
-[private vulnerability reporting](https://github.com/anggapixa/paymux/security/advisories/new),
+[private vulnerability reporting](https://github.com/Javapixa-Creative-Studio/PayMux/security/advisories/new),
 or by email to **security@javapixa.com**.
 
 Please include:

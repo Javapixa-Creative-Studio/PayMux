@@ -12,7 +12,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/anggapixa/paymux/migrations"
+	"github.com/Javapixa-Creative-Studio/PayMux/migrations"
 )
 
 // migrationsTable records which migrations have run.

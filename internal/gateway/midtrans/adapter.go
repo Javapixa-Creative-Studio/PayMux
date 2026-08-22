@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/anggapixa/paymux/internal/gateway"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/gateway"
 )
 
 // Adapter implements gateway.Gateway for Midtrans.
