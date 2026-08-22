@@ -381,3 +381,52 @@ func countEvents(events []*event.Event, eventType event.Type) int {
 	}
 	return n
 }
+
+// TestRefundListingStaysWithinTheApplication covers the cross-payment refunds
+// endpoint, which is a new way to reach refund data and therefore a new way to
+// leak it across applications (PRD §49).
+func TestRefundListingStaysWithinTheApplication(t *testing.T) {
+	h := newHarness(t)
+	h.setupGatewayAccount()
+	productA := h.setupApplication("Product A", "product-a")
+	productB := h.setupApplication("Product B", "product-b")
+
+	resp, raw := h.request(http.MethodPost, "/api/v1/payments",
+		createPaymentBody("INV-REFUND-1", 100000), withKey(productB.Key))
+	requireStatus(t, resp, raw, http.StatusCreated)
+	created := decode[map[string]any](t, raw)
+	orderID, _ := created["gateway_order_id"].(string)
+	paymentID, _ := created["id"].(string)
+
+	// Settle it so a refund is possible at all.
+	resp, raw = h.request(http.MethodPost, "/webhooks/midtrans",
+		signedNotification(orderID, "100000.00", "settlement", "accept"))
+	requireStatus(t, resp, raw, http.StatusOK)
+
+	resp, raw = h.request(http.MethodPost, "/api/v1/payments/"+paymentID+"/refunds",
+		map[string]any{"amount": 40000, "reason": "Customer requested refund"}, withKey(productB.Key))
+	requireStatus(t, resp, raw, http.StatusCreated)
+
+	// The owner sees its refund.
+	resp, raw = h.request(http.MethodGet, "/api/v1/refunds", nil, withKey(productB.Key))
+	requireStatus(t, resp, raw, http.StatusOK)
+	owned := decode[struct {
+		Data []map[string]any `json:"data"`
+	}](t, raw)
+	if len(owned.Data) != 1 {
+		t.Fatalf("owner sees %d refunds, want 1: %s", len(owned.Data), raw)
+	}
+
+	// Another application sees nothing, even when it names the owner's
+	// application id explicitly.
+	for _, path := range []string{"/api/v1/refunds", "/api/v1/refunds?application_id=" + productB.ID} {
+		resp, raw = h.request(http.MethodGet, path, nil, withKey(productA.Key))
+		requireStatus(t, resp, raw, http.StatusOK)
+		other := decode[struct {
+			Data []map[string]any `json:"data"`
+		}](t, raw)
+		if len(other.Data) != 0 {
+			t.Errorf("GET %s leaked %d refunds across applications", path, len(other.Data))
+		}
+	}
+}

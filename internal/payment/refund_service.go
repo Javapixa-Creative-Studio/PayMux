@@ -204,6 +204,11 @@ func (s *Service) ListRefunds(ctx context.Context, applicationID, paymentID stri
 	return s.repo.ListRefunds(ctx, paymentID)
 }
 
+// ListAllRefunds returns refunds across payments, for the dashboard.
+func (s *Service) ListAllRefunds(ctx context.Context, filter RefundFilter, page storage.Page) (storage.List[*Refund], error) {
+	return s.repo.ListAll(ctx, filter, page)
+}
+
 // GetRefund returns one refund, enforcing ownership.
 func (s *Service) GetRefund(ctx context.Context, applicationID, paymentID, refundID string) (*Refund, error) {
 	if _, err := s.load(ctx, applicationID, paymentID); err != nil {

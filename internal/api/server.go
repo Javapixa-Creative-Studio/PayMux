@@ -184,6 +184,7 @@ func (s *Server) applicationRoutes(r chi.Router) {
 		})
 	})
 
+	r.Get("/refunds", s.handleListApplicationRefunds)
 	r.Get("/events", s.handleListApplicationEvents)
 	r.Get("/deliveries", s.handleListApplicationDeliveries)
 	r.Post("/deliveries/{deliveryID}/retry", s.handleRetryDelivery)
@@ -247,6 +248,8 @@ func (s *Server) adminRoutes(r chi.Router) {
 			r.Post("/{paymentID}/refunds", s.handleCreateRefund)
 			r.Get("/{paymentID}/refunds", s.handleListRefunds)
 		})
+
+		r.Get("/refunds", s.handleAdminListRefunds)
 
 		r.Get("/events", s.handleAdminListEvents)
 		r.Get("/events/{eventID}", s.handleAdminGetEvent)

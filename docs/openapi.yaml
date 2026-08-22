@@ -269,6 +269,31 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/NotFound" }
 
+  /api/v1/refunds:
+    get:
+      tags: [Refunds]
+      summary: List refunds
+      description: |
+        Refunds across every payment the calling application owns. A payment's
+        own refunds are also available on its detail endpoint.
+      operationId: listAllRefunds
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/StartingAfter"
+        - name: status
+          in: query
+          schema: { type: string, enum: [PENDING, SUCCEEDED, FAILED] }
+        - name: payment_id
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: A page of refunds.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RefundList" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
   /api/v1/subscriptions:
     post:
       tags: [Subscriptions]

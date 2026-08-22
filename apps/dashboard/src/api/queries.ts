@@ -285,6 +285,13 @@ export function useRefundPayment(id: string) {
 // Events, deliveries and gateway notifications
 // ---------------------------------------------------------------------------
 
+export function useRefunds(params?: ListParams) {
+  return useQuery({
+    queryKey: ['refunds', params],
+    queryFn: () => apiFetch<ListEnvelope<Refund>>(`${ADMIN}/refunds`, { query: params }),
+  });
+}
+
 export function useEvents(params?: ListParams) {
   return useQuery({
     queryKey: ['events', params],

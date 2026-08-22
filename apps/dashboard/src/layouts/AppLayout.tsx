@@ -14,6 +14,7 @@ const GROUPS = [
     items: [
       { to: '/overview', label: 'Overview' },
       { to: '/payments', label: 'Payments' },
+      { to: '/refunds', label: 'Refunds' },
       { to: '/events', label: 'Events' },
       { to: '/deliveries', label: 'Deliveries', badge: 'deliveries' as const },
       { to: '/notifications', label: 'Notifications', badge: 'unrouted' as const },

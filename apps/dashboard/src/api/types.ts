@@ -149,6 +149,7 @@ export interface Refund {
   id: string;
   object: 'refund';
   payment_id: string;
+  application_id?: string;
   gateway_refund_id?: string;
   amount: number;
   currency: string;

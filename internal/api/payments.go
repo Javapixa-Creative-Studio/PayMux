@@ -11,6 +11,7 @@ import (
 
 	"github.com/Javapixa-Creative-Studio/PayMux/internal/auth"
 	"github.com/Javapixa-Creative-Studio/PayMux/internal/delivery"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/gateway"
 	"github.com/Javapixa-Creative-Studio/PayMux/internal/httpx"
 	"github.com/Javapixa-Creative-Studio/PayMux/internal/payment"
 )
@@ -270,6 +271,29 @@ func (s *Server) handleListRefunds(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httpx.JSON(w, r, http.StatusOK, renderList(refunds, false, len(refunds), renderRefund))
+}
+
+// handleListApplicationRefunds lists the calling application's refunds across
+// all of its payments.
+func (s *Server) handleListApplicationRefunds(w http.ResponseWriter, r *http.Request) {
+	app := auth.ApplicationFromContext(r.Context())
+
+	filter := payment.RefundFilter{
+		// Scoped to the caller whatever the query string asks for.
+		ApplicationID: app.ID,
+		PaymentID:     r.URL.Query().Get("payment_id"),
+	}
+	switch status := gateway.RefundStatus(r.URL.Query().Get("status")); status {
+	case gateway.RefundPending, gateway.RefundSucceeded, gateway.RefundFailed:
+		filter.Status = status
+	}
+
+	list, err := s.payments.ListAllRefunds(r.Context(), filter, pageFromRequest(r))
+	if err != nil {
+		fail(w, r, err, refundMissing)
+		return
+	}
+	httpx.JSON(w, r, http.StatusOK, renderList(list.Items, list.HasMore, list.Limit, renderRefund))
 }
 
 func (s *Server) handleListApplicationEvents(w http.ResponseWriter, r *http.Request) {

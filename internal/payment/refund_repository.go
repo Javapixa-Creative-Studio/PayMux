@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 
@@ -110,6 +111,69 @@ func (r *Repository) SucceededRefundTotal(ctx context.Context, paymentID string)
 		return 0, fmt.Errorf("payment: sum refunds: %w", err)
 	}
 	return total, nil
+}
+
+// RefundFilter narrows a cross-payment refund listing.
+type RefundFilter struct {
+	ApplicationID string
+	PaymentID     string
+	Status        gateway.RefundStatus
+}
+
+// ListAll returns a page of refunds across payments, newest first.
+//
+// The per-payment listing answers "what happened to this payment"; this one
+// answers "what have we refunded lately", which is the question an operator
+// arrives with when reconciling a day's activity.
+func (r *Repository) ListAll(ctx context.Context, filter RefundFilter, page storage.Page) (storage.List[*Refund], error) {
+	page = page.Normalize()
+
+	var (
+		conditions []string
+		args       []any
+	)
+	add := func(condition string, value any) {
+		args = append(args, value)
+		conditions = append(conditions, fmt.Sprintf(condition, len(args)))
+	}
+	if filter.ApplicationID != "" {
+		add("application_id = $%d", filter.ApplicationID)
+	}
+	if filter.PaymentID != "" {
+		add("payment_id = $%d", filter.PaymentID)
+	}
+	if filter.Status != "" {
+		add("status = $%d", string(filter.Status))
+	}
+	if page.StartingAfter != "" {
+		add("id < $%d", page.StartingAfter)
+	}
+
+	query := `SELECT ` + refundColumns + ` FROM refunds`
+	if len(conditions) > 0 {
+		query += " WHERE " + strings.Join(conditions, " AND ")
+	}
+	args = append(args, page.FetchLimit())
+	query += fmt.Sprintf(" ORDER BY id DESC LIMIT $%d", len(args))
+
+	rows, err := r.q(ctx).Query(ctx, query, args...)
+	if err != nil {
+		return storage.List[*Refund]{}, fmt.Errorf("payment: list refunds: %w", err)
+	}
+	defer rows.Close()
+
+	var out []*Refund
+	for rows.Next() {
+		var refund Refund
+		if err := scanRefund(rows, &refund); err != nil {
+			return storage.List[*Refund]{}, err
+		}
+		out = append(out, &refund)
+	}
+	if err := rows.Err(); err != nil {
+		return storage.List[*Refund]{}, fmt.Errorf("payment: list refunds: %w", err)
+	}
+	return storage.NewList(out, page), nil
 }
 
 func scanRefund(row scanner, refund *Refund) error {

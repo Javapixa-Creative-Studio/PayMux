@@ -6,8 +6,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/gateway"
 	"github.com/Javapixa-Creative-Studio/PayMux/internal/httpx"
 	"github.com/Javapixa-Creative-Studio/PayMux/internal/notification"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/payment"
 )
 
 // The administrator views span every application, so these handlers pass no
@@ -89,6 +91,26 @@ func (s *Server) handleAdminGetPayment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httpx.JSON(w, r, http.StatusOK, detail)
+}
+
+// handleAdminListRefunds lists refunds across every payment (PRD §51).
+func (s *Server) handleAdminListRefunds(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	filter := payment.RefundFilter{
+		ApplicationID: q.Get("application_id"),
+		PaymentID:     q.Get("payment_id"),
+	}
+	switch status := gateway.RefundStatus(q.Get("status")); status {
+	case gateway.RefundPending, gateway.RefundSucceeded, gateway.RefundFailed:
+		filter.Status = status
+	}
+
+	list, err := s.payments.ListAllRefunds(r.Context(), filter, pageFromRequest(r))
+	if err != nil {
+		fail(w, r, err, refundMissing)
+		return
+	}
+	httpx.JSON(w, r, http.StatusOK, renderList(list.Items, list.HasMore, list.Limit, renderRefund))
 }
 
 func (s *Server) handleAdminListEvents(w http.ResponseWriter, r *http.Request) {
