@@ -15,8 +15,8 @@ import (
 // These tests talk to the real Midtrans sandbox (PRD §86).
 //
 // They exist because a stub can only prove PayMux is self-consistent. Whether
-// PayMux's understanding of Midtrans is *correct* — the Snap payload it sends,
-// the signature scheme, the status vocabulary — can only be settled by the
+// PayMux's understanding of Midtrans is *correct*: the Snap payload it sends,
+// the signature scheme, the status vocabulary: can only be settled by the
 // real service.
 //
 // They are skipped unless sandbox credentials are present, so the ordinary
@@ -105,7 +105,7 @@ func TestSandboxReportsTransactionStatus(t *testing.T) {
 	}
 
 	// A Snap transaction that has not been paid has no Core API transaction
-	// yet, so "not found" is a legitimate answer here — what matters is that
+	// yet, so "not found" is a legitimate answer here: what matters is that
 	// PayMux recognises it as such rather than treating it as an outage.
 	txn, err := adapter.GetTransaction(ctx, orderID)
 	switch {

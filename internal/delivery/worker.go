@@ -189,7 +189,7 @@ func (w *Worker) process(ctx context.Context, d *Delivery) {
 
 	payload, eventType, secret, err := w.prepare(ctx, d)
 	if err != nil {
-		// The delivery cannot be built at all — a deleted destination, or an
+		// The delivery cannot be built at all: a deleted destination, or an
 		// event that no longer exists. Retrying will not help.
 		logger.Error("delivery could not be prepared", "error", err)
 		w.recordFailure(ctx, d, Attempt{Number: d.AttemptCount + 1, Error: err.Error()}, false, logger)

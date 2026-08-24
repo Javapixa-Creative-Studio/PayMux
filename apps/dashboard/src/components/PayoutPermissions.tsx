@@ -145,7 +145,7 @@ export function PayoutPermissions({ applicationId }: { applicationId: string }) 
                 placeholder="No ceiling"
                 disabled={!enabled}
               />
-              <span className="field__hint">In minor units — 500000 is Rp 500.000.</span>
+              <span className="field__hint">In minor units: 500000 is Rp 500.000.</span>
             </div>
 
             <div className="field">
@@ -163,7 +163,7 @@ export function PayoutPermissions({ applicationId }: { applicationId: string }) 
               />
               <span className="field__hint">
                 Counts everything committed in the last 24 hours, including payouts still in
-                flight — money the gateway already has cannot be spent twice.
+                flight: money the gateway already has cannot be spent twice.
               </span>
             </div>
 
@@ -211,7 +211,7 @@ export function PayoutPermissions({ applicationId }: { applicationId: string }) 
                       <Tag tone="inert">disabled</Tag>
                     ) : b.verified_at ? (
                       // The bank's own answer, shown verbatim. A name that
-                      // differs is not necessarily wrong — that judgement is
+                      // differs is not necessarily wrong: that judgement is
                       // the operator's, and they can only make it if they can
                       // see what the bank actually said.
                       <span className={nameMatches(b.name, b.verified_name) ? '' : 'gateway-status'}>

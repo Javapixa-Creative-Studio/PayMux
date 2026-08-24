@@ -2,7 +2,7 @@
  * The fan-out schematic: PayMux's own topology, drawn with live numbers.
  *
  * Every other view answers a question about one record. This one answers the
- * question the product exists for — one gateway account feeds many
+ * question the product exists for: one gateway account feeds many
  * applications, so *which branch is broken?* An aggregate cannot say: five
  * healthy applications hide the sixth whose deliveries are dying.
  *
@@ -71,7 +71,7 @@ export function FanOut({ overview }: { overview: Overview }) {
         {/*
           * Sized in absolute units, then capped at the panel width by CSS.
           * On a wide screen it draws at 1:1 and leaves air to its right rather
-          * than stretching — scaling an SVG scales its type with it, and labels
+          * than stretching: scaling an SVG scales its type with it, and labels
           * larger than the surrounding interface stop reading as an instrument.
           * Below that width it scales down proportionally, which is the one
           * place growing type the other way is the right answer.
@@ -87,7 +87,7 @@ export function FanOut({ overview }: { overview: Overview }) {
               : `${apps.length} applications, all receiving events`
           }
         >
-          {/* Gateway — where money and notifications originate. */}
+          {/* Gateway: where money and notifications originate. */}
           <g>
             <rect
               className="fanout__node fanout__node--gateway"

@@ -4,7 +4,7 @@
 
 PayMux lets several applications share one payment gateway account safely. Each
 application gets its own API credentials, its own webhook destination and its
-own isolated view of the data — while the merchant keeps a single Midtrans
+own isolated view of the data, while the merchant keeps a single Midtrans
 account and a single notification URL.
 
 ```text
@@ -41,7 +41,7 @@ are stuck choosing between coupling your products together or inventing fragile
 
 PayMux takes ownership of the gateway integration instead. Applications talk to
 PayMux; PayMux talks to the gateway. Because PayMux creates every transaction,
-it knows with certainty which application owns each notification — no prefix
+it knows with certainty which application owns each notification: no prefix
 parsing, no guessing.
 
 ---
@@ -76,7 +76,7 @@ docker compose up -d
 | Dashboard | <http://localhost:5173> |
 
 Sign in to the dashboard with the bootstrap credentials, then remove them from
-`.env` — they are only used to create the first account.
+`.env`: they are only used to create the first account.
 
 ### Running the backend directly
 
@@ -104,7 +104,7 @@ go run ./apps/worker         # delivers webhooks
    ```
 
 The server key is encrypted at rest with `PAYMUX_ENCRYPTION_KEY` and is never
-returned by the API — not to applications, and not to the dashboard.
+returned by the API, not to applications, and not to the dashboard.
 
 ---
 
@@ -112,8 +112,8 @@ returned by the API — not to applications, and not to the dashboard.
 
 In the dashboard, **Applications → New application**, then:
 
-- create an API key — the plaintext is shown **once**, at creation
-- add a webhook destination — its signing secret is also shown once
+- create an API key: the plaintext is shown **once**, at creation
+- add a webhook destination: its signing secret is also shown once
 
 Keys are issued per environment. A `pmx_test_…` key works against a sandbox
 gateway account and a `pmx_live_…` key against a production one; PayMux refuses
@@ -162,7 +162,7 @@ curl -X POST https://your-paymux-host/api/v1/payments \
 Your frontend then opens Snap with the token, or sends the customer to
 `redirect_url`. **The Midtrans server key never leaves PayMux.**
 
-Amounts are integers in the currency's minor unit — for IDR that is one rupiah,
+Amounts are integers in the currency's minor unit: for IDR that is one rupiah,
 so `150000` is Rp 150.000.
 
 ### Idempotency
@@ -223,8 +223,8 @@ Reject deliveries whose timestamp is far from your clock, and treat the event
 as at-least-once: PayMux retries until you answer `2xx`, so make your handler
 idempotent on `id`.
 
-A complete, runnable integration — creating a payment and verifying the event
-that comes back — is in [`examples/merchant-go`](examples/merchant-go), along
+A complete, runnable integration: creating a payment and verifying the event
+that comes back: is in [`examples/merchant-go`](examples/merchant-go), along
 with a JavaScript verification snippet in [`examples/`](examples/README.md).
 
 ### Event types
@@ -308,8 +308,8 @@ paymux_delivery_duration_seconds{outcome}
 paymux_delivery_queue_depth{state}
 ```
 
-Labels are deliberately coarse — route patterns rather than paths, status
-classes rather than codes — because a payment identifier in a label would make
+Labels are deliberately coarse: route patterns rather than paths, status
+classes rather than codes, because a payment identifier in a label would make
 the series unbounded. Neither endpoint is authenticated, so keep them off the
 public network.
 
@@ -401,7 +401,7 @@ second gateway a matter of writing an adapter rather than rewriting the core.
   cannot change its answer between validation and delivery.
 - PayMux never stores card numbers, CVVs or any raw card credential.
 
-Please report vulnerabilities privately — see [SECURITY.md](SECURITY.md).
+Please report vulnerabilities privately: see [SECURITY.md](SECURITY.md).
 
 ---
 
@@ -409,7 +409,7 @@ Please report vulnerabilities privately — see [SECURITY.md](SECURITY.md).
 
 PayMux serves plain HTTP and expects TLS termination in front of it. Before it
 handles a real transaction, read
-[`docs/production.md`](docs/production.md) — it covers the encryption key's
+[`docs/production.md`](docs/production.md): it covers the encryption key's
 recovery characteristics (there are none), the settings whose defaults are
 wrong for production, backups, what to alert on, and what PayMux deliberately
 does not do.

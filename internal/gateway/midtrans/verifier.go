@@ -22,8 +22,8 @@ type SignatureInput struct {
 //
 //	SHA512(order_id + status_code + gross_amount + server_key)
 //
-// The gross amount must be used exactly as it appeared in the notification —
-// "150000.00", not a reformatted "150000" — because the digest covers the
+// The gross amount must be used exactly as it appeared in the notification,
+// "150000.00", not a reformatted "150000", because the digest covers the
 // literal string Midtrans sent.
 func Signature(in SignatureInput, serverKey crypto.Secret) string {
 	var b strings.Builder

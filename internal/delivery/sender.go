@@ -66,7 +66,7 @@ func NewSender(guard *netsafe.Guard, timeout time.Duration, userAgent string) *S
 		Transport: transport,
 		Timeout:   timeout,
 		// Redirects are not followed: a destination that redirects could send
-		// PayMux — and the signed event with it — somewhere unvetted.
+		// PayMux, and the signed event with it, somewhere unvetted.
 		CheckRedirect: func(*http.Request, []*http.Request) error {
 			return http.ErrUseLastResponse
 		},

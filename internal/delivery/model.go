@@ -116,7 +116,7 @@ func applyJitter(base time.Duration) time.Duration {
 // ShouldRetry reports whether an HTTP status code deserves another attempt.
 //
 // A 2xx is success. Everything else is retried except the 4xx range, where the
-// destination has told PayMux the request itself is unacceptable — with two
+// destination has told PayMux the request itself is unacceptable, with two
 // exceptions that are explicitly about timing rather than content.
 func ShouldRetry(statusCode int) bool {
 	switch {

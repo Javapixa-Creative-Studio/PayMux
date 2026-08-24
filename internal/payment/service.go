@@ -86,7 +86,7 @@ type CreateInput struct {
 // Create opens a payment at the gateway and records it.
 //
 // The order of operations matters. PayMux writes its own payment row first, so
-// a gateway transaction can never exist that PayMux does not know about — the
+// a gateway transaction can never exist that PayMux does not know about: the
 // reverse would produce a payment a customer can pay and PayMux cannot
 // attribute. If the gateway then rejects the request, the local row is removed.
 func (s *Service) Create(ctx context.Context, in CreateInput) (*Payment, error) {

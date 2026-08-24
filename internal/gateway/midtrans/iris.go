@@ -27,7 +27,7 @@ const (
 
 // notesPattern keeps only what a beneficiary's bank will accept on a
 // statement line. Midtrans restricts this to ASCII alphanumerics and spaces
-// for bank destinations, and rejects the whole payout otherwise — so PayMux
+// for bank destinations, and rejects the whole payout otherwise, so PayMux
 // sanitises rather than fails, since a note is descriptive and losing a comma
 // is never worth refusing to pay somebody.
 var notesPattern = regexp.MustCompile(`[^a-zA-Z0-9 ]+`)
@@ -162,7 +162,7 @@ type irisBanksResponse struct {
 //
 // PayMux sends payouts one at a time even though the endpoint accepts a batch.
 // A batch shares one idempotency key and one failure, which would make a
-// partial failure impossible to attribute — and attribution is the whole point
+// partial failure impossible to attribute, and attribution is the whole point
 // when the subject is somebody's money.
 func (d *Disburser) CreatePayout(ctx context.Context, req gateway.CreatePayoutRequest) (*gateway.PayoutResult, error) {
 	if req.IdempotencyKey == "" {
@@ -314,8 +314,8 @@ func (d *Disburser) ListBanks(ctx context.Context) ([]gateway.Bank, error) {
 
 // GetBalance reports what is available to pay out.
 //
-// The endpoint is confirmed to exist — an authenticated probe answers 401
-// where an unknown path answers 404 — but Midtrans does not currently document
+// The endpoint is confirmed to exist: an authenticated probe answers 401
+// where an unknown path answers 404, but Midtrans does not currently document
 // its response, so the shape here is inferred from the legacy Iris API. The
 // raw body is kept and an unreadable amount is reported as an error rather
 // than silently becoming zero: a balance that reads as nothing when it is not
@@ -455,7 +455,7 @@ func (d *Disburser) doRaw(ctx context.Context, method, path string, key crypto.S
 //
 // Midtrans reports four states. "processed" means the request reached the bank
 // but the beneficiary has not been credited yet, which is PayMux's SUBMITTED
-// rather than COMPLETED — treating it as completed would tell an application
+// rather than COMPLETED: treating it as completed would tell an application
 // money had arrived when it had not.
 func mapIrisStatus(status string) (gateway.PayoutStatus, error) {
 	switch strings.ToLower(strings.TrimSpace(status)) {

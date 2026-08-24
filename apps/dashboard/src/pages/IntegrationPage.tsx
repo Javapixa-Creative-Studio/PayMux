@@ -9,7 +9,7 @@ import { Snippet } from '../components/Snippet';
  *
  * Written for the person integrating an application, not for an operator, and
  * kept in the console rather than in a README because the two things a
- * developer needs — the endpoints and their own API key — are both here. It
+ * developer needs, the endpoints and their own API key, are both here. It
  * uses this instance's real host so a command can be copied rather than
  * adapted, and it is ordered the way an integration actually happens: get a
  * key, take a payment, hear about it, then pay somebody.
@@ -30,7 +30,7 @@ export function IntegrationPage() {
       </div>
       <p className="page__lede">
         Everything an application needs to talk to this PayMux. The examples use this instance's own
-        address, so they can be copied as they are — only the API key is yours to fill in.
+        address, so they can be copied as they are: only the API key is yours to fill in.
       </p>
 
       <nav className="docnav" aria-label="Sections">
@@ -53,7 +53,7 @@ export function IntegrationPage() {
         <h2>Authenticate</h2>
         <p>
           Every call carries an API key as a bearer token. Create one under{' '}
-          <Link to={first ? `/applications/${first.id}` : '/applications'}>Applications</Link> — it
+          <Link to={first ? `/applications/${first.id}` : '/applications'}>Applications</Link>: it
           is shown once, at creation, and never again.
         </p>
 
@@ -71,7 +71,7 @@ export function IntegrationPage() {
         </div>
 
         <p>
-          Ask what this instance's gateway supports before assuming a feature exists — subscriptions
+          Ask what this instance's gateway supports before assuming a feature exists: subscriptions
           and disbursement both depend on the merchant account, not on PayMux:
         </p>
         <Snippet
@@ -170,7 +170,7 @@ PayMux-Signature:    v1=<hex hmac-sha256>`}
         <p>
           The signature is HMAC-SHA256 over{' '}
           <code>{'<timestamp>.<delivery id>.<raw body>'}</code>, keyed with the destination's
-          signing secret. Sign the <em>raw</em> body — re-serialising the JSON first will change a
+          signing secret. Sign the <em>raw</em> body: re-serialising the JSON first will change a
           byte somewhere and the signature will not match.
         </p>
 
@@ -262,7 +262,7 @@ curl -s -X POST "$PAYMUX_URL/api/v1/beneficiaries/{id}/verify" \\
         />
 
         <p>
-          Valid bank codes come from the gateway, not from PayMux —{' '}
+          Valid bank codes come from the gateway, not from PayMux: {' '}
           <code>GET /api/v1/payout-banks</code> lists them. Use <code>gopay</code> or{' '}
           <code>ovo</code> with a phone number to pay an e-wallet.
         </p>
@@ -287,7 +287,7 @@ curl -s -X POST "$PAYMUX_URL/api/v1/beneficiaries/{id}/verify" \\
           </li>
           <li>
             <strong>application_payout_id</strong> is the safety mechanism. Reuse it and you get the
-            original payout back — a retried request can never become a second transfer.
+            original payout back: a retried request can never become a second transfer.
           </li>
           <li>
             Watch for <code>payout.completed</code> and <code>payout.failed</code> on your webhook.
@@ -323,7 +323,7 @@ curl -s -X POST "$PAYMUX_URL/api/v1/beneficiaries/{id}/verify" \\
         />
 
         <p>
-          Quote the <code>request_id</code> when something needs explaining — it appears in the
+          Quote the <code>request_id</code> when something needs explaining: it appears in the
           server logs for that exact call.
         </p>
 
@@ -357,7 +357,7 @@ curl -s -X POST "$PAYMUX_URL/api/v1/beneficiaries/{id}/verify" \\
                   412
                 </td>
                 <td data-label="Means">
-                  Something is not configured yet — no gateway account, or no disbursement
+                  Something is not configured yet: no gateway account, or no disbursement
                   credentials.
                 </td>
               </tr>
@@ -382,7 +382,7 @@ curl -s -X POST "$PAYMUX_URL/api/v1/beneficiaries/{id}/verify" \\
                   5xx
                 </td>
                 <td data-label="Means">
-                  PayMux's problem. Safe to retry — with the same Idempotency-Key.
+                  PayMux's problem. Safe to retry, with the same Idempotency-Key.
                 </td>
               </tr>
             </tbody>

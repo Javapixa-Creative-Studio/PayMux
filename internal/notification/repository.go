@@ -30,7 +30,7 @@ const (
 	// RoutingRejected means verification failed.
 	RoutingRejected Routing = "rejected"
 	// RoutingIgnored means the notification was understood but changed
-	// nothing — a stale state, or a status PayMux does not map.
+	// nothing: a stale state, or a status PayMux does not map.
 	RoutingIgnored Routing = "ignored"
 )
 

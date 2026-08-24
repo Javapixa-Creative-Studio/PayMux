@@ -4,7 +4,7 @@ import { elideId, formatAmount, formatRelative, formatTransportError } from './f
 
 describe('formatAmount', () => {
   it('renders zero-decimal currencies as whole units', () => {
-    // The API stores rupiah as an integer, so 150000 is Rp 150.000 — not
+    // The API stores rupiah as an integer, so 150000 is Rp 150.000, not
     // Rp 1.500,00. Getting this wrong misstates every amount by a hundredfold.
     expect(formatAmount(150000, 'IDR')).toBe('150,000');
     expect(formatAmount(0, 'IDR')).toBe('0');

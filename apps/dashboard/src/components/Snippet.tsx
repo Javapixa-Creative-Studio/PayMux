@@ -10,7 +10,7 @@ type CopyState = 'idle' | 'copied' | 'selected';
  *
  * The clipboard is not assumed to exist. PayMux is self-hosted, and an
  * instance served over plain HTTP on a LAN address is not a secure context, so
- * navigator.clipboard is simply absent there — as it is when a permissions
+ * navigator.clipboard is simply absent there, as it is when a permissions
  * policy blocks it. Rather than a button that silently does nothing, the
  * fallback selects the text and says so, which leaves the reader one keystroke
  * from the same result.

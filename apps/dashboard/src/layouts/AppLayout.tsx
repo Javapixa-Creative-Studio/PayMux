@@ -38,8 +38,8 @@ const GROUPS = [
  * The phone's tab bar, which is a different editorial decision from the rail.
  *
  * Nobody configures a gateway on a phone. They open PayMux on a phone because
- * something pinged them — a delivery is failing, a customer is asking whether a
- * payment went through — so the four tabs are the triage path and setup lives
+ * something pinged them: a delivery is failing, a customer is asking whether a
+ * payment went through, so the four tabs are the triage path and setup lives
  * behind More. Deliveries and Notifications keep their counts here for the same
  * reason the rail gives them counts: the tab bar is always on screen, so what
  * needs attention is visible without navigating to find it.

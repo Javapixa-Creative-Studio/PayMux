@@ -2,7 +2,7 @@
 // the rules that decide whether a transfer may happen at all.
 //
 // It is deliberately not part of package payment. The two look similar on
-// paper — an amount, a gateway, a status that advances — but they answer
+// paper, an amount, a gateway, a status that advances, but they answer
 // opposite questions. A payment asks whether money arrived, and a mistake
 // costs a reconciliation. A payout asks whether money should leave, and a
 // mistake costs the money. Sharing a package would invite sharing the

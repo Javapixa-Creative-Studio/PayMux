@@ -87,7 +87,7 @@ function ApiKeysPanel({ applicationId }: { applicationId: string }) {
         <div className="panel__body">
           <div className="notice notice--secret">
             <div>
-              Copy this key now — it is shown once and cannot be retrieved afterwards.
+              Copy this key now: it is shown once and cannot be retrieved afterwards.
             </div>
             <div className="notice__code">{issued}</div>
             <div>
@@ -242,8 +242,8 @@ function CreateKeyDialog({
             value={mode}
             onChange={(event) => setMode(event.target.value as 'live' | 'test')}
           >
-            <option value="test">Test — for a sandbox gateway account</option>
-            <option value="live">Live — for a production gateway account</option>
+            <option value="test">Test: for a sandbox gateway account</option>
+            <option value="live">Live: for a production gateway account</option>
           </select>
           <span className="field__hint">
             PayMux refuses a mismatch, so a test key can never move real money.
@@ -294,7 +294,7 @@ function DestinationsPanel({ applicationId }: { applicationId: string }) {
         {secret && (
           <div className="notice notice--secret">
             <div>
-              Copy this signing secret now — it is shown once. Your application needs it to verify
+              Copy this signing secret now: it is shown once. Your application needs it to verify
               the <span className="mono">PayMux-Signature</span> header.
             </div>
             <div className="notice__code">{secret}</div>

@@ -109,7 +109,7 @@ func (r *Repository) ListBeneficiaries(ctx context.Context, applicationID string
 // BeneficiaryUpdate is a change to a destination.
 //
 // Fields are pointers so that "leave this alone" and "set this to empty" stay
-// distinguishable — on a record that decides where money goes, the difference
+// distinguishable: on a record that decides where money goes, the difference
 // is not one to infer.
 type BeneficiaryUpdate struct {
 	Name     *string

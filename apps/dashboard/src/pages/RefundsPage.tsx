@@ -30,7 +30,7 @@ function tone(status: Refund['status']): 'settled' | 'pending' | 'failed' {
  * Refunds across every payment.
  *
  * A payment's own refunds live on its detail page; this view answers the other
- * question — what have we refunded lately, and did any of it fail — which is
+ * question, what have we refunded lately, and did any of it fail, which is
  * what an operator reconciling a day's activity arrives with.
  */
 export function RefundsPage() {

@@ -15,7 +15,7 @@ import (
 //
 // Verification uses Midtrans's documented signature: the digest covers the
 // order id, status code and gross amount, keyed by the merchant's server key.
-// A notification that fails is rejected outright — PayMux never updates a
+// A notification that fails is rejected outright: PayMux never updates a
 // payment from an unauthenticated message.
 func (a *Adapter) VerifyWebhook(_ context.Context, req gateway.WebhookRequest) error {
 	var payload transactionResponse
@@ -84,8 +84,8 @@ func (a *Adapter) ParseWebhook(_ context.Context, req gateway.WebhookRequest) (*
 // (PRD §39).
 //
 // Midtrans redelivers notifications, and a redelivery of the same state is
-// byte-identical in the fields below. Including the status and fraud status —
-// not just the transaction id — is what lets a genuine state change through
+// byte-identical in the fields below. Including the status and fraud status,
+// not just the transaction id: is what lets a genuine state change through
 // while collapsing repeats of a state PayMux already handled.
 func DedupeKey(payload *transactionResponse) string {
 	identity := fmt.Sprintf("%s|%s|%s|%s|%s",

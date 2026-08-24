@@ -12,7 +12,7 @@ import (
 
 // The example's verification has to agree with PayMux's signer exactly. This
 // test signs with PayMux's own implementation and verifies with the example's,
-// so the two cannot drift apart — which is the failure mode that would leave
+// so the two cannot drift apart, which is the failure mode that would leave
 // every integrator's webhooks silently rejected.
 func TestExampleVerificationAgreesWithPayMux(t *testing.T) {
 	const secret = "whsec_example_secret_value"

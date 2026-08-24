@@ -296,7 +296,7 @@ func (r *Repository) TouchSynced(ctx context.Context, payoutID string) error {
 //
 // The wait applies only to payouts already at the gateway. An APPROVED payout
 // has not been sent, so making it wait only delays somebody being paid, while
-// a SUBMITTED one read too soon reports an interim status — Midtrans asks for
+// a SUBMITTED one read too soon reports an interim status: Midtrans asks for
 // a buffer before reading a payout back, and honouring it avoids recording a
 // state that was never final.
 func (r *Repository) ClaimUnsettled(ctx context.Context, limit int, settleWait time.Duration) ([]*Payout, error) {
@@ -333,7 +333,7 @@ func (r *Repository) ClaimUnsettled(ctx context.Context, limit int, settleWait t
 // SUBMITTED counts even though the money has not landed: once the gateway has
 // it PayMux cannot recall it, so a limit that ignored it would let an
 // application spend the same headroom twice while transfers were in flight.
-// UNRESOLVED counts for the same reason — it may well have gone out.
+// UNRESOLVED counts for the same reason: it may well have gone out.
 func (r *Repository) SentToday(ctx context.Context, applicationID string) (int64, error) {
 	var total int64
 	err := r.q(ctx).QueryRow(ctx, `

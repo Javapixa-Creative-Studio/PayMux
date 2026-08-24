@@ -23,7 +23,7 @@ type MetricsRecorder interface {
 //
 // The pipeline is: verify, record, attribute, apply, publish (PRD §37). Each
 // step is separate so a notification that fails one of them is still stored
-// with the reason — PayMux never silently drops a message from a gateway.
+// with the reason: PayMux never silently drops a message from a gateway.
 type Processor struct {
 	repo      *Repository
 	payments  *payment.Repository
@@ -77,7 +77,7 @@ type Outcome struct {
 
 // Process handles one inbound notification.
 //
-// It returns an error only when PayMux itself failed — a database problem, or
+// It returns an error only when PayMux itself failed: a database problem, or
 // a gateway account it cannot load. A notification that is forged, unknown or
 // stale is not an error: it is recorded with the appropriate routing status
 // and reported back so the endpoint can answer the gateway correctly.

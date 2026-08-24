@@ -432,8 +432,8 @@ func TestRefundListingStaysWithinTheApplication(t *testing.T) {
 }
 
 // TestApplicationAPIIsRateLimited proves the application API is bounded, not
-// just the login endpoint. Without this, a leaked API key — or a client stuck
-// in a retry loop — can hammer PayMux and the gateway behind it.
+// just the login endpoint. Without this, a leaked API key, or a client stuck
+// in a retry loop: can hammer PayMux and the gateway behind it.
 func TestApplicationAPIIsRateLimited(t *testing.T) {
 	t.Setenv("PAYMUX_RATE_LIMIT_PER_SECOND", "1")
 	t.Setenv("PAYMUX_RATE_LIMIT_BURST", "3")

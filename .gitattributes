@@ -1,0 +1,18 @@
+# PayMux verifies a checksum over each migration and refuses to start if an
+# applied one changed underneath it. That check is byte-exact, so a file
+# checked out with CRLF on one host and LF on another is, to PayMux, a
+# different migration: the same commit would start on Linux and refuse to
+# start on Windows.
+#
+# Normalising every text file to LF removes the possibility. It matters most
+# for migrations, but a checksum is not the only thing that cares about bytes:
+# webhook signatures are computed over raw payloads, and fixtures that drift
+# by a line ending fail in ways that read as cryptographic problems.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.7z  binary

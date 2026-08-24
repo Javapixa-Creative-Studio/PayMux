@@ -69,8 +69,8 @@ func IsCheckViolation(err error) bool {
 	return pgErr != nil && pgErr.Code == codeCheckViolation
 }
 
-// IsRetryable reports whether err is a transient failure — a serialization
-// conflict or deadlock — that is worth retrying with the same input.
+// IsRetryable reports whether err is a transient failure: a serialization
+// conflict or deadlock: that is worth retrying with the same input.
 func IsRetryable(err error) bool {
 	pgErr := asPgError(err)
 	if pgErr == nil {

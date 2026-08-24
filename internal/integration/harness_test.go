@@ -2,8 +2,8 @@
 // database and a stub Midtrans.
 //
 // These tests are the ones that can actually prove the properties the product
-// depends on — application isolation, idempotency, event ordering, signed
-// delivery and retries — because those properties live in database constraints
+// depends on: application isolation, idempotency, event ordering, signed
+// delivery and retries, because those properties live in database constraints
 // and concurrent behaviour that a unit test cannot reach.
 //
 // They are skipped unless PAYMUX_TEST_DATABASE_URL points at a disposable

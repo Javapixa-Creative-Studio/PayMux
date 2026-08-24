@@ -189,8 +189,8 @@ type Event struct {
 
 // VerifyWebhook authenticates a delivery and decodes it.
 //
-// Pass the *raw* body, exactly as received. Re-encoding it first — even
-// through a JSON round trip that looks lossless — changes the bytes the
+// Pass the *raw* body, exactly as received. Re-encoding it first: even
+// through a JSON round trip that looks lossless: changes the bytes the
 // signature covers and verification will fail.
 func VerifyWebhook(secret string, header http.Header, body []byte) (*Event, error) {
 	timestamp, err := strconv.ParseInt(header.Get(HeaderTimestamp), 10, 64)

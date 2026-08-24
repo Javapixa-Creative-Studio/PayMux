@@ -3,7 +3,7 @@
  *
  * The governing rule: the only saturated colour on screen is data. Indigo is
  * reserved for things the operator can act on, and the signal colours mean
- * exactly one thing each — a payment's state or a delivery's outcome. Nothing
+ * exactly one thing each: a payment's state or a delivery's outcome. Nothing
  * is coloured for decoration, so colour stays readable as information.
  */
 
@@ -315,7 +315,7 @@ h1.page__amount .amount {
 }
 
 /* ---------------------------------------------------------------------------
-   Status strip — a one-line instrument readout, present on every page because
+   Status strip: a one-line instrument readout, present on every page because
    the operator's question never changes.
    --------------------------------------------------------------------------- */
 
@@ -689,7 +689,7 @@ textarea:focus {
 }
 
 /* ---------------------------------------------------------------------------
-   Fan-out schematic — PayMux's own topology, drawn with live numbers. It is a
+   Fan-out schematic: PayMux's own topology, drawn with live numbers. It is a
    wiring diagram, not a chart: the geometry says "signal flows this way" and
    nothing more, so every remaining mark carries data.
    --------------------------------------------------------------------------- */
@@ -987,7 +987,7 @@ textarea:focus {
 }
 
 /* ---------------------------------------------------------------------------
-   Trace — the signature element. A payment's chain of custody, from the
+   Trace: the signature element. A payment's chain of custody, from the
    gateway's notification to the application's answer.
    --------------------------------------------------------------------------- */
 
@@ -1349,7 +1349,7 @@ textarea:focus {
 }
 
 /* ---------------------------------------------------------------------------
-   Phone navigation — a tab bar and a More sheet.
+   Phone navigation: a tab bar and a More sheet.
 
    Both are inert above the breakpoint, where the rail does this job. They are
    declared outside the media query so their appearance is defined once and the
@@ -1613,7 +1613,7 @@ textarea:focus {
   }
 
   /* The card's title is whichever cell answers "which one is this?", and that
-     is rarely the first column — on payments it is the merchant's own order
+     is rarely the first column: on payments it is the merchant's own order
      reference, three columns in. Ordering here rather than in the markup keeps
      the table's own column order intact. */
   tbody td[data-primary] {
@@ -1648,7 +1648,7 @@ textarea:focus {
     text-align: left;
   }
 
-  /* A cell with nothing worth labelling — an action, or the row's own title. */
+  /* A cell with nothing worth labelling: an action, or the row's own title. */
   tbody td[data-primary],
   tbody td:not([data-label]) {
     display: block;
@@ -1717,7 +1717,7 @@ textarea:focus {
    Phone. Below this width the console stops being a workbench and becomes a
    triage instrument: navigation moves to the thumb, overlays rise as sheets,
    and every target grows to something a finger can hit. The data has already
-   reflowed by now — see the breakpoint above.
+   reflowed by now: see the breakpoint above.
    --------------------------------------------------------------------------- */
 
 @media (max-width: 760px) {
@@ -1907,7 +1907,7 @@ textarea:focus {
 }
 
 /* ---------------------------------------------------------------------------
-   Integration guide — documentation living inside the console, because the two
+   Integration guide: documentation living inside the console, because the two
    things a developer needs (the endpoints, and their own key) are both here.
    --------------------------------------------------------------------------- */
 

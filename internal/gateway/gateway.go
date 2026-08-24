@@ -23,8 +23,8 @@ func (e Environment) Valid() bool { return e == Sandbox || e == Production }
 
 // Gateway is the contract every payment gateway adapter implements.
 //
-// Capabilities that not every gateway supports — refunds, subscriptions,
-// hosted-checkout sessions — are declared through the narrower interfaces
+// Capabilities that not every gateway supports: refunds, subscriptions,
+// hosted-checkout sessions: are declared through the narrower interfaces
 // below rather than forcing meaningless methods onto every adapter (PRD §11).
 type Gateway interface {
 	// Name is the adapter's stable identifier, e.g. "midtrans".

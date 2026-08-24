@@ -15,7 +15,7 @@ import (
 //
 // Recurring billing must be activated on the merchant account before these
 // calls succeed. The adapter implementing the interface says only that PayMux
-// can make the call — not that the merchant is entitled to; Midtrans decides
+// can make the call, not that the merchant is entitled to; Midtrans decides
 // that, and its rejection is surfaced unchanged.
 
 // CreateSubscription starts a recurring subscription.

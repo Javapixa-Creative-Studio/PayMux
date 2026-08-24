@@ -2,7 +2,7 @@
  * The data primitives this interface is built from.
  *
  * Amounts, identifiers, timestamps and statuses are most of what an operator
- * reads here, so they get real components rather than ad-hoc markup — which is
+ * reads here, so they get real components rather than ad-hoc markup, which is
  * what keeps a rupiah formatted the same way on every screen.
  */
 
@@ -30,7 +30,7 @@ export function Amount({ minor, currency }: { minor: number; currency: string })
  * Renders a timestamp as elapsed time, with the exact value on hover.
  *
  * Operators nearly always want "how long ago", but when reconciling against a
- * gateway they need the precise instant — so both are available without a
+ * gateway they need the precise instant, so both are available without a
  * second control.
  */
 export function Timestamp({ value, absolute = false }: { value?: string | null; absolute?: boolean }) {
@@ -78,7 +78,7 @@ export function Id({ value, full = false }: { value?: string; full?: boolean }) 
       type="button"
       className={copied ? 'id id__copied' : 'id'}
       onClick={copy}
-      title={copied ? 'Copied' : `${value} — click to copy`}
+      title={copied ? 'Copied' : `${value}: click to copy`}
     >
       {copied ? 'copied' : full ? value : elideId(value)}
     </button>
@@ -242,7 +242,7 @@ export function DeliveryResult({
  *
  * UNRESOLVED gets the failure colour deliberately even though it is not a
  * failure. It means PayMux does not know whether the money left, which is the
- * state most deserving of an operator's attention — colouring it neutral
+ * state most deserving of an operator's attention: colouring it neutral
  * because it "might be fine" would bury the one row worth looking at.
  */
 function payoutTone(status: PayoutStatus): string {

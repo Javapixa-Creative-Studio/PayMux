@@ -300,7 +300,7 @@ paths:
       summary: Create a subscription
       description: |
         Requires a gateway payment token; PayMux never handles raw card
-        details. Recurring billing must be activated on the merchant account —
+        details. Recurring billing must be activated on the merchant account,
         if it is not, the gateway's refusal is returned unchanged.
       operationId: createSubscription
       requestBody:
@@ -842,7 +842,7 @@ components:
           type: string
           maxLength: 128
           description: |
-            Your own order reference. Unique within your application only —
+            Your own order reference. Unique within your application only,
             two applications may both use `INV-001`.
         amount:
           type: integer

@@ -1,7 +1,7 @@
 # Examples
 
 Worked integrations, kept deliberately small. An application needs to do two
-things with PayMux — open a payment, and verify the event that comes back —
+things with PayMux, open a payment, and verify the event that comes back, 
 and these show both with nothing else in the way.
 
 ## merchant-go
@@ -39,16 +39,16 @@ Point the destination for that application at
 `http://127.0.0.1:9911/webhooks/paymux` and the example will log each event as
 it lands. Local addresses are blocked by default, so set
 `PAYMUX_ALLOW_PRIVATE_WEBHOOK_DESTINATIONS=true` on your development instance
-first — and leave it off in production, where it disables the SSRF protection.
+first, and leave it off in production, where it disables the SSRF protection.
 
 ### What to copy
 
 `paymux.go` is the part worth lifting into your own service:
 
-- `Client.CreatePayment` — one POST, with an `Idempotency-Key` derived from
+- `Client.CreatePayment`: one POST, with an `Idempotency-Key` derived from
   your own order so a retry after a timeout returns the original payment
   instead of opening a second one
-- `VerifyWebhook` — checks the signature over the **raw** body and rejects a
+- `VerifyWebhook`: checks the signature over the **raw** body and rejects a
   delivery whose timestamp is outside a five-minute window, which is what stops
   a captured delivery being replayed later
 

@@ -3,8 +3,8 @@
 // Every metric here answers an operational question someone would otherwise
 // have to reconstruct from logs: is the API healthy, is the gateway
 // responding, are webhooks getting through. Labels are kept deliberately
-// coarse — route patterns rather than paths, outcomes rather than status
-// codes — because a payment identifier in a label would make the time series
+// coarse: route patterns rather than paths, outcomes rather than status
+// codes, because a payment identifier in a label would make the time series
 // unbounded and the metric useless.
 package metrics
 

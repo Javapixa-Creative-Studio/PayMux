@@ -1,8 +1,8 @@
 /**
  * A single-line instrument readout, present on every page.
  *
- * The operator's question does not change as they move between screens — did
- * the money move, and did the applications hear about it — so the answer stays
+ * The operator's question does not change as they move between screens: did
+ * the money move, and did the applications hear about it, so the answer stays
  * on screen rather than living on a dashboard page they have to navigate back
  * to. It is one dense row, not a grid of cards: this is a status bar, and it
  * should read like one.

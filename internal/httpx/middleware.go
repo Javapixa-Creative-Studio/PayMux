@@ -157,7 +157,7 @@ func SecureHeaders(next http.Handler) http.Handler {
 // arbitrary origin alongside that would let any website drive the admin API
 // with an operator's session. The browser itself forbids "*" with
 // credentials, and reflecting the caller's origin is the same hole wearing a
-// disguise — so "*" is dropped from the allow-list rather than honoured.
+// disguise, so "*" is dropped from the allow-list rather than honoured.
 func CORS(origins []string) func(http.Handler) http.Handler {
 	allowed := make(map[string]bool, len(origins))
 	for _, o := range origins {
@@ -198,7 +198,7 @@ type RequestRecorder interface {
 
 // RouteResolver reports the matched route pattern for a request.
 //
-// The pattern — not the path — is what a metric can be labelled with: a path
+// The pattern, not the path, is what a metric can be labelled with: a path
 // contains payment identifiers, and one time series per payment would make
 // the metric unusable.
 type RouteResolver func(*http.Request) string
@@ -240,7 +240,7 @@ func Timeout(d time.Duration) func(http.Handler) http.Handler {
 //
 // It defaults to false because those headers are trivially spoofable: a caller
 // that can set its own apparent address can evade a rate limit at will. Turn
-// it on only when PayMux sits behind a proxy that overwrites them — which is
+// it on only when PayMux sits behind a proxy that overwrites them, which is
 // the normal production topology, and without it every request appears to come
 // from the proxy, collapsing per-client rate limits into one global bucket and
 // recording the proxy's address in the audit trail.

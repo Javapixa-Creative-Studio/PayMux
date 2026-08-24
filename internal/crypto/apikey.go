@@ -69,7 +69,7 @@ func GenerateAPIKey(mode KeyMode) (GeneratedAPIKey, error) {
 // HashAPIKey derives the stored lookup hash for an API key.
 //
 // The key already carries 256 bits of entropy, so an unsalted SHA-256 is
-// sufficient here and — unlike a salted hash — allows constant-time lookup by
+// sufficient here and, unlike a salted hash, allows constant-time lookup by
 // a unique index.
 func HashAPIKey(plaintext string) string {
 	sum := sha256.Sum256([]byte(plaintext))

@@ -68,8 +68,8 @@ func (a *Adapter) CreatePayment(ctx context.Context, req gateway.CreatePaymentRe
 // CancelCheckoutSession retires a Snap checkout session (PRD §30).
 //
 // Midtrans has no endpoint that revokes a Snap token on its own. Expiring the
-// underlying transaction achieves the same outcome — the token can no longer
-// be paid — so that is what PayMux does, and it is why this takes an order id
+// underlying transaction achieves the same outcome: the token can no longer
+// be paid, so that is what PayMux does, and it is why this takes an order id
 // rather than a token.
 func (a *Adapter) CancelCheckoutSession(ctx context.Context, orderID string) error {
 	_, err := a.ExpireTransaction(ctx, orderID)

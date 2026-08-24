@@ -2,10 +2,10 @@
  * The payment trace: a payment's chain of custody, in order.
  *
  * Every other view answers "what state is this payment in". This one answers
- * the question an operator actually opens the dashboard with — *where did it
- * stop?* — by putting the gateway's notification, PayMux's normalized state,
- * the event it published and each delivery attempt on one spine, so a break in
- * the chain is visible at a glance rather than reconstructed from four tables.
+ * the question an operator actually opens the dashboard with: *where did it
+ * stop?* It puts the gateway's notification, PayMux's normalized state, the
+ * event it published and each delivery attempt on one spine, so a break in the
+ * chain is visible at a glance rather than reconstructed from four tables.
  */
 
 import { Link } from 'react-router-dom';
@@ -39,7 +39,7 @@ export function Trace({ payment, events, deliveries, gatewayEvents, refunds }: T
   const entries: TraceEntry[] = [];
 
   // The payment.created event covers the same instant with more detail, so
-  // the synthetic opening entry only appears when that event is absent —
+  // the synthetic opening entry only appears when that event is absent,
   // otherwise the trace would open by saying the same thing twice.
   const created = events.find((event) => event.type === 'payment.created');
   if (!created) {

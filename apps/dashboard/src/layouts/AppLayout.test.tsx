@@ -1,8 +1,8 @@
 /**
  * The phone's navigation.
  *
- * The rail and the tab bar are both in the document at every width — CSS
- * decides which one is on screen — so these assert on the tab bar specifically
+ * The rail and the tab bar are both in the document at every width: CSS
+ * decides which one is on screen, so these assert on the tab bar specifically
  * rather than on link text, which both would match.
  */
 

@@ -224,7 +224,7 @@ func (s *Service) resolveBeneficiary(ctx context.Context, in RequestInput) (*Ben
 // correct one until somebody notices they were not paid.
 //
 // The bank's answer is stored rather than compared automatically. Names differ
-// legitimately — a trading name, an initial, a spouse's account — so PayMux
+// legitimately, a trading name, an initial, a spouse's account, so PayMux
 // records what the bank said and lets a person decide whether it is the right
 // person.
 func (s *Service) VerifyBeneficiary(ctx context.Context, applicationID, beneficiaryID, accountID string) (*Beneficiary, error) {
@@ -264,7 +264,7 @@ func (s *Service) VerifyBeneficiary(ctx context.Context, applicationID, benefici
 //
 // PayMux does not gate payouts on this. The per-application limits are what
 // bound spending, and a balance read is a snapshot that can be stale by the
-// time a transfer executes — refusing a payout because a number looked low a
+// time a transfer executes: refusing a payout because a number looked low a
 // moment ago would be its own kind of wrong. This is for an operator to look
 // at, not for the system to act on.
 func (s *Service) Balance(ctx context.Context, accountID string) (*gateway.Balance, error) {
@@ -487,7 +487,7 @@ func (s *Service) transition(ctx context.Context, p *Payout, update StateUpdate,
 //   - SUBMITTED: sent and acknowledged. Ask what happened.
 //   - UNRESOLVED: sent, outcome unknown. Re-send under the original
 //     idempotency key, which the gateway answers with the original result
-//     rather than performing a second transfer — but only while it still
+//     rather than performing a second transfer, but only while it still
 //     remembers the key.
 func (s *Service) Reconcile(ctx context.Context, p *Payout) (*Payout, error) {
 	switch p.Status {

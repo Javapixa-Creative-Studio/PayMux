@@ -49,7 +49,7 @@ type PublishResult struct {
 
 // Publish stores an event and enqueues its deliveries.
 //
-// A duplicate — an event PayMux already published for this payment and state —
+// A duplicate, an event PayMux already published for this payment and state,
 // is reported, not treated as an error: redelivered gateway notifications are
 // routine, and the correct response is to do nothing again (PRD §39).
 func (p *Publisher) Publish(ctx context.Context, e *event.Event) (*PublishResult, error) {

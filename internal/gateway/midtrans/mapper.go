@@ -51,7 +51,7 @@ func formatTime(t time.Time) string {
 //
 // Card payments are the subtle case: a "capture" is only money in hand when
 // fraud screening accepted it. A challenged capture is authorized but awaiting
-// a manual decision, and a denied one has failed — collapsing all three into
+// a manual decision, and a denied one has failed: collapsing all three into
 // PAID would tell applications a payment succeeded when it has not.
 func NormalizeStatus(transactionStatus, fraudStatus string) (gateway.Status, bool) {
 	switch strings.ToLower(strings.TrimSpace(transactionStatus)) {

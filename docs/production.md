@@ -24,7 +24,7 @@ at rest. It is the one secret with no recovery path:
   key. Rotate it, re-enter the credentials, and rotate the destination secrets.
 
 Keep it in a secret manager, not in the deployment's `.env`. Back it up
-separately from the database — a backup containing both is a backup that
+separately from the database: a backup containing both is a backup that
 protects nothing.
 
 ### Set these correctly
@@ -44,15 +44,15 @@ PayMux serves plain HTTP and expects a reverse proxy. Gateway notifications and
 API keys travel over that connection, so it must be TLS.
 
 The proxy must overwrite `X-Forwarded-For` rather than append to a
-client-supplied value — otherwise `PAYMUX_TRUST_PROXY_HEADERS=true` trusts
+client-supplied value: otherwise `PAYMUX_TRUST_PROXY_HEADERS=true` trusts
 whatever the caller wrote. Add HSTS at the proxy; PayMux does not set it,
 because only the edge knows whether every subdomain is HTTPS.
 
 Do not expose these publicly:
 
-- `/metrics` on the API, and the worker's metrics port — unauthenticated by
+- `/metrics` on the API, and the worker's metrics port: unauthenticated by
   design, for a scraper on a private network
-- PostgreSQL — the bundled compose file no longer publishes it
+- PostgreSQL: the bundled compose file no longer publishes it
 
 ### Point the gateway at PayMux
 
@@ -64,7 +64,7 @@ PayMux's Gateways screen to confirm the credentials before taking a payment.
 
 ## Scaling
 
-The API is stateless — run as many as you like behind the load balancer. No
+The API is stateless: run as many as you like behind the load balancer. No
 transaction state lives in process memory.
 
 The worker can also run several instances. They coordinate through the database
@@ -74,7 +74,7 @@ connection, and the worker already requests `PAYMUX_WORKER_CONCURRENCY + 2`.
 
 Migrations run on startup under an advisory lock, so simultaneous starts are
 safe. A rolling deploy where an old and new version overlap is only safe if the
-new migration is backward-compatible with the old code — add columns, don't
+new migration is backward-compatible with the old code: add columns, don't
 rename them.
 
 ---
@@ -105,14 +105,14 @@ this is fine for years; plan for it before it is not.
 |---|---|
 | `events` | one row per payment state change |
 | `deliveries` | one row per event per destination |
-| `delivery_attempts` | one row per attempt — up to 7 per delivery |
+| `delivery_attempts` | one row per attempt: up to 7 per delivery |
 | `gateway_events` | one row per notification the gateway sends |
 | `audit_logs` | one row per administrative action |
-| `payout_transitions` | one row per payout state change — keep these |
+| `payout_transitions` | one row per payout state change: keep these |
 
 Expired sessions and idempotency keys *are* pruned hourly by the worker.
 
-If you need retention, delete oldest-first and keep payments — they are the
+If you need retention, delete oldest-first and keep payments: they are the
 record you are legally likeliest to need:
 
 ```sql
@@ -137,7 +137,7 @@ PayMux exports Prometheus metrics from both the API and the worker.
 | Signal | Query | Means |
 |---|---|---|
 | Deliveries dying | `increase(paymux_delivery_failures_total[15m])` rising | An application's endpoint is down or rejecting |
-| Unroutable notifications | `paymux_webhook_received_total{routing="unrouted"}` increasing | The gateway is reporting orders PayMux did not create — check whether something else shares the merchant account |
+| Unroutable notifications | `paymux_webhook_received_total{routing="unrouted"}` increasing | The gateway is reporting orders PayMux did not create: check whether something else shares the merchant account |
 | Rejected notifications | `paymux_webhook_received_total{routing="rejected"}` above zero | Signature failures: wrong server key configured, or someone is probing you |
 | Gateway errors | `paymux_gateway_requests_total{outcome="error"}` rising | Credentials expired, or the gateway is down |
 | Queue backing up | `paymux_delivery_queue_depth{state="failed"}` climbing | Workers cannot keep up, or destinations are failing |
@@ -146,7 +146,7 @@ A `routing="rejected"` count that climbs steadily is worth investigating
 promptly. It means either a misconfiguration that is silently dropping real
 payment notifications, or someone attempting to forge them.
 
-**Also watch:** `/ready` on the API — it reports unready when PostgreSQL is
+**Also watch:** `/ready` on the API: it reports unready when PostgreSQL is
 unreachable, which is what should pull an instance out of the load balancer.
 
 ---
@@ -155,7 +155,7 @@ unreachable, which is what should pull an instance out of the load balancer.
 
 **An application stopped receiving events.** Check Deliveries filtered to
 `failed` and `dead`. The last status code and error are recorded per attempt.
-Once their endpoint is healthy, use **Retry** — it restores the full attempt
+Once their endpoint is healthy, use **Retry**: it restores the full attempt
 budget rather than granting one last try.
 
 **A payment looks wrong.** Open it and read the trace: it shows the gateway's
@@ -164,12 +164,12 @@ delivery attempt with its response. **Sync with gateway** re-reads the
 authoritative state.
 
 **Notifications are being rejected.** The signature is computed from the
-server key. Confirm the key in Gateways matches the environment — a sandbox
+server key. Confirm the key in Gateways matches the environment: a sandbox
 key against production credentials fails exactly this way. **Test connection**
 settles it in one click.
 
 **A key or secret leaked.** Revoke the API key in Applications; it stops
-working immediately. Rotate a destination secret in place — deliveries already
+working immediately. Rotate a destination secret in place: deliveries already
 queued are signed with whichever secret is current when they are sent, so have
 the receiver accept both during the change.
 
@@ -183,7 +183,7 @@ decrypted means `PAYMUX_ENCRYPTION_KEY` changed.
 
 1. Read the release notes for migrations.
 2. Back up the database.
-3. Deploy the API first — it applies migrations under an advisory lock.
+3. Deploy the API first: it applies migrations under an advisory lock.
 4. Deploy the worker.
 
 Migrations are forward-only and never edited once applied; PayMux verifies a
@@ -208,7 +208,7 @@ A payout only happens when all three are true:
    account for disbursement.
 2. The **application** has payouts enabled, in Applications → the application →
    Paying money out.
-3. Somebody **approves** the payout, unless you have turned approval off — and
+3. Somebody **approves** the payout, unless you have turned approval off, and
    PayMux refuses to let you turn it off without setting a limit.
 
 Turning on one without the others does nothing. That is the intent: money
@@ -217,7 +217,7 @@ leaving needs more than one decision behind it.
 ### Why the per-application limit matters more than it looks
 
 PayMux exists so several applications can share one merchant account. On the
-way in that is harmless — application A cannot take application B's money. On
+way in that is harmless: application A cannot take application B's money. On
 the way out, every application with an API key spends from the *same balance*.
 
 So the limits are not a nicety. Without them, one compromised API key drains
@@ -236,14 +236,14 @@ separately.
 
 Give PayMux the approver key only if you want payouts released from PayMux. If
 you leave it out, PayMux can request payouts but they wait in the Midtrans
-dashboard for someone to release them there — which is a legitimate and
+dashboard for someone to release them there, which is a legitimate and
 stricter setup, not a broken one.
 
 ### UNRESOLVED is the state that matters
 
 Most payout states are self-explanatory. One is not:
 
-> **UNRESOLVED** — PayMux sent the payout and does not know what happened.
+> **UNRESOLVED**: PayMux sent the payout and does not know what happened.
 > The connection failed at the one moment where failure is ambiguous. The money
 > may or may not be moving.
 
@@ -266,7 +266,7 @@ The Gateways screen shows what each account has available to disburse, read
 from the gateway when you look at it.
 
 PayMux never gates a payout on that number. The per-application limits do that,
-and a balance is a snapshot that can be stale by the time a transfer executes —
+and a balance is a snapshot that can be stale by the time a transfer executes,
 refusing a payout because a figure looked low a moment ago would be its own
 kind of wrong. A balance reading `unavailable` means the gateway would not
 answer, which is worth investigating in itself.
@@ -298,7 +298,7 @@ Know these limits before you rely on it:
 - **No automatic reconciliation.** If a notification is never delivered by the
   gateway, the payment stays in its last known state until something calls
   **Sync**. There is no background sweep.
-- **No retention or archival policy** — see Data growth above.
+- **No retention or archival policy**: see Data growth above.
 - **No multi-region or active-active story.** One PostgreSQL primary.
 - **Administrator accounts have no roles.** Every administrator can do
   everything, including reading every application's payments and approving

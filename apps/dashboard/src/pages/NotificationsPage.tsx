@@ -24,7 +24,7 @@ const EXPLANATION: Record<RoutingStatus, string> = {
   duplicate: 'A repeat of a state PayMux had already handled. Nothing was published again.',
   unrouted: 'Authentic, but no payment matches this order. Kept for you to investigate.',
   rejected: 'The signature did not verify. Nothing was applied.',
-  ignored: 'Understood but changed nothing — a stale state, or a status PayMux does not map.',
+  ignored: 'Understood but changed nothing: a stale state, or a status PayMux does not map.',
 };
 
 export function NotificationsPage() {

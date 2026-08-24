@@ -44,7 +44,7 @@ function renderTrace(overrides: {
 
 describe('Trace', () => {
   it('orders the chain of custody by time, whatever order it arrives in', () => {
-    // The lists come from separate endpoints, so the component — not the API —
+    // The lists come from separate endpoints, so the component, not the API, 
     // is what puts the story in order.
     renderTrace({
       deliveries: [

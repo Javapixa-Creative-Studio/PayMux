@@ -13,7 +13,7 @@ import (
 //
 // It is deliberately larger than the gateway's own set. Midtrans reports four
 // states, all of them about what the bank is doing; PayMux has to record two
-// things the gateway has no opinion on — whether a human released the payout,
+// things the gateway has no opinion on: whether a human released the payout,
 // and whether PayMux knows the outcome at all.
 type PayoutStatus string
 
@@ -31,7 +31,7 @@ const (
 	PayoutSubmitted PayoutStatus = "SUBMITTED"
 
 	// PayoutUnresolved means PayMux sent the request and does not know what
-	// happened to it — the connection failed at the one moment where failure
+	// happened to it: the connection failed at the one moment where failure
 	// is ambiguous. The money may or may not be moving.
 	//
 	// This is the state that justifies the whole idempotency apparatus. It is
@@ -61,7 +61,7 @@ const (
 // falling out of an inequality.
 var payoutSuccessors = map[PayoutStatus][]PayoutStatus{
 	// A request can be released, refused, or fail validation before it is
-	// ever sent — an over-limit or disabled-beneficiary request never reaches
+	// ever sent: an over-limit or disabled-beneficiary request never reaches
 	// the gateway.
 	PayoutRequested: {PayoutApproved, PayoutRejected, PayoutFailed},
 
@@ -187,8 +187,8 @@ type DisbursementGateway interface {
 	// CreatePayout submits a payout for execution.
 	//
 	// It must send req.IdempotencyKey to the gateway. On any error where the
-	// request may still have been received — a timeout, a dropped connection,
-	// a 5xx — it must return an error wrapping ErrOutcomeUnknown rather than a
+	// request may still have been received: a timeout, a dropped connection,
+	// a 5xx: it must return an error wrapping ErrOutcomeUnknown rather than a
 	// plain failure, because the difference decides whether PayMux may retry.
 	CreatePayout(ctx context.Context, req CreatePayoutRequest) (*PayoutResult, error)
 
@@ -217,7 +217,7 @@ type AccountValidator interface {
 //
 // Separate from DisbursementGateway because the balance is a different
 // question from a transfer, and a gateway that cannot answer it can still
-// disburse — PayMux's own limits are what bound spending, not this.
+// disburse: PayMux's own limits are what bound spending, not this.
 type BalanceReporter interface {
 	GetBalance(ctx context.Context) (*Balance, error)
 }

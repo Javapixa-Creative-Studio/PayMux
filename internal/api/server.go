@@ -109,7 +109,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // routes mounts every route group.
 //
 // Middleware order matters: the request id and logger come first so everything
-// downstream — including the panic recoverer — can attribute what it reports
+// downstream, including the panic recoverer, can attribute what it reports
 // to a specific request.
 func (s *Server) routes() chi.Router {
 	r := chi.NewRouter()

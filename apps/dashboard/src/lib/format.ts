@@ -12,7 +12,7 @@ const ZERO_DECIMAL = new Set(['IDR', 'JPY', 'KRW', 'VND']);
 /**
  * Formats an amount held in the currency's minor unit.
  *
- * PayMux stores money as an integer — rupiah for IDR, cents for USD — so the
+ * PayMux stores money as an integer, rupiah for IDR, cents for USD, so the
  * exponent has to be reapplied here rather than assumed.
  */
 export function formatAmount(minor: number, currency: string): string {
@@ -97,7 +97,7 @@ export function formatTransportError(value: string): string {
 
 /**
  * Causes worth naming, most specific first. Everything else falls through to
- * the raw text — inventing a friendly phrase for an error we have not seen
+ * the raw text: inventing a friendly phrase for an error we have not seen
  * would hide the one detail that explains it.
  */
 const TRANSPORT_CAUSES: Array<[RegExp, string]> = [

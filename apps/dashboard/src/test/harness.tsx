@@ -2,7 +2,7 @@
  * Test harness for the dashboard.
  *
  * Screens are rendered against a stubbed `fetch` rather than a mocked query
- * layer, so the tests exercise the request the page actually makes — including
+ * layer, so the tests exercise the request the page actually makes, including
  * the query string, which is where a filter bug would hide.
  */
 
@@ -20,7 +20,7 @@ export interface Stub {
   status?: number;
   /**
    * The response. A function is called per request, so a stub can reflect
-   * state a previous call changed — which is what a refetch after a mutation
+   * state a previous call changed, which is what a refetch after a mutation
    * needs in order to be meaningful.
    */
   body?: unknown | (() => unknown);

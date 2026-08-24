@@ -59,7 +59,7 @@ func (s Status) Settled() bool {
 // statusRanks orders statuses by how far through the lifecycle they are.
 //
 // Rank exists to stop a delayed or reordered notification from downgrading a
-// payment — a "pending" that arrives after a "settlement" must not revert a
+// payment: a "pending" that arrives after a "settlement" must not revert a
 // paid payment (PRD §40). Ranks are compared, never subtracted, so the exact
 // spacing carries no meaning.
 var statusRanks = map[Status]int{
@@ -79,7 +79,7 @@ func (s Status) Rank() int { return statusRanks[s] }
 // CanTransitionTo reports whether a payment in status s may move to next.
 //
 // The rule is: a payment never moves backwards, and never leaves a terminal
-// status — except that a settled payment may still become refunded, which is
+// status: except that a settled payment may still become refunded, which is
 // the one legitimate transition out of PAID.
 func (s Status) CanTransitionTo(next Status) bool {
 	if !s.Valid() || !next.Valid() {

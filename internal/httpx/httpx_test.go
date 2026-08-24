@@ -338,7 +338,7 @@ func TestJSONWritesContentType(t *testing.T) {
 // A wildcard origin combined with credentialed responses would let any site
 // drive the admin API with an operator's session cookie. The browser forbids
 // literal "*" with credentials, and reflecting the caller's origin instead is
-// the same hole in disguise — so the wildcard must not be honoured at all.
+// the same hole in disguise, so the wildcard must not be honoured at all.
 func TestCORSRefusesWildcardBecauseResponsesCarryCredentials(t *testing.T) {
 	h := CORS([]string{"*"})(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
 

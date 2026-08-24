@@ -1,8 +1,8 @@
 // Package money converts between PayMux's internal amounts and the decimal
 // strings payment gateways exchange.
 //
-// PayMux stores every amount as an integer in the currency's minor unit —
-// rupiah for IDR, cents for USD — so arithmetic on money is exact. Gateways
+// PayMux stores every amount as an integer in the currency's minor unit,
+// rupiah for IDR, cents for USD, so arithmetic on money is exact. Gateways
 // speak decimal strings, and this package is the only place that translates
 // between the two. Nothing here uses floating point: a float cannot represent
 // most decimal fractions exactly, and a payment system must never round money

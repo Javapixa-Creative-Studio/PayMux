@@ -109,7 +109,7 @@ func (s *shop) checkout(w http.ResponseWriter, r *http.Request) {
 	s.mu.Unlock()
 
 	// The browser needs only the token or the redirect URL. Never send the
-	// gateway's server key anywhere near a browser — PayMux holds it for you.
+	// gateway's server key anywhere near a browser: PayMux holds it for you.
 	writeJSON(w, http.StatusOK, map[string]any{
 		"payment_id":   payment.ID,
 		"snap_token":   payment.SnapToken,

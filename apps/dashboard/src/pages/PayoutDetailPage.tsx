@@ -80,7 +80,7 @@ export function PayoutDetailPage() {
           <div>
             <strong>PayMux does not know whether this money left.</strong> It is re-asking the
             gateway under the original idempotency key, which returns the original result rather
-            than sending again. <strong>Do not create a replacement payout</strong> — a new payout
+            than sending again. <strong>Do not create a replacement payout</strong>: a new payout
             carries a new key, and the gateway would treat it as a second instruction.
           </div>
         </div>

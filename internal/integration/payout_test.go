@@ -132,7 +132,7 @@ func TestConcurrentPayoutRequestsProduceOnePayout(t *testing.T) {
 		t.Fatalf("count payouts: %v", err)
 	}
 	if count != 1 {
-		t.Fatalf("%d payout rows, want 1 — a retry became a second transfer", count)
+		t.Fatalf("%d payout rows, want 1: a retry became a second transfer", count)
 	}
 }
 
@@ -158,8 +158,8 @@ func TestDailyLimitCountsPayoutsStillInFlight(t *testing.T) {
 		if i == 0 && resp.StatusCode != http.StatusAccepted {
 			t.Fatalf("first payout: status = %d, body %s", resp.StatusCode, body)
 		}
-		// The first is still REQUESTED — nothing has been sent, let alone
-		// completed — and it must still consume the day's headroom.
+		// The first is still REQUESTED: nothing has been sent, let alone
+		// completed, and it must still consume the day's headroom.
 		if i == 1 && resp.StatusCode != http.StatusUnprocessableEntity {
 			t.Fatalf("second payout: status = %d, want 422; body %s", resp.StatusCode, body)
 		}
@@ -245,7 +245,7 @@ func TestOnlyOneWorkerClaimsAnApprovedPayout(t *testing.T) {
 	if err := other.QueryRow(ctx, `
 		SELECT id FROM payouts WHERE normalized_status = 'APPROVED'
 		LIMIT 1 FOR UPDATE SKIP LOCKED`).Scan(&second); err == nil {
-		t.Fatalf("a second worker also claimed %s — it would be sent twice", second)
+		t.Fatalf("a second worker also claimed %s: it would be sent twice", second)
 	}
 }
 

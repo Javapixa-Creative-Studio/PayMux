@@ -26,7 +26,7 @@ const probeOrderID = "pmx-connection-probe"
 // It works by asking for a transaction that cannot exist. The gateway's answer
 // separates the two cases an operator cares about: "no such transaction" means
 // the credentials were accepted, while a rejection means they were not. A
-// call that created something would be a poor probe — it would leave litter in
+// call that created something would be a poor probe: it would leave litter in
 // the merchant's account every time someone pressed the button.
 func Probe(ctx context.Context, g Gateway) ProbeResult {
 	result := ProbeResult{CheckedAt: time.Now().UTC(), Capabilities: CapabilitiesFor(g)}

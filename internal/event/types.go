@@ -13,7 +13,7 @@ import (
 // These names are part of the public contract: applications match on them, so
 // a name is added, never repurposed. They deliberately describe PayMux's
 // normalized lifecycle rather than any gateway's status vocabulary, so a
-// receiving application need not learn Midtrans's terms — the gateway's own
+// receiving application need not learn Midtrans's terms: the gateway's own
 // values remain available inside the payload.
 type Type string
 
@@ -112,8 +112,8 @@ func PayoutDedupeKey(payoutID string, t Type) string {
 
 // TypeForStatus maps a normalized payment status to the event announcing it.
 //
-// PENDING has no event of its own on creation — payment.created already says
-// a payment exists — but a later transition back into a pending-like state
+// PENDING has no event of its own on creation: payment.created already says
+// a payment exists, but a later transition back into a pending-like state
 // from a gateway still reports payment.pending.
 func TypeForStatus(status gateway.Status) (Type, bool) {
 	switch status {
@@ -160,7 +160,7 @@ type Event struct {
 // PaymentDedupeKey builds the key for a payment state event.
 //
 // The discriminator distinguishes occurrences that share a payment and a type
-// but are genuinely different — successive partial refunds each move the
+// but are genuinely different: successive partial refunds each move the
 // refunded total, and each deserves its own event.
 func PaymentDedupeKey(paymentID string, t Type, discriminator string) string {
 	key := "payment:" + paymentID + ":" + string(t)

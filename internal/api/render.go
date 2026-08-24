@@ -11,7 +11,7 @@ import (
 // The response types below are PayMux's public wire format. They exist
 // separately from the domain models on purpose: a field only reaches a client
 // if it is written here, so adding a column to a table cannot accidentally
-// publish it — which is what keeps secrets from leaking (PRD §58).
+// publish it, which is what keeps secrets from leaking (PRD §58).
 
 type applicationResponse struct {
 	ID               string         `json:"id"`
@@ -128,7 +128,7 @@ type gatewayAccountResponse struct {
 	// Disbursement credentials, reported the same write-only way. These are
 	// derived from the keys rather than read from Capabilities: that blob is
 	// only refreshed when somebody runs a connection test, so it would say an
-	// account cannot pay out for as long as nobody had tested it — while the
+	// account cannot pay out for as long as nobody had tested it, while the
 	// keys sat right there.
 	DisbursementCreatorKeySet  bool `json:"disbursement_creator_key_set"`
 	DisbursementApproverKeySet bool `json:"disbursement_approver_key_set"`

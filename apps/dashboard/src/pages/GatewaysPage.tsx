@@ -39,7 +39,7 @@ export function GatewaysPage() {
       </div>
       <p className="page__lede">
         The credentials PayMux uses to reach a payment gateway. Server keys are encrypted when saved
-        and are never shown again — not here, and not through the API.
+        and are never shown again, not here, and not through the API.
       </p>
 
       {(accounts.isError || update.isError || remove.isError || test.isError) && (
