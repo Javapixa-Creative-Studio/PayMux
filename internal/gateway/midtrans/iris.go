@@ -363,7 +363,7 @@ func (d *Disburser) do(ctx context.Context, method, path string, key crypto.Secr
 			// The request left PayMux and no answer came back. Midtrans may
 			// have executed it. Only the idempotency key can settle this, and
 			// only a caller who kept it can ask.
-			return fmt.Errorf("%w: %s did not answer: %v", gateway.ErrOutcomeUnknown, path, err)
+			return fmt.Errorf("%w: %s did not answer: %w", gateway.ErrOutcomeUnknown, path, err)
 		}
 		return &gateway.Error{Gateway: Name, Message: "could not reach the disbursement gateway", Retryable: true, Err: err}
 	}
@@ -372,7 +372,7 @@ func (d *Disburser) do(ctx context.Context, method, path string, key crypto.Secr
 	raw, readErr := readLimited(resp.Body)
 	if readErr != nil {
 		if mutating {
-			return fmt.Errorf("%w: could not read the response to %s: %v", gateway.ErrOutcomeUnknown, path, readErr)
+			return fmt.Errorf("%w: could not read the response to %s: %w", gateway.ErrOutcomeUnknown, path, readErr)
 		}
 		return &gateway.Error{Gateway: Name, StatusCode: resp.StatusCode, Message: "could not read the gateway response", Retryable: true, Err: readErr}
 	}
@@ -408,7 +408,7 @@ func (d *Disburser) do(ctx context.Context, method, path string, key crypto.Secr
 	}
 	if err := json.Unmarshal(raw, out); err != nil {
 		if mutating {
-			return fmt.Errorf("%w: the response to %s was unreadable: %v", gateway.ErrOutcomeUnknown, path, err)
+			return fmt.Errorf("%w: the response to %s was unreadable: %w", gateway.ErrOutcomeUnknown, path, err)
 		}
 		return &gateway.Error{Gateway: Name, StatusCode: resp.StatusCode, Message: "the gateway returned an unreadable response", Err: err}
 	}
