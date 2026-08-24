@@ -83,6 +83,12 @@ type Capabilities struct {
 	Subscriptions bool `json:"subscriptions"`
 	Cancel        bool `json:"cancel"`
 	Expire        bool `json:"expire"`
+	// Disbursement stays false until an account actually holds disbursement
+	// credentials. An adapter implementing DisbursementGateway is necessary
+	// but not sufficient: Midtrans gates payouts behind separate approval and
+	// separate keys, so what the code can do and what the account may do are
+	// different questions.
+	Disbursement bool `json:"disbursement"`
 }
 
 // CapabilityReporter is implemented by adapters that can describe themselves.
