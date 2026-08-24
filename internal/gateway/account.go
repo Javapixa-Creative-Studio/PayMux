@@ -20,6 +20,14 @@ type Account struct {
 	ClientKey   string
 	// ServerKey is sealed at rest and never returned through the API (PRD §58).
 	ServerKey crypto.Secret
+
+	// Disbursement credentials, sealed the same way and kept apart from the
+	// payment key. Midtrans issues two so that whoever can request a payout
+	// cannot also release it, and PayMux keeps that separation rather than
+	// collapsing them into one field.
+	DisbursementCreatorKey  crypto.Secret
+	DisbursementApproverKey crypto.Secret
+
 	Enabled   bool
 	IsDefault bool
 
@@ -35,6 +43,20 @@ type Account struct {
 // Usable reports whether the account may be used to reach a gateway.
 func (a *Account) Usable() bool {
 	return a != nil && a.Enabled && a.ServerKey != "" && a.Environment.Valid()
+}
+
+// CanDisburse reports whether this account holds the credentials needed to pay
+// money out. An adapter that implements disbursement is not enough: Midtrans
+// gates payouts behind separate approval and separate keys, so what the code
+// can do and what the account may do are different questions.
+func (a *Account) CanDisburse() bool {
+	return a != nil && a.Enabled && a.DisbursementCreatorKey != ""
+}
+
+// CanApprovePayouts reports whether payouts can be released through PayMux
+// rather than only in the gateway's own dashboard.
+func (a *Account) CanApprovePayouts() bool {
+	return a != nil && a.DisbursementApproverKey != ""
 }
 
 // IsSandbox reports whether the account points at the gateway's sandbox.

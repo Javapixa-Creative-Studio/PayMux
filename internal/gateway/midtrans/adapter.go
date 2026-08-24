@@ -90,6 +90,9 @@ func (a *Adapter) Capabilities() gateway.Capabilities {
 		Cancel:        true,
 		Expire:        true,
 		Subscriptions: a.account.Capabilities.Subscriptions,
+		// Reported from the account rather than hard-coded: the adapter can
+		// always disburse, but an account without Iris credentials cannot.
+		Disbursement: a.account.CanDisburse(),
 	}
 	return caps
 }

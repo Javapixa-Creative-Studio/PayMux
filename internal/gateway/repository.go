@@ -33,8 +33,19 @@ func serverKeyContext(accountID string) string {
 	return "gateway_account:" + accountID + ":server_key"
 }
 
+// Each sealed value binds to its own context, so a ciphertext lifted from one
+// column cannot be replayed into another.
+func disbursementCreatorContext(accountID string) string {
+	return "gateway_account:" + accountID + ":disbursement_creator_key"
+}
+
+func disbursementApproverContext(accountID string) string {
+	return "gateway_account:" + accountID + ":disbursement_approver_key"
+}
+
 const accountColumns = `
 	id, gateway, name, environment, merchant_id, client_key, server_key_encrypted,
+	disbursement_creator_key_encrypted, disbursement_approver_key_encrypted,
 	enabled, is_default, capabilities, last_checked_at, last_check_ok,
 	last_check_error, created_at, updated_at`
 
@@ -128,6 +139,12 @@ type AccountUpdate struct {
 	Enabled     *bool
 	IsDefault   *bool
 	Environment *Environment
+
+	// Disbursement credentials. A pointer to an empty string clears one,
+	// which is how an operator revokes PayMux's ability to pay out without
+	// deleting the account that takes payments.
+	DisbursementCreatorKey  *crypto.Secret
+	DisbursementApproverKey *crypto.Secret
 }
 
 // Update applies a partial update to an account.
@@ -140,6 +157,16 @@ func (r *Repository) Update(ctx context.Context, id string, update AccountUpdate
 		}
 		sealed = &s
 	}
+	var err error
+	sealCreator, err := sealOptional(r, update.DisbursementCreatorKey, disbursementCreatorContext(id))
+	if err != nil {
+		return nil, err
+	}
+	sealApprover, err := sealOptional(r, update.DisbursementApproverKey, disbursementApproverContext(id))
+	if err != nil {
+		return nil, err
+	}
+
 	var environment *string
 	if update.Environment != nil {
 		env := string(*update.Environment)
@@ -147,7 +174,7 @@ func (r *Repository) Update(ctx context.Context, id string, update AccountUpdate
 	}
 
 	var acc Account
-	err := r.db.InTx(ctx, func(ctx context.Context, tx storage.Querier) error {
+	err = r.db.InTx(ctx, func(ctx context.Context, tx storage.Querier) error {
 		if update.IsDefault != nil && *update.IsDefault {
 			current, err := r.Get(ctx, id)
 			if err != nil {
@@ -170,11 +197,13 @@ func (r *Repository) Update(ctx context.Context, id string, update AccountUpdate
 				enabled              = coalesce($6, enabled),
 				is_default           = coalesce($7, is_default),
 				environment          = coalesce($8, environment),
+				disbursement_creator_key_encrypted  = coalesce($9, disbursement_creator_key_encrypted),
+				disbursement_approver_key_encrypted = coalesce($10, disbursement_approver_key_encrypted),
 				updated_at           = now()
 			WHERE id = $1
 			RETURNING `+accountColumns,
 			id, update.Name, update.MerchantID, update.ClientKey, sealed,
-			update.Enabled, update.IsDefault, environment,
+			update.Enabled, update.IsDefault, environment, sealCreator, sealApprover,
 		)
 		return r.scan(row, &acc)
 	})
@@ -234,13 +263,16 @@ type scanner interface {
 
 func (r *Repository) scan(row scanner, acc *Account) error {
 	var (
-		environment  string
-		sealed       string
-		capabilities []byte
+		environment    string
+		sealed         string
+		sealedCreator  string
+		sealedApprover string
+		capabilities   []byte
 	)
 	err := row.Scan(
 		&acc.ID, &acc.Gateway, &acc.Name, &environment, &acc.MerchantID, &acc.ClientKey,
-		&sealed, &acc.Enabled, &acc.IsDefault, &capabilities, &acc.LastCheckedAt,
+		&sealed, &sealedCreator, &sealedApprover,
+		&acc.Enabled, &acc.IsDefault, &capabilities, &acc.LastCheckedAt,
 		&acc.LastCheckOK, &acc.LastCheckError, &acc.CreatedAt, &acc.UpdatedAt,
 	)
 	if err != nil {
@@ -258,10 +290,50 @@ func (r *Repository) scan(row scanner, acc *Account) error {
 	}
 	acc.ServerKey = crypto.Secret(serverKey)
 
+	// Disbursement keys are optional: most accounts never hold them, and an
+	// empty value is what "this account cannot pay out" means.
+	if sealedCreator != "" {
+		creator, err := r.sealer.OpenString(sealedCreator, disbursementCreatorContext(acc.ID))
+		if err != nil {
+			return fmt.Errorf("gateway: account %s disbursement creator key cannot be decrypted "+
+				"(has PAYMUX_ENCRYPTION_KEY changed?): %w", acc.ID, err)
+		}
+		acc.DisbursementCreatorKey = crypto.Secret(creator)
+	}
+	if sealedApprover != "" {
+		approver, err := r.sealer.OpenString(sealedApprover, disbursementApproverContext(acc.ID))
+		if err != nil {
+			return fmt.Errorf("gateway: account %s disbursement approver key cannot be decrypted "+
+				"(has PAYMUX_ENCRYPTION_KEY changed?): %w", acc.ID, err)
+		}
+		acc.DisbursementApproverKey = crypto.Secret(approver)
+	}
+
 	if len(capabilities) > 0 {
 		if err := json.Unmarshal(capabilities, &acc.Capabilities); err != nil {
 			return fmt.Errorf("gateway: decode capabilities: %w", err)
 		}
 	}
 	return nil
+}
+
+// sealOptional seals a credential the caller may not have supplied.
+//
+// nil leaves the stored value alone; an empty secret clears it, which is how a
+// credential is revoked. The two cases have to stay distinguishable, because
+// "do not change this" and "remove this" are very different intentions about
+// a key that can move money.
+func sealOptional(r *Repository, secret *crypto.Secret, context string) (*string, error) {
+	if secret == nil {
+		return nil, nil
+	}
+	if *secret == "" {
+		empty := ""
+		return &empty, nil
+	}
+	sealed, err := r.sealer.SealString(secret.Reveal(), context)
+	if err != nil {
+		return nil, fmt.Errorf("gateway: seal disbursement key: %w", err)
+	}
+	return &sealed, nil
 }
