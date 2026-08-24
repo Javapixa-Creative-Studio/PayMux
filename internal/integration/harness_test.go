@@ -118,6 +118,7 @@ func newHarness(t *testing.T) *harness {
 		Notifications:    container.Notifications,
 		NotificationRepo: container.NotificationRepo,
 		Subscriptions:    container.Subscriptions,
+		Payouts:          container.Payouts,
 	}))
 	t.Cleanup(server.Close)
 
@@ -132,6 +133,7 @@ func truncateAll(t *testing.T, db *storage.DB) {
 			audit_logs, delivery_attempts, deliveries, events, gateway_events,
 			gateway_transactions, refunds, subscriptions, idempotency_keys,
 			payment_items, payment_customers, payments,
+			payout_transitions, payouts, beneficiaries,
 			webhook_destinations, application_api_keys, applications,
 			gateway_accounts, admin_sessions, admins
 		RESTART IDENTITY CASCADE`)
