@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom';
 
 import { useDeliveries, useGatewayAccounts, useOverview, usePayments } from '../api/queries';
+import { FanOut } from '../components/FanOut';
 import {
   Amount,
+  DeliveryResult,
   DeliveryStateTag,
   Empty,
   ErrorNotice,
@@ -26,7 +28,6 @@ export function OverviewPage() {
 
   const needsGateway = gateways.data && gateways.data.data.length === 0;
   const attention = [...(failing.data?.data ?? []), ...(dead.data?.data ?? [])];
-  const unrouted = overview.data?.unrouted_notifications ?? 0;
 
   return (
     <>
@@ -34,7 +35,8 @@ export function OverviewPage() {
         <h1>Overview</h1>
       </div>
       <p className="page__lede">
-        Payment operations for the last 24 hours. The strip above updates on its own.
+        How payments are flowing from the gateway to each of your applications over the last 24
+        hours. Deliveries that are still failing stay listed however long they have been failing.
       </p>
 
       {needsGateway && (
@@ -46,14 +48,7 @@ export function OverviewPage() {
         </div>
       )}
 
-      {unrouted > 0 && (
-        <div className="notice notice--error">
-          <div>
-            {unrouted} notification{unrouted === 1 ? '' : 's'} could not be attributed to a payment.{' '}
-            <Link to="/notifications">Review them</Link> — they were recorded, not discarded.
-          </div>
-        </div>
-      )}
+      {overview.data && <FanOut overview={overview.data} />}
 
       {attention.length > 0 && (
         <div className="panel">
@@ -77,7 +72,7 @@ export function OverviewPage() {
               </thead>
               <tbody>
                 {attention.map((delivery) => (
-                  <tr key={delivery.id}>
+                  <tr key={delivery.id} className="is-failing">
                     <td>
                       <Id value={delivery.id} />
                     </td>
@@ -90,10 +85,11 @@ export function OverviewPage() {
                     <td className="num">
                       {delivery.attempt_count}/{delivery.max_attempts}
                     </td>
-                    <td className="gateway-status">
-                      {delivery.last_status_code
-                        ? `HTTP ${delivery.last_status_code}`
-                        : delivery.last_error || '—'}
+                    <td>
+                      <DeliveryResult
+                        statusCode={delivery.last_status_code}
+                        error={delivery.last_error}
+                      />
                     </td>
                     <td>
                       {delivery.state === 'dead' ? (

@@ -89,7 +89,12 @@ export function NotificationsPage() {
                 {notifications.data.data.map((notification) => (
                   <tr
                     key={notification.id}
-                    className="is-clickable"
+                    className={
+                      notification.routing_status === 'rejected' ||
+                      notification.routing_status === 'unrouted'
+                        ? 'is-clickable is-failing'
+                        : 'is-clickable'
+                    }
                     onClick={() => setInspecting(notification)}
                   >
                     <td>

@@ -75,3 +75,36 @@ export function elideId(value: string): string {
   if (value.length <= 18) return value;
   return `${value.slice(0, 11)}…${value.slice(-4)}`;
 }
+
+/**
+ * Reduces a transport error to the part an operator can act on.
+ *
+ * Go's errors are built for logs, not for table cells: they lead with the
+ * method and full URL, which the neighbouring Destination column already
+ * shows, and bury the cause at the end. This keeps the cause. The untouched
+ * string stays available on hover, because the detail matters once you are
+ * actually debugging.
+ */
+export function formatTransportError(value: string): string {
+  // Strip Go's `Post "https://…":` / `Get "https://…":` prefix.
+  const stripped = value.replace(/^[A-Z][a-z]+ "[^"]*":\s*/, '').trim();
+
+  for (const [pattern, phrase] of TRANSPORT_CAUSES) {
+    if (pattern.test(stripped)) return phrase;
+  }
+  return stripped.length > 64 ? `${stripped.slice(0, 63)}…` : stripped;
+}
+
+/**
+ * Causes worth naming, most specific first. Everything else falls through to
+ * the raw text — inventing a friendly phrase for an error we have not seen
+ * would hide the one detail that explains it.
+ */
+const TRANSPORT_CAUSES: Array<[RegExp, string]> = [
+  [/connection refused/i, 'connection refused'],
+  [/no such host|name resolution|dns/i, 'host not found'],
+  [/connection reset/i, 'connection reset'],
+  [/context deadline exceeded|Client\.Timeout|i\/o timeout|timeout/i, 'timed out'],
+  [/x509|certificate|tls/i, 'TLS rejected'],
+  [/blocked|private|loopback|not permitted/i, 'destination not allowed'],
+];

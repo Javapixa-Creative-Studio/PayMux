@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { elideId, formatAmount, formatRelative } from './format';
+import { elideId, formatAmount, formatRelative, formatTransportError } from './format';
 
 describe('formatAmount', () => {
   it('renders zero-decimal currencies as whole units', () => {
@@ -62,5 +62,43 @@ describe('elideId', () => {
 
   it('leaves short identifiers alone', () => {
     expect(elideId('app_123')).toBe('app_123');
+  });
+});
+
+describe('formatTransportError', () => {
+  it('drops the method and URL Go prefixes onto every transport error', () => {
+    // The Destination column already shows the URL; repeating it pushes the
+    // cause off the end of the cell.
+    expect(
+      formatTransportError(
+        'Post "http://127.0.0.1:9911/webhooks/paymux": dial tcp 127.0.0.1:9911: connect: connection refused',
+      ),
+    ).toBe('connection refused');
+  });
+
+  it('names the causes an operator has a different fix for', () => {
+    expect(formatTransportError('dial tcp: lookup nope.example.com: no such host')).toBe(
+      'host not found',
+    );
+    expect(formatTransportError('context deadline exceeded (Client.Timeout exceeded)')).toBe(
+      'timed out',
+    );
+    expect(
+      formatTransportError('x509: certificate signed by unknown authority'),
+    ).toBe('TLS rejected');
+  });
+
+  it('keeps an unrecognised error rather than inventing a friendly phrase', () => {
+    // A cause we have never seen is exactly the one worth reading verbatim.
+    expect(formatTransportError('Post "https://a.example/x": something entirely new')).toBe(
+      'something entirely new',
+    );
+  });
+
+  it('truncates a long unrecognised error instead of breaking the table', () => {
+    const long = `Post "https://a.example/x": ${'z'.repeat(200)}`;
+    const out = formatTransportError(long);
+    expect(out).toHaveLength(64);
+    expect(out.endsWith('…')).toBe(true);
   });
 });

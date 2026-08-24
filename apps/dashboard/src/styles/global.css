@@ -115,8 +115,9 @@ h3 {
 }
 
 h1 {
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 27px;
+  font-weight: 700;
+  letter-spacing: -0.035em;
 }
 
 h2 {
@@ -272,11 +273,37 @@ a:hover {
   margin-bottom: 4px;
 }
 
+.page__eyebrow {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-muted);
+  margin-bottom: 3px;
+}
+
+/*
+ * A page whose subject is a sum of money sets that sum as the title: mono and
+ * tabular like every other figure in the console, so it reads as an instrument
+ * value rather than a slogan. The nested .amount would otherwise reassert its
+ * own 13px here and quietly cancel the title size.
+ */
+h1.page__amount {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+h1.page__amount .amount {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
 .page__lede {
   color: var(--ink-muted);
   font-size: 13px;
-  margin: 2px 0 18px;
+  margin: 6px 0 22px;
   max-width: 68ch;
+  /* Keeps a one-word last line from hanging under a full measure. */
+  text-wrap: pretty;
 }
 
 /* ---------------------------------------------------------------------------
@@ -414,6 +441,19 @@ tbody tr.is-clickable {
 
 tbody tr.is-clickable:hover {
   background: var(--surface-sunken);
+}
+
+/*
+ * A failing row carries a mark in the gutter. In a table of identical rows a
+ * small pill has to be hunted for; an edge is found peripherally, which is how
+ * an operator actually scans a list they did not come here to read.
+ */
+tbody tr.is-failing td:first-child {
+  box-shadow: inset 2px 0 0 var(--signal-failed);
+}
+
+tbody tr.is-attention td:first-child {
+  box-shadow: inset 2px 0 0 var(--signal-pending);
 }
 
 .num {
@@ -641,6 +681,162 @@ textarea:focus {
 }
 
 /* ---------------------------------------------------------------------------
+   Fan-out schematic — PayMux's own topology, drawn with live numbers. It is a
+   wiring diagram, not a chart: the geometry says "signal flows this way" and
+   nothing more, so every remaining mark carries data.
+   --------------------------------------------------------------------------- */
+
+.fanout {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.fanout__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.fanout__caption {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+
+.fanout__canvas {
+  padding: 6px 16px 14px;
+  overflow-x: auto;
+}
+
+.fanout__canvas svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.fanout__node {
+  fill: var(--surface-sunken);
+  stroke: var(--rule-strong);
+  stroke-width: 1;
+}
+
+.fanout__node--hub {
+  fill: var(--accent-wash);
+  stroke: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.fanout__label {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  fill: var(--ink);
+}
+
+.fanout__label--hub {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  fill: var(--accent);
+}
+
+.fanout__branch {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  fill: var(--ink);
+}
+
+.fanout__sub {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  fill: var(--ink-faint);
+}
+
+.fanout__sub--broken {
+  fill: var(--signal-failed);
+}
+
+.fanout__sub--busy {
+  fill: var(--signal-pending);
+}
+
+.fanout__wire {
+  fill: none;
+  stroke-width: 1.5;
+  stroke: var(--rule-strong);
+}
+
+.fanout__wire--ok {
+  stroke: color-mix(in srgb, var(--signal-settled) 55%, transparent);
+}
+
+.fanout__wire--busy {
+  stroke: color-mix(in srgb, var(--signal-pending) 60%, transparent);
+}
+
+/* A broken branch is the one thing on this screen that should interrupt. */
+.fanout__wire--broken {
+  stroke: var(--signal-failed);
+  stroke-width: 2;
+}
+
+.fanout__wire--idle {
+  stroke: var(--rule);
+  stroke-dasharray: 3 4;
+}
+
+.fanout__port {
+  fill: var(--rule-strong);
+}
+
+.fanout__port--ok {
+  fill: var(--signal-settled);
+}
+
+.fanout__port--busy {
+  fill: var(--signal-pending);
+}
+
+.fanout__port--broken {
+  fill: var(--signal-failed);
+}
+
+.fanout__port--idle {
+  fill: var(--rule-strong);
+}
+
+/*
+ * The diagram has already coloured the broken branch red. Repeating that as a
+ * full-width wash makes the footer shout louder than the thing it points at,
+ * so this stays a quiet row: the count in the failure colour, the action in
+ * link colour, and no fill.
+ */
+.fanout__foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  border-top: 1px solid var(--rule);
+  font-size: 13px;
+}
+
+.fanout__foot-text {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--signal-failed);
+}
+
+/* ---------------------------------------------------------------------------
    Trace — the signature element. A payment's chain of custody, from the
    gateway's notification to the application's answer.
    --------------------------------------------------------------------------- */
@@ -797,9 +993,9 @@ textarea:focus {
 
 .summary__meta {
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
   gap: 6px 14px;
-  margin-top: 6px;
   font-size: 12px;
   color: var(--ink-muted);
 }

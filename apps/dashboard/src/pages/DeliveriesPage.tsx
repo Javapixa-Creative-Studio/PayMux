@@ -5,6 +5,7 @@ import { useDeliveries, useDeliveryDetail, useRetryDelivery } from '../api/queri
 import type { DeliveryState } from '../api/types';
 import { Modal } from '../components/Modal';
 import {
+  DeliveryResult,
   DeliveryStateTag,
   Empty,
   ErrorNotice,
@@ -75,7 +76,16 @@ export function DeliveriesPage() {
               </thead>
               <tbody>
                 {deliveries.data.data.map((delivery) => (
-                  <tr key={delivery.id}>
+                  <tr
+                    key={delivery.id}
+                    className={
+                      delivery.state === 'dead'
+                        ? 'is-failing'
+                        : delivery.state === 'failed'
+                          ? 'is-attention'
+                          : undefined
+                    }
+                  >
                     <td>
                       <button
                         type="button"
@@ -98,10 +108,11 @@ export function DeliveriesPage() {
                     <td className="num">
                       {delivery.attempt_count}/{delivery.max_attempts}
                     </td>
-                    <td className="gateway-status">
-                      {delivery.last_status_code
-                        ? `HTTP ${delivery.last_status_code}`
-                        : delivery.last_error || '—'}
+                    <td>
+                      <DeliveryResult
+                        statusCode={delivery.last_status_code}
+                        error={delivery.last_error}
+                      />
                     </td>
                     <td className="num gateway-status">
                       {delivery.last_duration_ms != null ? `${delivery.last_duration_ms}ms` : '—'}
@@ -189,8 +200,8 @@ function AttemptsDialog({ id, onClose }: { id: string; onClose: () => void }) {
                 {detail.data.attempts.map((attempt) => (
                   <tr key={attempt.id}>
                     <td className="num">{attempt.attempt_number}</td>
-                    <td className="gateway-status">
-                      {attempt.status_code ? `HTTP ${attempt.status_code}` : attempt.error || '—'}
+                    <td>
+                      <DeliveryResult statusCode={attempt.status_code} error={attempt.error} />
                     </td>
                     <td className="num gateway-status">{attempt.duration_ms}ms</td>
                     <td>

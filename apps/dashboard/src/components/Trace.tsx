@@ -10,6 +10,8 @@
 
 import { Link } from 'react-router-dom';
 
+import { formatTransportError } from '../lib/format';
+
 import type { Delivery, GatewayEvent, Payment, PayMuxEvent, Refund } from '../api/types';
 import { Id, Timestamp } from './primitives';
 
@@ -118,7 +120,7 @@ export function Trace({ payment, events, deliveries, gatewayEvents, refunds }: T
         ...(delivery.last_status_code ? [`HTTP ${delivery.last_status_code}`] : []),
         ...(delivery.last_duration_ms != null ? [`${delivery.last_duration_ms}ms`] : []),
         `attempt ${delivery.attempt_count}/${delivery.max_attempts}`,
-        ...(delivery.last_error ? [delivery.last_error] : []),
+        ...(delivery.last_error ? [formatTransportError(delivery.last_error)] : []),
       ],
       tone: deliveryTone(delivery),
     });

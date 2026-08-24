@@ -13,6 +13,7 @@ import { formatAmount } from '../lib/format';
 import {
   Amount,
   CodeBlock,
+  DeliveryResult,
   DeliveryStateTag,
   ErrorNotice,
   Id,
@@ -40,12 +41,17 @@ export function PaymentDetailPage() {
 
   return (
     <>
+      {/*
+        * The money is the headline. "Payment" as a title tells an operator who
+        * clicked a payment nothing they did not already know, so the amount
+        * takes the h1 and the identifier becomes the eyebrow above it.
+        */}
       <div className="page__head">
         <div>
-          <h1>Payment</h1>
-          <div className="mono" style={{ color: 'var(--ink-muted)', marginTop: 2 }}>
-            {payment.id}
-          </div>
+          <div className="page__eyebrow">{payment.id}</div>
+          <h1 className="page__amount">
+            <Amount minor={payment.amount} currency={payment.currency} />
+          </h1>
         </div>
         <Link to="/payments" className="button button--small">
           All payments
@@ -55,24 +61,19 @@ export function PaymentDetailPage() {
       {action.isError && <ErrorNotice error={action.error} action="That action did not complete." />}
 
       <div className="summary" style={{ marginTop: 14 }}>
-        <div>
-          <div className="summary__amount">
-            <Amount minor={payment.amount} currency={payment.currency} />
-          </div>
-          <div className="summary__meta">
-            <PaymentStatusTag status={payment.status} />
-            {payment.gateway_status && (
-              <span className="gateway-status">
-                {payment.gateway}: {payment.gateway_status}
-              </span>
-            )}
-            {payment.payment_type && <span className="gateway-status">{payment.payment_type}</span>}
-            {payment.refunded_amount > 0 && (
-              <span className="gateway-status">
-                refunded {formatAmount(payment.refunded_amount, payment.currency)}
-              </span>
-            )}
-          </div>
+        <div className="summary__meta">
+          <PaymentStatusTag status={payment.status} />
+          {payment.gateway_status && (
+            <span className="gateway-status">
+              {payment.gateway}: {payment.gateway_status}
+            </span>
+          )}
+          {payment.payment_type && <span className="gateway-status">{payment.payment_type}</span>}
+          {payment.refunded_amount > 0 && (
+            <span className="gateway-status">
+              refunded {formatAmount(payment.refunded_amount, payment.currency)}
+            </span>
+          )}
         </div>
 
         <div className="actions">
@@ -164,10 +165,11 @@ export function PaymentDetailPage() {
                         <td className="num">
                           {delivery.attempt_count}/{delivery.max_attempts}
                         </td>
-                        <td className="gateway-status">
-                          {delivery.last_status_code
-                            ? `HTTP ${delivery.last_status_code}`
-                            : delivery.last_error || '—'}
+                        <td>
+                          <DeliveryResult
+                            statusCode={delivery.last_status_code}
+                            error={delivery.last_error}
+                          />
                         </td>
                         <td>
                           {delivery.state !== 'succeeded' && delivery.state !== 'delivering' && (

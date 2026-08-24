@@ -9,7 +9,13 @@
 import { useEffect, useState, type ReactNode } from 'react';
 
 import type { DeliveryState, PaymentStatus, RoutingStatus } from '../api/types';
-import { elideId, formatAmount, formatClock, formatRelative } from '../lib/format';
+import {
+  elideId,
+  formatAmount,
+  formatClock,
+  formatRelative,
+  formatTransportError,
+} from '../lib/format';
 
 export function Amount({ minor, currency }: { minor: number; currency: string }) {
   return (
@@ -206,4 +212,27 @@ export function ErrorNotice({ error, action }: { error: unknown; action?: string
 
 export function CodeBlock({ value }: { value: unknown }) {
   return <pre className="code">{JSON.stringify(value, null, 2)}</pre>;
+}
+
+/**
+ * The outcome of a delivery attempt: the status code when the destination
+ * answered, the named cause when it never did.
+ *
+ * The full error stays on the title attribute. A table cell should say what
+ * went wrong; the stack of detail belongs to whoever is already debugging it.
+ */
+export function DeliveryResult({
+  statusCode,
+  error,
+}: {
+  statusCode?: number;
+  error?: string;
+}) {
+  if (statusCode) return <span className="gateway-status">HTTP {statusCode}</span>;
+  if (!error) return <span className="gateway-status">—</span>;
+  return (
+    <span className="gateway-status" title={error}>
+      {formatTransportError(error)}
+    </span>
+  );
 }
