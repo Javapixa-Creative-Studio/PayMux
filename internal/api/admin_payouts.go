@@ -238,6 +238,22 @@ func payoutLimitsBody(l payout.Limits) map[string]any {
 	}
 }
 
+// handleGatewayBalance reports what an account can pay out.
+//
+// Read on request rather than polled: it costs a gateway call, it is only
+// meaningful at the moment somebody looks, and nothing in PayMux acts on it.
+func (s *Server) handleGatewayBalance(w http.ResponseWriter, r *http.Request) {
+	balance, err := s.payouts.Balance(r.Context(), chi.URLParam(r, "accountID"))
+	if err != nil {
+		fail(w, r, err, genericMissing)
+		return
+	}
+	httpx.JSON(w, r, http.StatusOK, map[string]any{
+		"amount":   balance.Amount,
+		"currency": balance.Currency,
+	})
+}
+
 // handleAdminVerifyBeneficiary checks a destination from the dashboard.
 func (s *Server) handleAdminVerifyBeneficiary(w http.ResponseWriter, r *http.Request) {
 	applicationID := chi.URLParam(r, "applicationID")

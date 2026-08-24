@@ -4,13 +4,21 @@ import {
   useCreateGatewayAccount,
   useDeleteGatewayAccount,
   useGatewayAccounts,
+  useGatewayBalance,
   useSupportedGateways,
   useTestGatewayAccount,
   useUpdateGatewayAccount,
 } from '../api/queries';
 import type { GatewayAccount } from '../api/types';
 import { Modal } from '../components/Modal';
-import { Empty, ErrorNotice, Loading, Tag, Timestamp } from '../components/primitives';
+import {
+  Amount,
+  Empty,
+  ErrorNotice,
+  Loading,
+  Tag,
+  Timestamp,
+} from '../components/primitives';
 
 export function GatewaysPage() {
   const accounts = useGatewayAccounts();
@@ -56,6 +64,7 @@ export function GatewaysPage() {
                   <th>Server key</th>
                   <th>State</th>
                   <th>Connection</th>
+                  <th className="num">Payout balance</th>
                   <th />
                 </tr>
               </thead>
@@ -87,6 +96,9 @@ export function GatewaysPage() {
                     </td>
                     <td data-label="Connection" className="cell--stack">
                       <ConnectionStatus account={account} />
+                    </td>
+                    <td data-label="Payout balance" className="num">
+                      <PayoutBalance account={account} />
                     </td>
                     <td>
                       <div className="actions">
@@ -509,4 +521,33 @@ function EditAccountDialog({ account, onClose }: { account: GatewayAccount; onCl
       </form>
     </Modal>
   );
+}
+
+
+/**
+ * The disbursement balance, asked for only when this account can disburse.
+ *
+ * PayMux never gates a payout on this number: the per-application limits do
+ * that, and a balance is a snapshot that can be stale by the time a transfer
+ * runs. It is here so an operator can see whether there is money to send.
+ */
+function PayoutBalance({ account }: { account: GatewayAccount }) {
+  // Read from the keys, not from capabilities: that blob only refreshes on a
+  // connection test, so it would claim an account cannot pay out until
+  // somebody happened to press a button.
+  const canDisburse = account.disbursement_creator_key_set;
+  const balance = useGatewayBalance(account.id, canDisburse);
+
+  if (!canDisburse) {
+    return <span className="gateway-status">no payout keys</span>;
+  }
+  if (balance.isPending) {
+    return <span className="gateway-status">…</span>;
+  }
+  if (balance.isError || !balance.data) {
+    // The gateway refused or does not answer. Saying so is more use than a
+    // blank cell, because a balance that will not load is itself a finding.
+    return <span className="gateway-status">unavailable</span>;
+  }
+  return <Amount minor={balance.data.amount} currency={balance.data.currency} />;
 }

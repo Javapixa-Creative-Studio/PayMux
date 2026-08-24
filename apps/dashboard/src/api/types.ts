@@ -83,6 +83,8 @@ export interface GatewayAccount {
   merchant_id: string;
   client_key: string;
   server_key_set: boolean;
+  disbursement_creator_key_set: boolean;
+  disbursement_approver_key_set: boolean;
   enabled: boolean;
   is_default: boolean;
   capabilities: {
@@ -92,6 +94,9 @@ export interface GatewayAccount {
     subscriptions: boolean;
     cancel: boolean;
     expire: boolean;
+    // False until the account holds disbursement credentials, whatever the
+    // adapter is capable of.
+    disbursement: boolean;
   };
   last_checked_at: string | null;
   last_check_ok: boolean | null;

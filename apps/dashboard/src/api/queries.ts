@@ -514,6 +514,25 @@ export function useVerifyBeneficiary(applicationID: string) {
   });
 }
 
+/**
+ * What a gateway account has available to disburse.
+ *
+ * Fetched on demand rather than with the account list: it costs a gateway call
+ * and nothing in PayMux acts on the answer, so it is only worth asking when
+ * somebody is looking.
+ */
+export function useGatewayBalance(accountID: string | undefined, enabled: boolean) {
+  return useQuery({
+    queryKey: ['gateway-balance', accountID],
+    queryFn: () => apiFetch<{ amount: number; currency: string }>(
+      `${ADMIN}/gateways/accounts/${accountID}/balance`,
+    ),
+    enabled: Boolean(accountID) && enabled,
+    staleTime: 30_000,
+    retry: false,
+  });
+}
+
 export function useBeneficiaries(applicationID: string | undefined) {
   return useQuery({
     queryKey: ['beneficiaries', applicationID],

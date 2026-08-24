@@ -124,7 +124,15 @@ type gatewayAccountResponse struct {
 	ClientKey   string `json:"client_key"`
 	// ServerKeySet reports whether a server key is configured. The key itself
 	// is write-only and is never returned (PRD §58).
-	ServerKeySet   bool                 `json:"server_key_set"`
+	ServerKeySet bool `json:"server_key_set"`
+	// Disbursement credentials, reported the same write-only way. These are
+	// derived from the keys rather than read from Capabilities: that blob is
+	// only refreshed when somebody runs a connection test, so it would say an
+	// account cannot pay out for as long as nobody had tested it — while the
+	// keys sat right there.
+	DisbursementCreatorKeySet  bool `json:"disbursement_creator_key_set"`
+	DisbursementApproverKeySet bool `json:"disbursement_approver_key_set"`
+
 	Enabled        bool                 `json:"enabled"`
 	IsDefault      bool                 `json:"is_default"`
 	Capabilities   gateway.Capabilities `json:"capabilities"`
@@ -137,13 +145,16 @@ type gatewayAccountResponse struct {
 
 func renderGatewayAccount(acc *gateway.Account) gatewayAccountResponse {
 	return gatewayAccountResponse{
-		ID:             acc.ID,
-		Gateway:        acc.Gateway,
-		Name:           acc.Name,
-		Environment:    string(acc.Environment),
-		MerchantID:     acc.MerchantID,
-		ClientKey:      acc.ClientKey,
-		ServerKeySet:   acc.ServerKey != "",
+		ID:                         acc.ID,
+		Gateway:                    acc.Gateway,
+		Name:                       acc.Name,
+		Environment:                string(acc.Environment),
+		MerchantID:                 acc.MerchantID,
+		ClientKey:                  acc.ClientKey,
+		ServerKeySet:               acc.ServerKey != "",
+		DisbursementCreatorKeySet:  acc.DisbursementCreatorKey != "",
+		DisbursementApproverKeySet: acc.DisbursementApproverKey != "",
+
 		Enabled:        acc.Enabled,
 		IsDefault:      acc.IsDefault,
 		Capabilities:   acc.Capabilities,

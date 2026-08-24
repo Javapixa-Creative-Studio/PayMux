@@ -323,6 +323,7 @@ func (s *Server) adminRoutes(r chi.Router) {
 				r.Patch("/{accountID}", s.handleUpdateGatewayAccount)
 				r.Delete("/{accountID}", s.handleDeleteGatewayAccount)
 				r.Post("/{accountID}/test", s.handleTestGatewayAccount)
+				r.Get("/{accountID}/balance", s.handleGatewayBalance)
 			})
 		})
 	})

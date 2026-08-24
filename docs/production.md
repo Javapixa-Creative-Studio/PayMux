@@ -260,6 +260,17 @@ If a payout is still UNRESOLVED after the window closes, PayMux stops trying
 and logs it at ERROR. That one needs a person: check the Midtrans dashboard for
 the reference, decide what actually happened, and settle it there.
 
+### Balance
+
+The Gateways screen shows what each account has available to disburse, read
+from the gateway when you look at it.
+
+PayMux never gates a payout on that number. The per-application limits do that,
+and a balance is a snapshot that can be stale by the time a transfer executes —
+refusing a payout because a figure looked low a moment ago would be its own
+kind of wrong. A balance reading `unavailable` means the gateway would not
+answer, which is worth investigating in itself.
+
 ### Watch these
 
 | Signal | Query | Means |

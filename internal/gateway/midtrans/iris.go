@@ -54,6 +54,7 @@ var (
 	_ gateway.DisbursementGateway = (*Disburser)(nil)
 	_ gateway.AccountValidator    = (*Disburser)(nil)
 	_ gateway.BankLister          = (*Disburser)(nil)
+	_ gateway.BalanceReporter     = (*Disburser)(nil)
 )
 
 // NewDisburser builds a disburser for an account's environment.
@@ -311,6 +312,34 @@ func (d *Disburser) ListBanks(ctx context.Context) ([]gateway.Bank, error) {
 	return banks, nil
 }
 
+// GetBalance reports what is available to pay out.
+//
+// The endpoint is confirmed to exist — an authenticated probe answers 401
+// where an unknown path answers 404 — but Midtrans does not currently document
+// its response, so the shape here is inferred from the legacy Iris API. The
+// raw body is kept and an unreadable amount is reported as an error rather
+// than silently becoming zero: a balance that reads as nothing when it is not
+// would stop payouts for no reason, and one that reads as something when it is
+// nothing is worse.
+func (d *Disburser) GetBalance(ctx context.Context) (*gateway.Balance, error) {
+	var out struct {
+		Balance string `json:"balance"`
+	}
+	raw, err := d.doRaw(ctx, http.MethodGet, "/api/v1/balance", d.CreatorKey, "", nil, &out)
+	if err != nil {
+		return nil, err
+	}
+	if out.Balance == "" {
+		return nil, fmt.Errorf("midtrans: the balance response had no balance in it: %s",
+			truncate(string(raw), 200))
+	}
+	amount, err := money.Parse(out.Balance, "IDR")
+	if err != nil {
+		return nil, fmt.Errorf("midtrans: balance %q is not a usable amount: %w", out.Balance, err)
+	}
+	return &gateway.Balance{Amount: amount, Currency: "IDR", Raw: raw}, nil
+}
+
 // ---------------------------------------------------------------------------
 // Transport
 // ---------------------------------------------------------------------------
@@ -321,7 +350,14 @@ func (d *Disburser) ListBanks(ctx context.Context) ([]gateway.Bank, error) {
 // where the request might still have been executed is reported as
 // ErrOutcomeUnknown rather than as an ordinary error. Getting that
 // distinction wrong is how a retry becomes a second transfer.
-func (d *Disburser) do(ctx context.Context, method, path string, key crypto.Secret, idempotencyKey string, body, out any) (err error) {
+func (d *Disburser) do(ctx context.Context, method, path string, key crypto.Secret, idempotencyKey string, body, out any) error {
+	_, err := d.doRaw(ctx, method, path, key, idempotencyKey, body, out)
+	return err
+}
+
+// doRaw is do, additionally handing back the response body. Callers that need
+// to keep what the gateway actually said use this; everything else uses do.
+func (d *Disburser) doRaw(ctx context.Context, method, path string, key crypto.Secret, idempotencyKey string, body, out any) (raw []byte, err error) {
 	if d.Metrics != nil {
 		start := time.Now()
 		operation := "iris." + strings.TrimPrefix(strings.SplitN(strings.TrimPrefix(path, "/api/v1/"), "?", 2)[0], "/")
@@ -332,7 +368,7 @@ func (d *Disburser) do(ctx context.Context, method, path string, key crypto.Secr
 	if body != nil {
 		encoded, err := json.Marshal(body)
 		if err != nil {
-			return fmt.Errorf("midtrans: encode payout request: %w", err)
+			return nil, fmt.Errorf("midtrans: encode payout request: %w", err)
 		}
 		payload = strings.NewReader(string(encoded))
 	}
@@ -344,7 +380,7 @@ func (d *Disburser) do(ctx context.Context, method, path string, key crypto.Secr
 		req, err = http.NewRequestWithContext(ctx, method, d.BaseURL+path, nil)
 	}
 	if err != nil {
-		return fmt.Errorf("midtrans: build payout request: %w", err)
+		return nil, fmt.Errorf("midtrans: build payout request: %w", err)
 	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(key.Reveal()+":")))
@@ -363,24 +399,24 @@ func (d *Disburser) do(ctx context.Context, method, path string, key crypto.Secr
 			// The request left PayMux and no answer came back. Midtrans may
 			// have executed it. Only the idempotency key can settle this, and
 			// only a caller who kept it can ask.
-			return fmt.Errorf("%w: %s did not answer: %w", gateway.ErrOutcomeUnknown, path, err)
+			return nil, fmt.Errorf("%w: %s did not answer: %w", gateway.ErrOutcomeUnknown, path, err)
 		}
-		return &gateway.Error{Gateway: Name, Message: "could not reach the disbursement gateway", Retryable: true, Err: err}
+		return nil, &gateway.Error{Gateway: Name, Message: "could not reach the disbursement gateway", Retryable: true, Err: err}
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	raw, readErr := readLimited(resp.Body)
 	if readErr != nil {
 		if mutating {
-			return fmt.Errorf("%w: could not read the response to %s: %w", gateway.ErrOutcomeUnknown, path, readErr)
+			return nil, fmt.Errorf("%w: could not read the response to %s: %w", gateway.ErrOutcomeUnknown, path, readErr)
 		}
-		return &gateway.Error{Gateway: Name, StatusCode: resp.StatusCode, Message: "could not read the gateway response", Retryable: true, Err: readErr}
+		return nil, &gateway.Error{Gateway: Name, StatusCode: resp.StatusCode, Message: "could not read the gateway response", Retryable: true, Err: readErr}
 	}
 
 	if resp.StatusCode == http.StatusConflict {
 		// Midtrans rejects a key reused with different content. That is a
 		// caller bug, and retrying will not fix it.
-		return fmt.Errorf("%w: %s", gateway.ErrIdempotencyConflict, irisMessage(raw))
+		return nil, fmt.Errorf("%w: %s", gateway.ErrIdempotencyConflict, irisMessage(raw))
 	}
 
 	if resp.StatusCode >= 500 {
@@ -388,9 +424,9 @@ func (d *Disburser) do(ctx context.Context, method, path string, key crypto.Secr
 			// A 5xx after the request was accepted for processing is exactly
 			// the ambiguous case: the gateway may have done the work before
 			// falling over.
-			return fmt.Errorf("%w: %s returned HTTP %d", gateway.ErrOutcomeUnknown, path, resp.StatusCode)
+			return nil, fmt.Errorf("%w: %s returned HTTP %d", gateway.ErrOutcomeUnknown, path, resp.StatusCode)
 		}
-		return &gateway.Error{Gateway: Name, StatusCode: resp.StatusCode, Message: irisMessage(raw), Retryable: true}
+		return nil, &gateway.Error{Gateway: Name, StatusCode: resp.StatusCode, Message: irisMessage(raw), Retryable: true}
 	}
 
 	if resp.StatusCode >= 400 {
@@ -398,21 +434,21 @@ func (d *Disburser) do(ctx context.Context, method, path string, key crypto.Secr
 		// nothing was executed and the caller may safely correct and retry.
 		message := irisMessage(raw)
 		if strings.Contains(strings.ToLower(message), "insufficient") {
-			return fmt.Errorf("%w: %s", gateway.ErrInsufficientBalance, message)
+			return nil, fmt.Errorf("%w: %s", gateway.ErrInsufficientBalance, message)
 		}
-		return &gateway.Error{Gateway: Name, StatusCode: resp.StatusCode, Message: message}
+		return nil, &gateway.Error{Gateway: Name, StatusCode: resp.StatusCode, Message: message}
 	}
 
 	if out == nil {
-		return nil
+		return raw, nil
 	}
 	if err := json.Unmarshal(raw, out); err != nil {
 		if mutating {
-			return fmt.Errorf("%w: the response to %s was unreadable: %w", gateway.ErrOutcomeUnknown, path, err)
+			return nil, fmt.Errorf("%w: the response to %s was unreadable: %w", gateway.ErrOutcomeUnknown, path, err)
 		}
-		return &gateway.Error{Gateway: Name, StatusCode: resp.StatusCode, Message: "the gateway returned an unreadable response", Err: err}
+		return nil, &gateway.Error{Gateway: Name, StatusCode: resp.StatusCode, Message: "the gateway returned an unreadable response", Err: err}
 	}
-	return nil
+	return raw, nil
 }
 
 // mapIrisStatus translates Midtrans's payout vocabulary into PayMux's.

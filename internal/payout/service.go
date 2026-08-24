@@ -260,8 +260,27 @@ func (s *Service) VerifyBeneficiary(ctx context.Context, applicationID, benefici
 	return s.repo.GetBeneficiary(ctx, applicationID, beneficiaryID)
 }
 
-// Banks lists the destinations this account can pay out to.
-func (s *Service) Banks(ctx context.Context, accountID string) ([]gateway.Bank, error) {
+// Balance reports what an account has available to pay out.
+//
+// PayMux does not gate payouts on this. The per-application limits are what
+// bound spending, and a balance read is a snapshot that can be stale by the
+// time a transfer executes — refusing a payout because a number looked low a
+// moment ago would be its own kind of wrong. This is for an operator to look
+// at, not for the system to act on.
+func (s *Service) Balance(ctx context.Context, accountID string) (*gateway.Balance, error) {
+	client, err := s.clientForAccount(ctx, accountID)
+	if err != nil {
+		return nil, err
+	}
+	reporter, ok := client.(gateway.BalanceReporter)
+	if !ok {
+		return nil, fmt.Errorf("%w: this gateway cannot report a balance", ErrNotSupported)
+	}
+	return reporter.GetBalance(ctx)
+}
+
+// clientForAccount builds the disbursement client for a gateway account.
+func (s *Service) clientForAccount(ctx context.Context, accountID string) (gateway.DisbursementGateway, error) {
 	acc, err := s.accounts.Get(ctx, accountID)
 	if err != nil {
 		return nil, err
@@ -269,7 +288,12 @@ func (s *Service) Banks(ctx context.Context, accountID string) ([]gateway.Bank, 
 	if s.disburser == nil {
 		return nil, ErrNotSupported
 	}
-	client, err := s.disburser(ctx, acc)
+	return s.disburser(ctx, acc)
+}
+
+// Banks lists the destinations this account can pay out to.
+func (s *Service) Banks(ctx context.Context, accountID string) ([]gateway.Bank, error) {
+	client, err := s.clientForAccount(ctx, accountID)
 	if err != nil {
 		return nil, err
 	}

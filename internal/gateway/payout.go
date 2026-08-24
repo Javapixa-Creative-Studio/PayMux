@@ -212,6 +212,26 @@ type AccountValidator interface {
 	ValidateAccount(ctx context.Context, account, bank string) (*AccountValidation, error)
 }
 
+// BalanceReporter is implemented by adapters that can say how much is
+// available to pay out.
+//
+// Separate from DisbursementGateway because the balance is a different
+// question from a transfer, and a gateway that cannot answer it can still
+// disburse — PayMux's own limits are what bound spending, not this.
+type BalanceReporter interface {
+	GetBalance(ctx context.Context) (*Balance, error)
+}
+
+// Balance is what a merchant has available to disburse.
+type Balance struct {
+	Amount   int64
+	Currency string
+	// Raw is kept so an operator can see exactly what the gateway said, which
+	// matters when a number that decides whether payouts can proceed does not
+	// look right.
+	Raw json.RawMessage
+}
+
 // BankLister is implemented by adapters that can enumerate valid destinations.
 type BankLister interface {
 	ListBanks(ctx context.Context) ([]Bank, error)
