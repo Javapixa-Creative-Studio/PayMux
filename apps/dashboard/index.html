@@ -8,6 +8,19 @@
     />
     <meta name="color-scheme" content="light dark" />
     <title>PayMux</title>
+    <script>
+      // Runs before the stylesheet paints. Without it a viewer who chose light
+      // on a dark machine sees a dark flash on every navigation, which reads
+      // as the console being broken rather than as a loading step.
+      try {
+        var t = localStorage.getItem('paymux.theme');
+        if (t === 'light' || t === 'dark') {
+          document.documentElement.setAttribute('data-theme', t);
+        }
+      } catch (e) {
+        /* Private windows throw on localStorage; following the system is fine. */
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

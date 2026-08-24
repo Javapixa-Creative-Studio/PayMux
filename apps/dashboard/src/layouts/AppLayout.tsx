@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom';
 
 import { useLogout, useOverview, usePayouts, useSession } from '../api/queries';
 import { StatusStrip } from '../components/StatusStrip';
+import { ThemeToggle } from '../components/ThemeToggle';
 
 /**
  * Navigation is grouped by the question being asked, not by database table:
@@ -121,6 +122,7 @@ export function AppLayout() {
         ))}
 
         <div className="rail__footer">
+          <ThemeToggle />
           <div className="rail__account">{session.data?.email}</div>
           <button
             type="button"
@@ -209,6 +211,10 @@ export function AppLayout() {
                 })}
               </div>
             ))}
+
+            <div className="sheet__theme">
+              <ThemeToggle />
+            </div>
 
             <div className="sheet__footer">
               <div className="sheet__account">{session.data?.email}</div>

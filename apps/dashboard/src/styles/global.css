@@ -61,8 +61,16 @@
   color-scheme: light dark;
 }
 
+/*
+ * Dark, three ways, because the viewer has three states and not two.
+ *
+ * Choosing nothing is the default and follows the operating system. Choosing
+ * light has to beat a dark OS, and choosing dark has to beat a light one, so
+ * the same tokens are declared once for the system preference (guarded, so an
+ * explicit light choice wins) and once for the explicit choice.
+ */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --paper: #0e1016;
     --surface: #171a22;
     --surface-sunken: #12141b;
@@ -89,6 +97,43 @@
     --shadow-raised: 0 1px 2px rgb(0 0 0 / 40%), 0 4px 12px rgb(0 0 0 / 30%);
     --shadow-overlay: 0 8px 40px rgb(0 0 0 / 60%);
   }
+}
+
+:root[data-theme='dark'] {
+  --paper: #0e1016;
+  --surface: #171a22;
+  --surface-sunken: #12141b;
+  --rule: #262a36;
+  --rule-strong: #363b4a;
+
+  --ink: #eceef4;
+  --ink-muted: #9ba0b3;
+  --ink-faint: #6f748a;
+
+  --accent: #7c88ff;
+  --accent-hover: #939dff;
+  --accent-wash: #1c2140;
+
+  --signal-settled: #4ec49b;
+  --signal-settled-wash: #10281f;
+  --signal-pending: #e0a33a;
+  --signal-pending-wash: #2a2011;
+  --signal-failed: #f2685c;
+  --signal-failed-wash: #2d1614;
+  --signal-inert: #8b90a4;
+  --signal-inert-wash: #1e222c;
+
+  --shadow-raised: 0 1px 2px rgb(0 0 0 / 40%), 0 4px 12px rgb(0 0 0 / 30%);
+  --shadow-overlay: 0 8px 40px rgb(0 0 0 / 60%);
+}
+
+/* Tells the browser which way to paint scrollbars and form controls. */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
 }
 
 *,
@@ -2045,4 +2090,51 @@ textarea:focus {
   line-height: 1.65;
   color: var(--ink);
   white-space: pre;
+}
+
+/* ---------------------------------------------------------------------------
+   Theme picker. Small and quiet: it is a comfort setting, not an instrument.
+   --------------------------------------------------------------------------- */
+
+.themepick {
+  display: flex;
+  gap: 1px;
+  margin-bottom: 10px;
+  padding: 2px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+}
+
+.themepick__opt {
+  flex: 1;
+  padding: 4px 6px;
+  border: none;
+  border-radius: 3px;
+  background: none;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.themepick__opt:hover {
+  color: var(--ink);
+}
+
+.themepick__opt.is-on {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-raised);
+}
+
+.sheet__theme {
+  margin-top: 16px;
+}
+
+.sheet__theme .themepick__opt {
+  min-height: 34px;
+  font-size: 12px;
 }
