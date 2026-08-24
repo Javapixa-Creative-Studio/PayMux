@@ -15,6 +15,9 @@ import { Link } from 'react-router-dom';
 
 import type { Overview } from '../api/types';
 
+/** One application's row in the schematic. */
+type Branch = NonNullable<Overview['applications']>[number];
+
 /** How many branches are drawn before the rest are summarised. */
 const MAX_BRANCHES = 6;
 
@@ -29,7 +32,7 @@ const CANVAS_W = 900;
 
 type Health = 'ok' | 'busy' | 'broken' | 'idle';
 
-function branchHealth(app: Overview['applications'][number]): Health {
+function branchHealth(app: Branch): Health {
   if (app.deliveries_dead > 0 || app.deliveries_failed > 0) return 'broken';
   if (app.pending > 0) return 'busy';
   if (app.payments > 0 || app.deliveries_ok > 0) return 'ok';
@@ -213,7 +216,7 @@ function summarise(overview: Overview, broken: number): string {
  * Ordered by what an operator needs to act on: a delivery that gave up
  * outranks one still retrying, which outranks anything healthy.
  */
-function describeBranch(app: Overview['applications'][number]): string {
+function describeBranch(app: Branch): string {
   if (app.deliveries_dead > 0) {
     return `${count(app.deliveries_dead, 'delivery', 'deliveries')} gave up`;
   }
