@@ -36,6 +36,7 @@ type Metrics struct {
 	deliveryFailed *prometheus.CounterVec
 	deliveryTime   *prometheus.HistogramVec
 	queueDepth     *prometheus.GaugeVec
+	payoutsTotal   *prometheus.CounterVec
 }
 
 // New builds the collectors and registers them.
@@ -104,6 +105,12 @@ func New() *Metrics {
 			Name: "paymux_delivery_queue_depth",
 			Help: "Deliveries waiting in the queue, by state.",
 		}, []string{"state"}),
+
+		payoutsTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: "paymux_payouts_total",
+			Help: "Payouts reaching a state, by normalized status. " +
+				"An 'unresolved' above zero means money may have moved without PayMux knowing.",
+		}, []string{"status", "gateway"}),
 	}
 
 	registry.MustRegister(
@@ -113,6 +120,7 @@ func New() *Metrics {
 		m.webhooksTotal,
 		m.deliveryTotal, m.deliveryFailed, m.deliveryTime,
 		m.queueDepth,
+		m.payoutsTotal,
 	)
 	return m
 }
@@ -230,4 +238,17 @@ func outcome(err error) string {
 		return "error"
 	}
 	return "success"
+}
+
+// RecordPayout counts a payout arriving at a state.
+//
+// Counted on transition rather than sampled, because the state that matters
+// most is one a payout can leave: an UNRESOLVED that later resolves would be
+// invisible to a gauge read afterwards, and it is exactly the event an
+// operator needs to know happened at all.
+func (m *Metrics) RecordPayout(status, gateway string) {
+	if m == nil {
+		return
+	}
+	m.payoutsTotal.WithLabelValues(status, gateway).Inc()
 }

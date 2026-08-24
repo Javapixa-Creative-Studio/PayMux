@@ -22,6 +22,13 @@ import (
 // for a person to intervene rather than at the moment it becomes impossible.
 const idempotencyWindow = 20 * time.Hour
 
+// MetricsRecorder observes payouts changing state. The domain depends on this
+// narrow interface rather than the metrics package, so instrumentation stays
+// optional and testable.
+type MetricsRecorder interface {
+	RecordPayout(status, gateway string)
+}
+
 // Disburser builds the disbursement client for an account. It is a function
 // rather than a registry lookup because disbursement credentials live on the
 // account and have to be unsealed per call.
@@ -35,7 +42,11 @@ type Service struct {
 	disburser Disburser
 	publisher *delivery.Publisher
 	logger    *slog.Logger
+	metrics   MetricsRecorder
 }
+
+// SetMetrics attaches a recorder. A nil recorder simply disables the counters.
+func (s *Service) SetMetrics(recorder MetricsRecorder) { s.metrics = recorder }
 
 // NewService builds a Service.
 func NewService(
@@ -220,20 +231,10 @@ func (s *Service) Approve(ctx context.Context, payoutID, adminID string) (*Payou
 		return nil, ErrSelfApproval
 	}
 
-	var updated *Payout
-	err = s.db.InTx(ctx, func(ctx context.Context, _ storage.Querier) error {
-		updated, err = s.repo.ApplyState(ctx, payoutID, StateUpdate{
-			Status:     gateway.PayoutApproved,
-			ApprovedBy: adminID,
-		})
-		if err != nil {
-			return err
-		}
-		return s.repo.RecordTransition(ctx, &Transition{
-			PayoutID: payoutID, FromStatus: p.Status, ToStatus: gateway.PayoutApproved,
-			ActorKind: ActorAdmin, ActorID: adminID,
-		})
-	})
+	updated, err := s.transition(ctx, p, StateUpdate{
+		Status:     gateway.PayoutApproved,
+		ApprovedBy: adminID,
+	}, ActorAdmin, adminID, "")
 	if err != nil {
 		return nil, err
 	}
@@ -251,21 +252,11 @@ func (s *Service) Reject(ctx context.Context, payoutID, adminID, reason string) 
 		return nil, fmt.Errorf("%w: it is %s", ErrNotPending, p.Status)
 	}
 
-	var updated *Payout
-	err = s.db.InTx(ctx, func(ctx context.Context, _ storage.Querier) error {
-		updated, err = s.repo.ApplyState(ctx, payoutID, StateUpdate{
-			Status:       gateway.PayoutRejected,
-			RejectedBy:   adminID,
-			RejectReason: reason,
-		})
-		if err != nil {
-			return err
-		}
-		return s.repo.RecordTransition(ctx, &Transition{
-			PayoutID: payoutID, FromStatus: p.Status, ToStatus: gateway.PayoutRejected,
-			ActorKind: ActorAdmin, ActorID: adminID, Reason: reason,
-		})
-	})
+	updated, err := s.transition(ctx, p, StateUpdate{
+		Status:       gateway.PayoutRejected,
+		RejectedBy:   adminID,
+		RejectReason: reason,
+	}, ActorAdmin, adminID, reason)
 	if err != nil {
 		return nil, err
 	}
@@ -325,7 +316,7 @@ func (s *Service) recordSubmissionFailure(ctx context.Context, p *Payout, cause 
 			Status:               gateway.PayoutUnresolved,
 			FailureReason:        cause.Error(),
 			IdempotencyExpiresAt: &expires,
-		}, ActorGateway, "outcome unknown")
+		}, ActorGateway, "", "outcome unknown")
 		if err != nil {
 			return nil, err
 		}
@@ -338,7 +329,7 @@ func (s *Service) recordSubmissionFailure(ctx context.Context, p *Payout, cause 
 	updated, err := s.transition(ctx, p, StateUpdate{
 		Status:        gateway.PayoutFailed,
 		FailureReason: cause.Error(),
-	}, ActorGateway, "rejected by the gateway")
+	}, ActorGateway, "", "rejected by the gateway")
 	if err != nil {
 		return nil, err
 	}
@@ -365,7 +356,7 @@ func (s *Service) applyGatewayResult(ctx context.Context, p *Payout, result *gat
 		FailureReason: result.FailureReason,
 		GatewayData:   result.Raw,
 		MarkSynced:    true,
-	}, actor, reason)
+	}, actor, "", reason)
 	if err != nil {
 		return nil, err
 	}
@@ -377,7 +368,7 @@ func (s *Service) applyGatewayResult(ctx context.Context, p *Payout, result *gat
 
 // transition applies a state change and records it in one transaction, so the
 // payout and its history can never disagree.
-func (s *Service) transition(ctx context.Context, p *Payout, update StateUpdate, actor, reason string) (*Payout, error) {
+func (s *Service) transition(ctx context.Context, p *Payout, update StateUpdate, actor, actorID, reason string) (*Payout, error) {
 	var updated *Payout
 	err := s.db.InTx(ctx, func(ctx context.Context, _ storage.Querier) error {
 		var err error
@@ -387,11 +378,15 @@ func (s *Service) transition(ctx context.Context, p *Payout, update StateUpdate,
 		}
 		return s.repo.RecordTransition(ctx, &Transition{
 			PayoutID: p.ID, FromStatus: p.Status, ToStatus: update.Status,
-			ActorKind: actor, Reason: reason, GatewayData: update.GatewayData,
+			ActorKind: actor, ActorID: actorID, Reason: reason,
+			GatewayData: update.GatewayData,
 		})
 	})
 	if err != nil {
 		return nil, err
+	}
+	if s.metrics != nil {
+		s.metrics.RecordPayout(string(update.Status), p.Gateway)
 	}
 	return updated, nil
 }

@@ -108,6 +108,7 @@ this is fine for years; plan for it before it is not.
 | `delivery_attempts` | one row per attempt — up to 7 per delivery |
 | `gateway_events` | one row per notification the gateway sends |
 | `audit_logs` | one row per administrative action |
+| `payout_transitions` | one row per payout state change — keep these |
 
 Expired sessions and idempotency keys *are* pruned hourly by the worker.
 
@@ -189,6 +190,94 @@ Migrations are forward-only and never edited once applied; PayMux verifies a
 checksum and refuses to start if an applied migration changed underneath it.
 There is no automatic rollback: to go back, restore the backup.
 
+
+---
+
+## Disbursement
+
+Everything else in PayMux moves money inward, where the worst case of a
+mistake is a payment that gets refunded through the gateway that took it. A
+payout has no such backstop. Read this section before turning it on.
+
+### It is off in three places, on purpose
+
+A payout only happens when all three are true:
+
+1. The **gateway account** holds a disbursement creator key. Midtrans issues
+   these separately from the payment server key, and only after approving your
+   account for disbursement.
+2. The **application** has payouts enabled, in Applications → the application →
+   Paying money out.
+3. Somebody **approves** the payout, unless you have turned approval off — and
+   PayMux refuses to let you turn it off without setting a limit.
+
+Turning on one without the others does nothing. That is the intent: money
+leaving needs more than one decision behind it.
+
+### Why the per-application limit matters more than it looks
+
+PayMux exists so several applications can share one merchant account. On the
+way in that is harmless — application A cannot take application B's money. On
+the way out, every application with an API key spends from the *same balance*.
+
+So the limits are not a nicety. Without them, one compromised API key drains
+what every other application collected. Set `max_amount` and `daily_limit` for
+every application you enable, and size them to what that application
+legitimately pays out in a day, not to what the balance holds.
+
+The daily limit counts payouts that are still in flight, including ones whose
+outcome is unknown. Money the gateway already has cannot be spent twice.
+
+### The two keys are not interchangeable
+
+Midtrans issues a **creator** key and an **approver** key so that whoever can
+request a payout cannot also release it. PayMux keeps them apart and seals them
+separately.
+
+Give PayMux the approver key only if you want payouts released from PayMux. If
+you leave it out, PayMux can request payouts but they wait in the Midtrans
+dashboard for someone to release them there — which is a legitimate and
+stricter setup, not a broken one.
+
+### UNRESOLVED is the state that matters
+
+Most payout states are self-explanatory. One is not:
+
+> **UNRESOLVED** — PayMux sent the payout and does not know what happened.
+> The connection failed at the one moment where failure is ambiguous. The money
+> may or may not be moving.
+
+PayMux resolves these by itself, by re-sending under the *original* idempotency
+key. Midtrans answers that with the original result rather than making a second
+transfer. This works for 20 hours, after which Midtrans forgets the key.
+
+**Do not re-issue a payout that is UNRESOLVED.** A new payout means a new key,
+and a new key means Midtrans treats it as a new instruction. If the first one
+did go out, you have now paid twice, and there is no chargeback on a
+disbursement.
+
+If a payout is still UNRESOLVED after the window closes, PayMux stops trying
+and logs it at ERROR. That one needs a person: check the Midtrans dashboard for
+the reference, decide what actually happened, and settle it there.
+
+### Watch these
+
+| Signal | Query | Means |
+|---|---|---|
+| Unknown outcomes | `paymux_payouts_total{status="unresolved"}` above zero | Money may have moved without PayMux knowing. Investigate each one |
+| Payouts failing | `increase(paymux_payouts_total{status="failed"}[15m])` rising | Bad credentials, bad beneficiary details, or an empty balance |
+| Approval queue growing | payouts in REQUESTED for hours | Nobody is releasing them; somebody is not getting paid |
+
+Also grep the API and worker logs for `payout outcome is unknown` and
+`payout outcome can no longer be resolved automatically`. Both are ERROR level
+and both mean somebody's money is unaccounted for.
+
+### Backups
+
+The `payouts` and `payout_transitions` tables are the record of who authorised
+moving money and when. A payment can be re-derived from the gateway; the answer
+to "who approved this" exists only in PayMux. Do not prune them.
+
 ---
 
 ## What PayMux does not do
@@ -201,7 +290,9 @@ Know these limits before you rely on it:
 - **No retention or archival policy** — see Data growth above.
 - **No multi-region or active-active story.** One PostgreSQL primary.
 - **Administrator accounts have no roles.** Every administrator can do
-  everything, including reading every application's payments.
+  everything, including reading every application's payments and approving
+  payouts. The only separation PayMux enforces is that an approver cannot
+  approve their own request.
 - **No 2FA on the dashboard.** Protect it at the network edge if that matters.
 - **Recurring billing depends on gateway activation.** PayMux implements the
   lifecycle; Midtrans decides whether your account may use it.

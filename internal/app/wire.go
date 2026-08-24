@@ -133,6 +133,7 @@ func Build(cfg *config.Config, db *storage.DB, logger *slog.Logger) (*Container,
 			return midtrans.NewDisburser(acc.Environment,
 				acc.DisbursementCreatorKey, acc.DisbursementApproverKey, gatewayClient)
 		}, publisher, logger)
+	payouts.SetMetrics(collector)
 
 	sender := delivery.NewSender(guard, cfg.WebhookTimeout, "PayMux-Webhook/1.0")
 
