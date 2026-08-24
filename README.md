@@ -405,6 +405,27 @@ Please report vulnerabilities privately — see [SECURITY.md](SECURITY.md).
 
 ---
 
+## Deploying
+
+PayMux serves plain HTTP and expects TLS termination in front of it. Before it
+handles a real transaction, read
+[`docs/production.md`](docs/production.md) — it covers the encryption key's
+recovery characteristics (there are none), the settings whose defaults are
+wrong for production, backups, what to alert on, and what PayMux deliberately
+does not do.
+
+The short version:
+
+```bash
+PAYMUX_ENV=production
+PAYMUX_TRUST_PROXY_HEADERS=true          # behind a reverse proxy
+PAYMUX_CORS_ORIGINS=https://dash.example.com
+PAYMUX_ALLOW_PRIVATE_WEBHOOK_DESTINATIONS=false
+# then remove PAYMUX_ADMIN_EMAIL and PAYMUX_ADMIN_PASSWORD
+```
+
+---
+
 ## Development
 
 ```bash
