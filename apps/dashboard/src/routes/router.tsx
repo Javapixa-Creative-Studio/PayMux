@@ -10,6 +10,7 @@ import { NotificationsPage } from '../pages/NotificationsPage';
 import { OverviewPage } from '../pages/OverviewPage';
 import { PaymentDetailPage } from '../pages/PaymentDetailPage';
 import { PaymentsPage } from '../pages/PaymentsPage';
+import { IntegrationPage } from '../pages/IntegrationPage';
 import { PayoutDetailPage } from '../pages/PayoutDetailPage';
 import { PayoutsPage } from '../pages/PayoutsPage';
 import { RefundsPage } from '../pages/RefundsPage';
@@ -34,6 +35,7 @@ export const router = createBrowserRouter([
           { path: 'refunds', element: <RefundsPage /> },
           { path: 'payouts', element: <PayoutsPage /> },
           { path: 'payouts/:payoutId', element: <PayoutDetailPage /> },
+          { path: 'integration', element: <IntegrationPage /> },
           { path: 'events', element: <EventsPage /> },
           { path: 'deliveries', element: <DeliveriesPage /> },
           { path: 'notifications', element: <NotificationsPage /> },

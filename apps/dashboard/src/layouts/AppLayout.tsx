@@ -28,6 +28,7 @@ const GROUPS = [
       { to: '/applications', label: 'Applications' },
       { to: '/subscriptions', label: 'Subscriptions' },
       { to: '/gateways', label: 'Gateways' },
+      { to: '/integration', label: 'Integration' },
       { to: '/settings', label: 'Settings' },
     ],
   },

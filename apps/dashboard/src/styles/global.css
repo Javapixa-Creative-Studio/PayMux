@@ -1905,3 +1905,144 @@ textarea:focus {
     position: static;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Integration guide — documentation living inside the console, because the two
+   things a developer needs (the endpoints, and their own key) are both here.
+   --------------------------------------------------------------------------- */
+
+.docnav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 22px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.docnav__link {
+  padding: 5px 11px;
+  border: 1px solid var(--rule);
+  border-radius: 100px;
+  background: var(--surface);
+  color: var(--ink-muted);
+  font-size: 12.5px;
+  text-decoration: none;
+}
+
+.docnav__link:hover {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  text-decoration: none;
+}
+
+.doc {
+  /* Scroll-margin so an anchor lands below the sticky status strip rather
+     than under it. */
+  scroll-margin-top: calc(var(--strip-height) + 12px);
+  margin-bottom: 40px;
+  max-width: 82ch;
+}
+
+.doc h2 {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0 0 10px;
+}
+
+.doc p {
+  margin: 0 0 12px;
+  color: var(--ink-muted);
+  text-wrap: pretty;
+}
+
+.doc strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.doc code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 1px 5px;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.doc__list {
+  margin: 0 0 14px;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--ink-muted);
+}
+
+.doc__list li {
+  text-wrap: pretty;
+}
+
+/*
+ * A note is for something that costs money to get wrong. The warn variant is
+ * reserved for the two that actually do: an unverified signature, and
+ * re-issuing a payout whose outcome is unknown.
+ */
+.doc__note {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--ink-faint);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-size: 13.5px;
+  color: var(--ink-muted);
+  text-wrap: pretty;
+}
+
+.doc__note--warn {
+  border-left-color: var(--signal-failed);
+  background: var(--signal-failed-wash);
+}
+
+.snippet {
+  margin: 0 0 14px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface-sunken);
+}
+
+.snippet__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 8px 6px 12px;
+  border-bottom: 1px solid var(--rule);
+  background: var(--surface);
+}
+
+.snippet__label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.snippet__code {
+  margin: 0;
+  padding: 12px 14px;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--ink);
+  white-space: pre;
+}
