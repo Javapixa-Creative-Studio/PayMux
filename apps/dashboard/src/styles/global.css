@@ -1542,57 +1542,17 @@ textarea:focus {
 }
 
 /* ---------------------------------------------------------------------------
-   Phone. Below this width the console stops being a workbench and becomes a
-   triage instrument: navigation moves to the thumb, tables become rows you can
-   read one at a time, and every target grows to something a finger can hit.
+   Narrow content, at any window size.
+
+   This is a separate breakpoint from the phone one below because the two
+   things fail at different widths. A 208px rail eats the width first: at a
+   900px window the table has about 650px and is already unreadable, while the
+   navigation is still perfectly usable. Splitting them means a phone in
+   landscape and a half-width desktop window both get the layout that fits,
+   rather than the one their viewport number happens to fall next to.
    --------------------------------------------------------------------------- */
 
-@media (max-width: 760px) {
-  .shell {
-    grid-template-columns: 1fr;
-  }
-
-  /* The rail is replaced wholesale, not reflowed. Wrapping ten links into a
-     row cost a full screen of height before any content appeared. */
-  .rail {
-    display: none;
-  }
-
-  .tabbar {
-    display: flex;
-  }
-
-  .page {
-    /* Clears the fixed tab bar, so the last row is never trapped under it. */
-    padding: 14px 12px calc(28px + var(--tabbar-height) + var(--safe-bottom));
-  }
-
-  .strip {
-    padding: 0 12px;
-    /* A phone has no scrollbar to grab, so the strip is swiped instead and
-       snaps to whichever metric you land on. */
-    scroll-snap-type: x proximity;
-    scrollbar-width: none;
-    overscroll-behavior-x: contain;
-  }
-
-  .strip::-webkit-scrollbar {
-    display: none;
-  }
-
-  .strip__metric {
-    scroll-snap-align: start;
-    padding: 0 12px;
-  }
-
-  h1 {
-    font-size: 23px;
-  }
-
-  .page__lede {
-    margin-bottom: 16px;
-  }
-
+@media (max-width: 900px) {
   /* The SVG would scale its 13px labels down to 6px; the tree does not. */
   .fanout__canvas {
     display: none;
@@ -1750,6 +1710,60 @@ textarea:focus {
 
   tbody tr.is-attention {
     box-shadow: inset 3px 0 0 var(--signal-pending);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Phone. Below this width the console stops being a workbench and becomes a
+   triage instrument: navigation moves to the thumb, overlays rise as sheets,
+   and every target grows to something a finger can hit. The data has already
+   reflowed by now — see the breakpoint above.
+   --------------------------------------------------------------------------- */
+
+@media (max-width: 760px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  /* The rail is replaced wholesale, not reflowed. Wrapping ten links into a
+     row cost a full screen of height before any content appeared. */
+  .rail {
+    display: none;
+  }
+
+  .tabbar {
+    display: flex;
+  }
+
+  .page {
+    /* Clears the fixed tab bar, so the last row is never trapped under it. */
+    padding: 14px 12px calc(28px + var(--tabbar-height) + var(--safe-bottom));
+  }
+
+  .strip {
+    padding: 0 12px;
+    /* A phone has no scrollbar to grab, so the strip is swiped instead and
+       snaps to whichever metric you land on. */
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+  }
+
+  .strip::-webkit-scrollbar {
+    display: none;
+  }
+
+  .strip__metric {
+    scroll-snap-align: start;
+    padding: 0 12px;
+  }
+
+  h1 {
+    font-size: 23px;
+  }
+
+  .page__lede {
+    margin-bottom: 16px;
   }
 
   /* --- Controls ---------------------------------------------------------- */
