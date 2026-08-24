@@ -303,3 +303,86 @@ export interface Overview {
     deliveries_dead: number;
   }> | null;
 }
+
+/** PayMux's normalized state for money leaving the merchant balance. */
+export type PayoutStatus =
+  | 'REQUESTED'
+  | 'APPROVED'
+  | 'SUBMITTED'
+  | 'UNRESOLVED'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'REJECTED';
+
+export interface Beneficiary {
+  id: string;
+  object: 'beneficiary';
+  application_id: string;
+  alias: string;
+  name: string;
+  account: string;
+  bank: string;
+  email?: string;
+  verified_at?: string | null;
+  verified_name?: string;
+  disabled_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Payout {
+  id: string;
+  object: 'payout';
+  application_id: string;
+  gateway: string;
+  application_payout_id: string;
+  reference_no?: string;
+  beneficiary_id?: string;
+  beneficiary_name: string;
+  beneficiary_account: string;
+  beneficiary_bank: string;
+  beneficiary_email?: string;
+  amount: number;
+  currency: string;
+  notes?: string;
+  status: PayoutStatus;
+  gateway_status?: string;
+  failure_code?: string;
+  failure_reason?: string;
+  requested_by?: string;
+  approved_by?: string;
+  approved_at?: string;
+  rejected_by?: string;
+  rejected_at?: string;
+  reject_reason?: string;
+  submitted_at?: string;
+  completed_at?: string;
+  failed_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/** One recorded change of state, with who caused it. */
+export interface PayoutTransition {
+  id: string;
+  payout_id: string;
+  from_status?: PayoutStatus | '';
+  to_status: PayoutStatus;
+  actor_kind: 'application' | 'admin' | 'gateway' | 'worker';
+  actor_id?: string;
+  reason?: string;
+  created_at: string;
+}
+
+export interface PayoutDetail {
+  payout: Payout;
+  transitions: PayoutTransition[] | null;
+}
+
+/** What an application is permitted to disburse. null means no ceiling. */
+export interface PayoutLimits {
+  enabled: boolean;
+  requires_approval: boolean;
+  max_amount: number | null;
+  daily_limit: number | null;
+}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 
-import { useLogout, useOverview, useSession } from '../api/queries';
+import { useLogout, useOverview, usePayouts, useSession } from '../api/queries';
 import { StatusStrip } from '../components/StatusStrip';
 
 /**
@@ -16,6 +16,7 @@ const GROUPS = [
       { to: '/overview', label: 'Overview' },
       { to: '/payments', label: 'Payments' },
       { to: '/refunds', label: 'Refunds' },
+      { to: '/payouts', label: 'Payouts', badge: 'payouts' as const },
       { to: '/events', label: 'Events' },
       { to: '/deliveries', label: 'Deliveries', badge: 'deliveries' as const },
       { to: '/notifications', label: 'Notifications', badge: 'unrouted' as const },
@@ -53,6 +54,7 @@ export function AppLayout() {
   const session = useSession();
   const logout = useLogout();
   const overview = useOverview('24h');
+  const pendingPayouts = usePayouts({ status: 'REQUESTED', limit: 50 });
   const location = useLocation();
   const [moreOpen, setMoreOpen] = useState(false);
 
@@ -73,9 +75,20 @@ export function AppLayout() {
   const badges = {
     deliveries: (overview.data?.deliveries.failed ?? 0) + (overview.data?.deliveries.dead ?? 0),
     unrouted: overview.data?.unrouted_notifications ?? 0,
+    // A payout nobody releases is simply never paid, and it will not announce
+    // itself. The count is the announcement.
+    payouts: pendingPayouts.data?.data?.length ?? 0,
   };
 
   const onATab = TABS.some((tab) => location.pathname.startsWith(tab.to));
+
+  // What needs attention behind More. Without this a payout awaiting approval
+  // would be invisible on a phone: it is not one of the four tabs, and nobody
+  // opens a drawer to check whether there is a reason to open the drawer.
+  const tabbed = new Set(TABS.map((tab) => tab.to));
+  const hidden = GROUPS.flatMap((group) => group.items)
+    .filter((item) => item.badge && !tabbed.has(item.to))
+    .reduce((n, item) => n + (item.badge ? badges[item.badge] : 0), 0);
 
   return (
     <div className="shell">
@@ -158,6 +171,11 @@ export function AppLayout() {
             ≡
           </span>
           <span className="tab__label">More</span>
+          {hidden > 0 && (
+            <span className="tab__count" aria-label={`${hidden} need attention`}>
+              {hidden > 99 ? '99+' : hidden}
+            </span>
+          )}
         </button>
       </nav>
 

@@ -356,6 +356,8 @@ function EditAccountDialog({ account, onClose }: { account: GatewayAccount; onCl
   const [merchantId, setMerchantId] = useState(account.merchant_id);
   const [clientKey, setClientKey] = useState(account.client_key);
   const [serverKey, setServerKey] = useState('');
+  const [creatorKey, setCreatorKey] = useState('');
+  const [approverKey, setApproverKey] = useState('');
   const [isDefault, setIsDefault] = useState(account.is_default);
 
   const submit = (event: FormEvent) => {
@@ -369,6 +371,8 @@ function EditAccountDialog({ account, onClose }: { account: GatewayAccount; onCl
         is_default: isDefault,
         // Only sent when the operator is deliberately replacing it.
         ...(serverKey ? { server_key: serverKey } : {}),
+        ...(creatorKey ? { disbursement_creator_key: creatorKey } : {}),
+        ...(approverKey ? { disbursement_approver_key: approverKey } : {}),
       },
       { onSuccess: onClose },
     );
@@ -426,6 +430,55 @@ function EditAccountDialog({ account, onClose }: { account: GatewayAccount; onCl
             value={clientKey}
             onChange={(event) => setClientKey(event.target.value)}
           />
+        </div>
+
+        {/*
+          * Disbursement is a separate Midtrans product with separate approval,
+          * so these are separate fields rather than more of the same. Leaving
+          * them blank changes nothing; an account without a creator key simply
+          * cannot pay out, which is the safe default.
+          */}
+        <div className="notice" style={{ margin: '18px 0 12px' }}>
+          <strong>Paying money out</strong>
+          <div className="field__hint" style={{ marginTop: 4 }}>
+            Midtrans issues these separately from the payment keys, and only once your
+            account is approved for disbursement. Whoever holds the creator key can request a
+            payout; only the approver key can release one.
+          </div>
+        </div>
+
+        <div className="field">
+          <label className="field__label" htmlFor="edit-creator">
+            Disbursement creator key
+          </label>
+          <input
+            id="edit-creator"
+            className="mono"
+            type="password"
+            value={creatorKey}
+            onChange={(event) => setCreatorKey(event.target.value)}
+            placeholder="Leave blank to keep the current one"
+          />
+          <span className="field__hint">
+            Without this, this account cannot pay out at all.
+          </span>
+        </div>
+
+        <div className="field">
+          <label className="field__label" htmlFor="edit-approver">
+            Disbursement approver key
+          </label>
+          <input
+            id="edit-approver"
+            className="mono"
+            type="password"
+            value={approverKey}
+            onChange={(event) => setApproverKey(event.target.value)}
+            placeholder="Leave blank to keep the current one"
+          />
+          <span className="field__hint">
+            Optional. Without it, payouts must be released in the Midtrans dashboard instead.
+          </span>
         </div>
 
         <div className="field">

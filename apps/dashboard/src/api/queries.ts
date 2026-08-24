@@ -17,6 +17,7 @@ import type {
   Admin,
   ApiKey,
   Application,
+  Beneficiary,
   Delivery,
   DeliveryDetail,
   Destination,
@@ -24,9 +25,12 @@ import type {
   GatewayEvent,
   ListEnvelope,
   Overview,
+  PayMuxEvent,
   Payment,
   PaymentDetail,
-  PayMuxEvent,
+  Payout,
+  PayoutDetail,
+  PayoutLimits,
   Refund,
   Subscription,
 } from './types';
@@ -414,5 +418,86 @@ export function useDeleteGatewayAccount() {
     mutationFn: (id: string) =>
       apiFetch<void>(`${ADMIN}/gateways/accounts/${id}`, { method: 'DELETE' }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['gateway-accounts'] }),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Payouts
+// ---------------------------------------------------------------------------
+
+export function usePayouts(params?: ListParams) {
+  return useQuery({
+    queryKey: ['payouts', params],
+    queryFn: () => apiFetch<ListEnvelope<Payout>>(`${ADMIN}/payouts`, { query: params }),
+  });
+}
+
+export function usePayoutDetail(id: string | undefined) {
+  return useQuery({
+    queryKey: ['payout', id],
+    queryFn: () => apiFetch<PayoutDetail>(`${ADMIN}/payouts/${id}`),
+    enabled: Boolean(id),
+  });
+}
+
+/**
+ * Approving and rejecting share a hook because they are the same decision with
+ * two answers, and both invalidate exactly the same views.
+ */
+export function usePayoutDecision(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (decision: { action: 'approve' | 'reject'; reason?: string }) =>
+      apiFetch<Payout>(`${ADMIN}/payouts/${id}/${decision.action}`, {
+        method: 'POST',
+        body: decision.action === 'reject' ? { reason: decision.reason ?? '' } : {},
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['payouts'] });
+      queryClient.invalidateQueries({ queryKey: ['payout', id] });
+      queryClient.invalidateQueries({ queryKey: ['overview'] });
+    },
+  });
+}
+
+export function useSyncPayout(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiFetch<Payout>(`${ADMIN}/payouts/${id}/sync`, { method: 'POST' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['payouts'] });
+      queryClient.invalidateQueries({ queryKey: ['payout', id] });
+    },
+  });
+}
+
+export function usePayoutLimits(applicationID: string | undefined) {
+  return useQuery({
+    queryKey: ['payout-limits', applicationID],
+    queryFn: () => apiFetch<PayoutLimits>(`${ADMIN}/applications/${applicationID}/payout-limits`),
+    enabled: Boolean(applicationID),
+  });
+}
+
+export function useSetPayoutLimits(applicationID: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: Partial<PayoutLimits> & { clear_max_amount?: boolean; clear_daily_limit?: boolean }) =>
+      apiFetch<PayoutLimits>(`${ADMIN}/applications/${applicationID}/payout-limits`, {
+        method: 'PATCH',
+        body,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['payout-limits', applicationID] });
+    },
+  });
+}
+
+export function useBeneficiaries(applicationID: string | undefined) {
+  return useQuery({
+    queryKey: ['beneficiaries', applicationID],
+    queryFn: () =>
+      apiFetch<ListEnvelope<Beneficiary>>(`${ADMIN}/applications/${applicationID}/beneficiaries`),
+    enabled: Boolean(applicationID),
   });
 }

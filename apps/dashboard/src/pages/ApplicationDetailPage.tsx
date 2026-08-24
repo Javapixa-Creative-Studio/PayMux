@@ -14,6 +14,7 @@ import {
   useUpdateDestination,
 } from '../api/queries';
 import { Modal } from '../components/Modal';
+import { PayoutPermissions } from '../components/PayoutPermissions';
 import { Empty, ErrorNotice, Id, KeyValue, Loading, Tag, Timestamp } from '../components/primitives';
 
 export function ApplicationDetailPage() {
@@ -62,6 +63,7 @@ export function ApplicationDetailPage() {
 
       <ApiKeysPanel applicationId={applicationId} />
       <DestinationsPanel applicationId={applicationId} />
+      <PayoutPermissions applicationId={applicationId} />
     </>
   );
 }

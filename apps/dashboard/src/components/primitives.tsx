@@ -8,7 +8,7 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 
-import type { DeliveryState, PaymentStatus, RoutingStatus } from '../api/types';
+import type { DeliveryState, PaymentStatus, PayoutStatus, RoutingStatus } from '../api/types';
 import {
   elideId,
   formatAmount,
@@ -235,4 +235,32 @@ export function DeliveryResult({
       {formatTransportError(error)}
     </span>
   );
+}
+
+/**
+ * A payout's state, coloured by what it means for the money.
+ *
+ * UNRESOLVED gets the failure colour deliberately even though it is not a
+ * failure. It means PayMux does not know whether the money left, which is the
+ * state most deserving of an operator's attention — colouring it neutral
+ * because it "might be fine" would bury the one row worth looking at.
+ */
+function payoutTone(status: PayoutStatus): string {
+  switch (status) {
+    case 'COMPLETED':
+      return 'settled';
+    case 'REQUESTED':
+    case 'APPROVED':
+    case 'SUBMITTED':
+      return 'pending';
+    case 'FAILED':
+    case 'UNRESOLVED':
+      return 'failed';
+    default:
+      return 'inert';
+  }
+}
+
+export function PayoutStatusTag({ status }: { status: PayoutStatus }) {
+  return <span className={`status status--${payoutTone(status)}`}>{status}</span>;
 }
