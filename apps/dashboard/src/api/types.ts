@@ -291,4 +291,15 @@ export interface Overview {
     paid_total: number;
     count: number;
   }> | null;
+  /** Per-application activity, which the routing schematic draws. */
+  applications: Array<{
+    application_id: string;
+    name: string;
+    payments: number;
+    paid: number;
+    pending: number;
+    deliveries_ok: number;
+    deliveries_failed: number;
+    deliveries_dead: number;
+  }> | null;
 }

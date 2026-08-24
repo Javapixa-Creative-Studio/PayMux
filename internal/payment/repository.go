@@ -587,6 +587,82 @@ type CurrencyTotal struct {
 	Count     int64
 }
 
+// ApplicationActivity is one application's slice of recent activity.
+//
+// The overview renders PayMux's fan-out, so it needs the branches, not just
+// the totals: an aggregate hides the one application whose deliveries are
+// failing behind five that are fine.
+type ApplicationActivity struct {
+	ApplicationID    string
+	Name             string
+	Payments         int64
+	Paid             int64
+	Pending          int64
+	DeliveriesOK     int64
+	DeliveriesFailed int64
+	DeliveriesDead   int64
+}
+
+// ActivityByApplication reports recent activity per application.
+//
+// Volume is windowed, but failures are not: a delivery that gave up yesterday
+// is still an outstanding problem this morning, and dropping it out of the
+// schematic at the window edge would report a branch as healthy while its
+// application is still missing events. Successes are windowed because they are
+// a rate, and an all-time success count says nothing about now.
+//
+// The windows sit in the join predicates rather than in aggregate FILTERs so
+// that payments_application_created_idx and deliveries_state_idx can be used;
+// filtering after the join would read every payment ever taken.
+func (r *Repository) ActivityByApplication(ctx context.Context, since time.Time) ([]ApplicationActivity, error) {
+	rows, err := r.q(ctx).Query(ctx, `
+		SELECT
+			a.id,
+			a.name,
+			count(p.id),
+			count(p.id) FILTER (
+				WHERE p.normalized_status IN ('PAID', 'REFUNDED', 'PARTIALLY_REFUNDED')),
+			count(p.id) FILTER (
+				WHERE p.normalized_status IN ('PENDING', 'AUTHORIZED')),
+			coalesce(d.succeeded, 0),
+			coalesce(d.failed, 0),
+			coalesce(d.dead, 0)
+		FROM applications a
+		LEFT JOIN payments p
+			ON p.application_id = a.id AND p.created_at >= $1
+		LEFT JOIN (
+			SELECT application_id,
+			       count(*) FILTER (WHERE state = 'succeeded') AS succeeded,
+			       count(*) FILTER (WHERE state = 'failed')    AS failed,
+			       count(*) FILTER (WHERE state = 'dead')      AS dead
+			FROM deliveries
+			WHERE (state = 'succeeded' AND created_at >= $1)
+			   OR state IN ('failed', 'dead')
+			GROUP BY application_id
+		) d ON d.application_id = a.id
+		WHERE a.disabled_at IS NULL
+		GROUP BY a.id, a.name, d.succeeded, d.failed, d.dead
+		ORDER BY a.name`, since)
+	if err != nil {
+		return nil, fmt.Errorf("payment: activity by application: %w", err)
+	}
+	defer rows.Close()
+
+	var out []ApplicationActivity
+	for rows.Next() {
+		var a ApplicationActivity
+		if err := rows.Scan(&a.ApplicationID, &a.Name, &a.Payments, &a.Paid, &a.Pending,
+			&a.DeliveriesOK, &a.DeliveriesFailed, &a.DeliveriesDead); err != nil {
+			return nil, fmt.Errorf("payment: scan application activity: %w", err)
+		}
+		out = append(out, a)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("payment: activity by application: %w", err)
+	}
+	return out, nil
+}
+
 // Stats counts payments created since a cutoff, grouped by outcome.
 func (r *Repository) Stats(ctx context.Context, since time.Time) (Stats, error) {
 	var s Stats

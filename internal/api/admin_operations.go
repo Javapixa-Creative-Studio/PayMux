@@ -197,6 +197,20 @@ type overviewResponse struct {
 	Deliveries deliveryTotals     `json:"deliveries"`
 	Unrouted   int64              `json:"unrouted_notifications"`
 	Currencies []currencySubtotal `json:"currency_totals"`
+	// Applications carries the fan-out the overview draws: which branches
+	// are busy, and which are failing.
+	Applications []applicationActivity `json:"applications"`
+}
+
+type applicationActivity struct {
+	ApplicationID    string `json:"application_id"`
+	Name             string `json:"name"`
+	Payments         int64  `json:"payments"`
+	Paid             int64  `json:"paid"`
+	Pending          int64  `json:"pending"`
+	DeliveriesOK     int64  `json:"deliveries_ok"`
+	DeliveriesFailed int64  `json:"deliveries_failed"`
+	DeliveriesDead   int64  `json:"deliveries_dead"`
 }
 
 type paymentTotals struct {
@@ -259,6 +273,24 @@ func (s *Server) handleAdminOverview(w http.ResponseWriter, r *http.Request) {
 		},
 		Unrouted: unrouted,
 	}
+	activity, err := s.paymentRepo.ActivityByApplication(r.Context(), since)
+	if err != nil {
+		fail(w, r, err, genericMissing)
+		return
+	}
+	for _, a := range activity {
+		response.Applications = append(response.Applications, applicationActivity{
+			ApplicationID:    a.ApplicationID,
+			Name:             a.Name,
+			Payments:         a.Payments,
+			Paid:             a.Paid,
+			Pending:          a.Pending,
+			DeliveriesOK:     a.DeliveriesOK,
+			DeliveriesFailed: a.DeliveriesFailed,
+			DeliveriesDead:   a.DeliveriesDead,
+		})
+	}
+
 	for _, total := range stats.Currencies {
 		response.Currencies = append(response.Currencies, currencySubtotal{
 			Currency:  total.Currency,
