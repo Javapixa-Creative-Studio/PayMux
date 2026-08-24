@@ -23,3 +23,5 @@ coverage.out
 # Editors
 .DS_Store
 .vscode/
+.idea/
+*.iml
