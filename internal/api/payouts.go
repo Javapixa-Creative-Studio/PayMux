@@ -211,6 +211,49 @@ func (s *Server) handleDeleteBeneficiary(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// handleListPayoutBanks lists the bank codes a beneficiary may name.
+//
+// An application creating a beneficiary has to supply a bank code, and the
+// codes are the gateway's own vocabulary rather than anything PayMux invents.
+// Making them discoverable is the difference between an integration that works
+// first time and one that guesses.
+func (s *Server) handleListPayoutBanks(w http.ResponseWriter, r *http.Request) {
+	app := auth.ApplicationFromContext(r.Context())
+	account, err := s.payoutAccount(r.Context(), app)
+	if err != nil {
+		fail(w, r, err, genericMissing)
+		return
+	}
+	banks, err := s.payouts.Banks(r.Context(), account.ID)
+	if err != nil {
+		fail(w, r, err, genericMissing)
+		return
+	}
+	httpx.JSON(w, r, http.StatusOK, map[string]any{"data": banks})
+}
+
+// handleVerifyBeneficiary asks the bank who owns this account.
+//
+// It is a POST because it costs a gateway call and writes the answer, not
+// because anything about the beneficiary changes. The result is reported even
+// when the name does not match what was recorded: PayMux does not decide
+// whether "PT Widget" and "Widget Indonesia" are the same company.
+func (s *Server) handleVerifyBeneficiary(w http.ResponseWriter, r *http.Request) {
+	app := auth.ApplicationFromContext(r.Context())
+	account, err := s.payoutAccount(r.Context(), app)
+	if err != nil {
+		fail(w, r, err, beneficiaryMissing)
+		return
+	}
+	b, err := s.payouts.VerifyBeneficiary(r.Context(), app.ID,
+		chi.URLParam(r, "beneficiaryID"), account.ID)
+	if err != nil {
+		fail(w, r, err, beneficiaryMissing)
+		return
+	}
+	httpx.JSON(w, r, http.StatusOK, b)
+}
+
 func validateBeneficiary(req beneficiaryRequest) error {
 	var fields []struct{ name, problem string }
 	if strings.TrimSpace(req.Alias) == "" {

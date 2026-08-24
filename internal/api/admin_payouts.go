@@ -238,6 +238,36 @@ func payoutLimitsBody(l payout.Limits) map[string]any {
 	}
 }
 
+// handleAdminVerifyBeneficiary checks a destination from the dashboard.
+func (s *Server) handleAdminVerifyBeneficiary(w http.ResponseWriter, r *http.Request) {
+	applicationID := chi.URLParam(r, "applicationID")
+
+	app, err := s.applications.Get(r.Context(), applicationID)
+	if err != nil {
+		fail(w, r, err, applicationMissing)
+		return
+	}
+	account, err := s.payoutAccount(r.Context(), app)
+	if err != nil {
+		fail(w, r, err, beneficiaryMissing)
+		return
+	}
+
+	b, err := s.payouts.VerifyBeneficiary(r.Context(), applicationID,
+		chi.URLParam(r, "beneficiaryID"), account.ID)
+	if err != nil {
+		fail(w, r, err, beneficiaryMissing)
+		return
+	}
+	s.audit(r, "beneficiary.verified", "beneficiary", b.ID, map[string]any{
+		"account":      b.Account,
+		"bank":         b.Bank,
+		"name_on_file": b.Name,
+		"name_at_bank": b.VerifiedName,
+	})
+	httpx.JSON(w, r, http.StatusOK, b)
+}
+
 // handleAdminListBeneficiaries lists one application's payout destinations.
 func (s *Server) handleAdminListBeneficiaries(w http.ResponseWriter, r *http.Request) {
 	list, err := s.payouts.Repo().ListBeneficiaries(r.Context(),

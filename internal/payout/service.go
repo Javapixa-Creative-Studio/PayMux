@@ -216,6 +216,70 @@ func (s *Service) resolveBeneficiary(ctx context.Context, in RequestInput) (*Ben
 	return b, nil
 }
 
+// VerifyBeneficiary asks the bank who owns an account, and records the answer.
+//
+// This is the last point at which a wrong account number is still cheap. Once
+// a payout is submitted the money is gone to whoever that number belongs to,
+// and a digit transposed in an address book entry is indistinguishable from a
+// correct one until somebody notices they were not paid.
+//
+// The bank's answer is stored rather than compared automatically. Names differ
+// legitimately — a trading name, an initial, a spouse's account — so PayMux
+// records what the bank said and lets a person decide whether it is the right
+// person.
+func (s *Service) VerifyBeneficiary(ctx context.Context, applicationID, beneficiaryID, accountID string) (*Beneficiary, error) {
+	b, err := s.repo.GetBeneficiary(ctx, applicationID, beneficiaryID)
+	if err != nil {
+		return nil, err
+	}
+
+	acc, err := s.accounts.Get(ctx, accountID)
+	if err != nil {
+		return nil, err
+	}
+	if s.disburser == nil {
+		return nil, ErrNotSupported
+	}
+	client, err := s.disburser(ctx, acc)
+	if err != nil {
+		return nil, err
+	}
+	validator, ok := client.(gateway.AccountValidator)
+	if !ok {
+		return nil, fmt.Errorf("%w: this gateway cannot check accounts", ErrNotSupported)
+	}
+
+	result, err := validator.ValidateAccount(ctx, b.Account, b.Bank)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.repo.MarkBeneficiaryVerified(ctx, applicationID, beneficiaryID,
+		result.AccountName, time.Now().UTC()); err != nil {
+		return nil, err
+	}
+	return s.repo.GetBeneficiary(ctx, applicationID, beneficiaryID)
+}
+
+// Banks lists the destinations this account can pay out to.
+func (s *Service) Banks(ctx context.Context, accountID string) ([]gateway.Bank, error) {
+	acc, err := s.accounts.Get(ctx, accountID)
+	if err != nil {
+		return nil, err
+	}
+	if s.disburser == nil {
+		return nil, ErrNotSupported
+	}
+	client, err := s.disburser(ctx, acc)
+	if err != nil {
+		return nil, err
+	}
+	lister, ok := client.(gateway.BankLister)
+	if !ok {
+		return nil, fmt.Errorf("%w: this gateway cannot list banks", ErrNotSupported)
+	}
+	return lister.ListBanks(ctx)
+}
+
 // Approve releases a payout for submission.
 func (s *Service) Approve(ctx context.Context, payoutID, adminID string) (*Payout, error) {
 	p, err := s.repo.Get(ctx, payoutID)

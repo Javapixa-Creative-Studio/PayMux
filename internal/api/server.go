@@ -204,11 +204,14 @@ func (s *Server) applicationRoutes(r chi.Router) {
 		r.Get("/{payoutID}", s.handleGetPayout)
 	})
 
+	r.Get("/payout-banks", s.handleListPayoutBanks)
+
 	r.Route("/beneficiaries", func(r chi.Router) {
 		r.Post("/", s.handleCreateBeneficiary)
 		r.Get("/", s.handleListBeneficiaries)
 		r.Get("/{beneficiaryID}", s.handleGetBeneficiary)
 		r.Patch("/{beneficiaryID}", s.handleUpdateBeneficiary)
+		r.Post("/{beneficiaryID}/verify", s.handleVerifyBeneficiary)
 		r.Delete("/{beneficiaryID}", s.handleDeleteBeneficiary)
 	})
 
@@ -268,6 +271,7 @@ func (s *Server) adminRoutes(r chi.Router) {
 				r.Get("/payout-limits", s.handleGetPayoutLimits)
 				r.Patch("/payout-limits", s.handleSetPayoutLimits)
 				r.Get("/beneficiaries", s.handleAdminListBeneficiaries)
+				r.Post("/beneficiaries/{beneficiaryID}/verify", s.handleAdminVerifyBeneficiary)
 			})
 		})
 

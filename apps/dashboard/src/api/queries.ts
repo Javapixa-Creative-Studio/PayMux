@@ -493,6 +493,27 @@ export function useSetPayoutLimits(applicationID: string) {
   });
 }
 
+/**
+ * Asks the bank who owns a beneficiary's account.
+ *
+ * The answer is stored, not judged: names differ legitimately, so PayMux
+ * records what the bank said and a person decides whether it is the right
+ * person.
+ */
+export function useVerifyBeneficiary(applicationID: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (beneficiaryID: string) =>
+      apiFetch<Beneficiary>(
+        `${ADMIN}/applications/${applicationID}/beneficiaries/${beneficiaryID}/verify`,
+        { method: 'POST' },
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['beneficiaries', applicationID] });
+    },
+  });
+}
+
 export function useBeneficiaries(applicationID: string | undefined) {
   return useQuery({
     queryKey: ['beneficiaries', applicationID],

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { useApplications, usePayoutDecision, usePayouts } from '../api/queries';
 import type { Payout, PayoutStatus } from '../api/types';
@@ -34,6 +35,7 @@ const STATUSES: PayoutStatus[] = [
 export function PayoutsPage() {
   const [status, setStatus] = useState('');
   const [deciding, setDeciding] = useState<Payout | null>(null);
+  const navigate = useNavigate();
 
   const payouts = usePayouts({ status: status || undefined, limit: 50 });
   const pending = usePayouts({ status: 'REQUESTED', limit: 50 });
@@ -158,9 +160,8 @@ export function PayoutsPage() {
                 {payouts.data.data.map((payout) => (
                   <tr
                     key={payout.id}
-                    className={rowClass(payout.status)}
-                    onClick={() => setDeciding(payout)}
-                    style={{ cursor: 'pointer' }}
+                    className={`${rowClass(payout.status) ?? ''} is-clickable`.trim()}
+                    onClick={() => navigate(`/payouts/${payout.id}`)}
                   >
                     <td data-label="Reference" data-primary="" className="mono">
                       {payout.application_payout_id}

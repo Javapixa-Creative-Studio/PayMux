@@ -1,7 +1,28 @@
 import { useEffect, useState, type FormEvent } from 'react';
 
-import { useBeneficiaries, usePayoutLimits, useSetPayoutLimits } from '../api/queries';
+import {
+  useBeneficiaries,
+  usePayoutLimits,
+  useSetPayoutLimits,
+  useVerifyBeneficiary,
+} from '../api/queries';
 import { Empty, ErrorNotice, Loading, Tag, Timestamp } from './primitives';
+
+/**
+ * Whether the bank's answer looks like the name on file.
+ *
+ * Deliberately forgiving: banks abbreviate, drop honorifics and uppercase
+ * everything, so an exact comparison would flag almost every real account.
+ * This only asks whether one contains the other once both are reduced to
+ * letters, and a mismatch is a prompt to look rather than a verdict.
+ */
+function nameMatches(onFile: string, atBank: string | undefined): boolean {
+  if (!atBank) return true;
+  const reduce = (v: string) => v.toLowerCase().replace(/[^a-z]/g, '');
+  const a = reduce(onFile);
+  const b = reduce(atBank);
+  return a.includes(b) || b.includes(a);
+}
 
 /**
  * What an application may pay out, and where to.
@@ -16,6 +37,7 @@ export function PayoutPermissions({ applicationId }: { applicationId: string }) 
   const limits = usePayoutLimits(applicationId);
   const save = useSetPayoutLimits(applicationId);
   const beneficiaries = useBeneficiaries(applicationId);
+  const verify = useVerifyBeneficiary(applicationId);
 
   const [enabled, setEnabled] = useState(false);
   const [requiresApproval, setRequiresApproval] = useState(true);
@@ -60,10 +82,16 @@ export function PayoutPermissions({ applicationId }: { applicationId: string }) 
       </div>
 
       <div className="panel__body">
-        {(limits.isError || save.isError) && (
+        {(limits.isError || save.isError || verify.isError) && (
           <ErrorNotice
-            error={limits.error ?? save.error}
-            action={save.isError ? 'The limits were not saved.' : 'Could not load the limits.'}
+            error={limits.error ?? save.error ?? verify.error}
+            action={
+              verify.isError
+                ? 'The bank could not confirm that account.'
+                : save.isError
+                  ? 'The limits were not saved.'
+                  : 'Could not load the limits.'
+            }
           />
         )}
 
@@ -163,8 +191,9 @@ export function PayoutPermissions({ applicationId }: { applicationId: string }) 
                 <th>Alias</th>
                 <th>Name</th>
                 <th>Account</th>
-                <th>Verified</th>
+                <th>Account holder</th>
                 <th>Added</th>
+                <th />
               </tr>
             </thead>
             <tbody>
@@ -177,17 +206,36 @@ export function PayoutPermissions({ applicationId }: { applicationId: string }) 
                   <td data-label="Account" className="mono">
                     {b.bank.toUpperCase()} {b.account}
                   </td>
-                  <td data-label="Verified">
+                  <td data-label="Account holder" className="cell--stack">
                     {b.disabled_at ? (
                       <Tag tone="inert">disabled</Tag>
                     ) : b.verified_at ? (
-                      <Tag tone="settled">verified</Tag>
+                      // The bank's own answer, shown verbatim. A name that
+                      // differs is not necessarily wrong — that judgement is
+                      // the operator's, and they can only make it if they can
+                      // see what the bank actually said.
+                      <span className={nameMatches(b.name, b.verified_name) ? '' : 'gateway-status'}>
+                        {b.verified_name || '—'}
+                        {!nameMatches(b.name, b.verified_name) && (
+                          <span style={{ color: 'var(--signal-pending)' }}> · differs</span>
+                        )}
+                      </span>
                     ) : (
                       <span className="gateway-status">not checked</span>
                     )}
                   </td>
                   <td data-label="Added">
                     <Timestamp value={b.created_at} />
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      className="button button--small"
+                      onClick={() => verify.mutate(b.id)}
+                      disabled={verify.isPending}
+                    >
+                      {verify.isPending && verify.variables === b.id ? 'Checking…' : 'Check account'}
+                    </button>
                   </td>
                 </tr>
               ))}
