@@ -293,15 +293,25 @@ func (r *Repository) TouchSynced(ctx context.Context, payoutID string) error {
 // FOR UPDATE SKIP LOCKED is the same mechanism the delivery queue uses. It
 // matters more here: two workers both deciding to submit the same approved
 // payout is how one transfer becomes two.
-func (r *Repository) ClaimUnsettled(ctx context.Context, limit int, olderThan time.Duration) ([]*Payout, error) {
+//
+// The wait applies only to payouts already at the gateway. An APPROVED payout
+// has not been sent, so making it wait only delays somebody being paid, while
+// a SUBMITTED one read too soon reports an interim status — Midtrans asks for
+// a buffer before reading a payout back, and honouring it avoids recording a
+// state that was never final.
+func (r *Repository) ClaimUnsettled(ctx context.Context, limit int, settleWait time.Duration) ([]*Payout, error) {
 	rows, err := r.q(ctx).Query(ctx, `
 		SELECT `+payoutColumns+` FROM payouts
-		WHERE normalized_status IN ('APPROVED', 'SUBMITTED', 'UNRESOLVED')
-		  AND (last_synced_at IS NULL OR last_synced_at < now() - $2::interval)
-		ORDER BY last_synced_at NULLS FIRST
+		WHERE (
+		        normalized_status = 'APPROVED'
+		     OR (normalized_status IN ('SUBMITTED', 'UNRESOLVED')
+		         AND (last_synced_at IS NULL OR last_synced_at < now() - $2::interval)
+		         AND updated_at < now() - $2::interval)
+		      )
+		ORDER BY normalized_status = 'APPROVED' DESC, last_synced_at NULLS FIRST
 		LIMIT $1
 		FOR UPDATE SKIP LOCKED`,
-		limit, olderThan.String())
+		limit, settleWait.String())
 	if err != nil {
 		return nil, fmt.Errorf("payout: claim unsettled: %w", err)
 	}

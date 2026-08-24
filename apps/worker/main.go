@@ -29,6 +29,22 @@ var version = "dev"
 // pruned. These are cheap deletes, so the interval is generous.
 const housekeepingInterval = time.Hour
 
+// Payout reconciliation settings.
+//
+// Midtrans asks for a ten-minute buffer before reading a payout back, because
+// a status read too early reports an interim state rather than a final one. So
+// the loop runs often but only touches payouts it has not looked at recently,
+// and the two intervals together decide how quickly an approved payout leaves.
+const (
+	payoutInterval = 30 * time.Second
+	// How long a payout must sit at the gateway before PayMux reads it back.
+	// Midtrans asks for a buffer, because a status read too early reports an
+	// interim state rather than a final one. Approved payouts are exempt: they
+	// have not been sent, so waiting only delays somebody being paid.
+	payoutSettleWait = 10 * time.Minute
+	payoutBatchSize  = 20
+)
+
 func main() {
 	// The container image has no shell or curl, so the binary probes itself
 	// for the container health check.
@@ -144,11 +160,48 @@ func run() error {
 		runHousekeeping(ctx, container, logger)
 	}()
 
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		runPayoutReconciliation(ctx, container, logger)
+	}()
+
 	<-ctx.Done()
 	logger.Info("shutdown signal received; finishing in-flight work")
 	wg.Wait()
 	logger.Info("shutdown complete")
 	return nil
+}
+
+// runPayoutReconciliation submits approved payouts and settles the ones whose
+// outcome PayMux does not yet know.
+//
+// Payments can wait for a notification to arrive. Payouts cannot: Midtrans
+// pushes nothing for them, so if this loop stops, an approved payout is never
+// sent and an unresolved one is never settled. Both failures are silent from
+// the outside, which is why it logs when it does something rather than only
+// when it fails.
+func runPayoutReconciliation(ctx context.Context, container *app.Container, logger *slog.Logger) {
+	if container.Payouts == nil {
+		return
+	}
+	ticker := time.NewTicker(payoutInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			// The wait applies only to payouts already at the gateway; the
+			// claim query orders approved ones first and exempts them.
+			if n, err := container.Payouts.ReconcileBatch(ctx, payoutBatchSize, payoutSettleWait); err != nil {
+				logger.Error("could not reconcile payouts", "error", err)
+			} else if n > 0 {
+				logger.Info("reconciled payouts", "count", n)
+			}
+		}
+	}
 }
 
 // startMetricsServer exposes the worker's metrics.
