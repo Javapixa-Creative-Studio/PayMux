@@ -105,6 +105,12 @@ type updateGatewayAccountRequest struct {
 	Environment *string `json:"environment"`
 	Enabled     *bool   `json:"enabled"`
 	IsDefault   *bool   `json:"is_default"`
+
+	// Disbursement credentials. Sending an empty string clears one, which is
+	// how an operator revokes PayMux's ability to pay out without disturbing
+	// the account that takes payments.
+	DisbursementCreatorKey  *string `json:"disbursement_creator_key"`
+	DisbursementApproverKey *string `json:"disbursement_approver_key"`
 }
 
 func (s *Server) handleUpdateGatewayAccount(w http.ResponseWriter, r *http.Request) {
@@ -127,6 +133,17 @@ func (s *Server) handleUpdateGatewayAccount(w http.ResponseWriter, r *http.Reque
 			return
 		}
 		update.ServerKey = crypto.Secret(*req.ServerKey)
+	}
+	// A pointer to an empty string clears a disbursement key rather than being
+	// rejected: revoking one is a legitimate act, unlike blanking a server key
+	// which would leave the account unable to take payments.
+	if req.DisbursementCreatorKey != nil {
+		secret := crypto.Secret(*req.DisbursementCreatorKey)
+		update.DisbursementCreatorKey = &secret
+	}
+	if req.DisbursementApproverKey != nil {
+		secret := crypto.Secret(*req.DisbursementApproverKey)
+		update.DisbursementApproverKey = &secret
 	}
 	if req.Environment != nil {
 		env := gateway.Environment(*req.Environment)

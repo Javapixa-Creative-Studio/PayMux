@@ -23,6 +23,7 @@ import (
 	"github.com/Javapixa-Creative-Studio/PayMux/internal/netsafe"
 	"github.com/Javapixa-Creative-Studio/PayMux/internal/notification"
 	"github.com/Javapixa-Creative-Studio/PayMux/internal/payment"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/payout"
 	"github.com/Javapixa-Creative-Studio/PayMux/internal/storage"
 	"github.com/Javapixa-Creative-Studio/PayMux/internal/subscription"
 )
@@ -55,6 +56,8 @@ type Container struct {
 	Notifications    *notification.Processor
 	NotificationRepo *notification.Repository
 	Subscriptions    *subscription.Service
+	Payouts          *payout.Service
+	PayoutRepo       *payout.Repository
 
 	// GatewayHTTPClient is shared by every adapter (PRD §74).
 	GatewayHTTPClient *http.Client
@@ -118,6 +121,19 @@ func Build(cfg *config.Config, db *storage.DB, logger *slog.Logger) (*Container,
 	subscriptions := subscription.NewService(
 		subscription.NewRepository(db), gatewayAccounts, registry, publisher, logger)
 
+	// Disbursement is built per call rather than registered like a payment
+	// adapter: the credentials live on the account and have to be unsealed
+	// each time, and an account without them must not yield a client at all.
+	payoutRepo := payout.NewRepository(db)
+	payouts := payout.NewService(db, payoutRepo, gatewayAccounts,
+		func(_ context.Context, acc *gateway.Account) (gateway.DisbursementGateway, error) {
+			if !acc.CanDisburse() {
+				return nil, payout.ErrDisbursementNotConfigured
+			}
+			return midtrans.NewDisburser(acc.Environment,
+				acc.DisbursementCreatorKey, acc.DisbursementApproverKey, gatewayClient)
+		}, publisher, logger)
+
 	sender := delivery.NewSender(guard, cfg.WebhookTimeout, "PayMux-Webhook/1.0")
 
 	return &Container{
@@ -144,6 +160,8 @@ func Build(cfg *config.Config, db *storage.DB, logger *slog.Logger) (*Container,
 		Notifications:     processor,
 		NotificationRepo:  notificationRepo,
 		Subscriptions:     subscriptions,
+		Payouts:           payouts,
+		PayoutRepo:        payoutRepo,
 		GatewayHTTPClient: gatewayClient,
 	}, nil
 }

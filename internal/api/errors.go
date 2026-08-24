@@ -9,6 +9,7 @@ import (
 	"github.com/Javapixa-Creative-Studio/PayMux/internal/gateway"
 	"github.com/Javapixa-Creative-Studio/PayMux/internal/httpx"
 	"github.com/Javapixa-Creative-Studio/PayMux/internal/payment"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/payout"
 	"github.com/Javapixa-Creative-Studio/PayMux/internal/storage"
 )
 
@@ -25,6 +26,8 @@ var (
 	paymentMissing     = notFound{httpx.CodePaymentNotFound, "Payment was not found."}
 	refundMissing      = notFound{httpx.CodeRefundNotFound, "Refund was not found."}
 	genericMissing     = notFound{httpx.CodeNotFound, "The requested resource was not found."}
+	payoutMissing      = notFound{"payout_not_found", "Payout was not found."}
+	beneficiaryMissing = notFound{"beneficiary_not_found", "Beneficiary was not found."}
 )
 
 // translate converts a domain error into PayMux's public error contract.
@@ -34,6 +37,13 @@ var (
 func translate(err error, missing notFound) error {
 	if err == nil {
 		return nil
+	}
+
+	// An error a handler built deliberately already says what it means, so it
+	// travels unchanged rather than being re-derived or flattened to a 500.
+	var typed *httpx.Error
+	if errors.As(err, &typed) {
+		return typed
 	}
 
 	var validation *application.ValidationError
@@ -101,6 +111,63 @@ func translate(err error, missing notFound) error {
 	case errors.Is(err, payment.ErrNotCancelable):
 		return httpx.NewError(http.StatusUnprocessableEntity, httpx.CodeInvalidState,
 			"This payment can no longer be canceled.").WithCause(err)
+
+	// Payouts. Each of these is a refusal a caller can act on, and an opaque
+	// 500 in their place would tell somebody trying to move money only that
+	// something went wrong.
+	case errors.Is(err, payout.ErrPayoutsDisabled):
+		return httpx.ErrForbidden(
+			"This application is not permitted to disburse. Turn payouts on for it first.").WithCause(err)
+
+	case errors.Is(err, payout.ErrExceedsMaxAmount):
+		return httpx.ErrValidation("The amount exceeds this application's per-payout limit.").
+			WithField("amount", "exceeds the per-payout limit").WithCause(err)
+
+	case errors.Is(err, payout.ErrExceedsDailyLimit):
+		return httpx.ErrValidation("The amount exceeds this application's daily payout limit.").
+			WithField("amount", "exceeds the daily limit").WithCause(err)
+
+	case errors.Is(err, payout.ErrDuplicatePayoutID):
+		return httpx.ErrConflict(httpx.CodeConflict,
+			"A payout with this application_payout_id already exists.").WithCause(err)
+
+	case errors.Is(err, payout.ErrBeneficiaryNotFound):
+		return httpx.ErrNotFound("beneficiary_not_found", "No such beneficiary.").WithCause(err)
+
+	case errors.Is(err, payout.ErrBeneficiaryDisabled):
+		return httpx.NewError(http.StatusUnprocessableEntity, httpx.CodeInvalidState,
+			"This beneficiary is disabled and cannot receive payouts.").WithCause(err)
+
+	case errors.Is(err, payout.ErrDuplicateAlias):
+		return httpx.ErrConflict(httpx.CodeConflict,
+			"A beneficiary with this alias already exists.").WithCause(err)
+
+	case errors.Is(err, payout.ErrPayoutNotFound):
+		return httpx.ErrNotFound("payout_not_found", "No such payout.").WithCause(err)
+
+	case errors.Is(err, payout.ErrNotPending):
+		return httpx.NewError(http.StatusUnprocessableEntity, httpx.CodeInvalidState,
+			"This payout is no longer awaiting approval.").WithCause(err)
+
+	case errors.Is(err, payout.ErrSelfApproval):
+		return httpx.ErrForbidden(
+			"A payout cannot be approved by the person who requested it.").WithCause(err)
+
+	case errors.Is(err, payout.ErrDisbursementNotConfigured), errors.Is(err, payout.ErrNotSupported):
+		return httpx.NewError(http.StatusPreconditionFailed, "disbursement_not_configured",
+			"This gateway account has no disbursement credentials.").WithCause(err)
+
+	case errors.Is(err, payout.ErrStaleTransition):
+		return httpx.ErrConflict(httpx.CodeConflict,
+			"This payout changed while the request was in flight. Read it again.").WithCause(err)
+
+	// An unknown outcome is reported as such rather than as a success or a
+	// failure. The caller must not retry with a new reference: PayMux is
+	// already holding the original idempotency key and will resolve it.
+	case errors.Is(err, gateway.ErrOutcomeUnknown), errors.Is(err, payout.ErrStranded):
+		return httpx.NewError(http.StatusAccepted, "outcome_unknown",
+			"The payout was sent but its outcome is not yet known. "+
+				"PayMux is resolving it; do not submit it again.").WithCause(err)
 
 	case errors.Is(err, payment.ErrNotRefundable):
 		return httpx.NewError(http.StatusUnprocessableEntity, httpx.CodeInvalidState,

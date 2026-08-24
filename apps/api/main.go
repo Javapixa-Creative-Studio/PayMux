@@ -98,6 +98,7 @@ func run() error {
 		Notifications:    container.Notifications,
 		NotificationRepo: container.NotificationRepo,
 		Subscriptions:    container.Subscriptions,
+		Payouts:          container.Payouts,
 		Metrics:          container.Metrics,
 	})
 

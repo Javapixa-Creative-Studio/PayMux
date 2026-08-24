@@ -18,6 +18,7 @@ import (
 	"github.com/Javapixa-Creative-Studio/PayMux/internal/metrics"
 	"github.com/Javapixa-Creative-Studio/PayMux/internal/notification"
 	"github.com/Javapixa-Creative-Studio/PayMux/internal/payment"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/payout"
 	"github.com/Javapixa-Creative-Studio/PayMux/internal/storage"
 	"github.com/Javapixa-Creative-Studio/PayMux/internal/subscription"
 )
@@ -43,6 +44,7 @@ type Server struct {
 	notifications    *notification.Processor
 	notificationRepo *notification.Repository
 	subscriptions    *subscription.Service
+	payouts          *payout.Service
 	metrics          *metrics.Metrics
 
 	router chi.Router
@@ -68,6 +70,7 @@ type Deps struct {
 	Notifications    *notification.Processor
 	NotificationRepo *notification.Repository
 	Subscriptions    *subscription.Service
+	Payouts          *payout.Service
 	Metrics          *metrics.Metrics
 }
 
@@ -88,6 +91,7 @@ func New(deps Deps) *Server {
 		idempotency:      deps.Idempotency,
 		events:           deps.Events,
 		deliveries:       deps.Deliveries,
+		payouts:          deps.Payouts,
 		notifications:    deps.Notifications,
 		notificationRepo: deps.NotificationRepo,
 		subscriptions:    deps.Subscriptions,
@@ -192,6 +196,22 @@ func (s *Server) applicationRoutes(r chi.Router) {
 		})
 	})
 
+	// Payouts sit behind the same key as payments but a different permission:
+	// holding an API key is not the same as being allowed to move money out.
+	r.Route("/payouts", func(r chi.Router) {
+		r.Post("/", s.handleCreatePayout)
+		r.Get("/", s.handleListPayouts)
+		r.Get("/{payoutID}", s.handleGetPayout)
+	})
+
+	r.Route("/beneficiaries", func(r chi.Router) {
+		r.Post("/", s.handleCreateBeneficiary)
+		r.Get("/", s.handleListBeneficiaries)
+		r.Get("/{beneficiaryID}", s.handleGetBeneficiary)
+		r.Patch("/{beneficiaryID}", s.handleUpdateBeneficiary)
+		r.Delete("/{beneficiaryID}", s.handleDeleteBeneficiary)
+	})
+
 	r.Get("/refunds", s.handleListApplicationRefunds)
 	r.Get("/events", s.handleListApplicationEvents)
 	r.Get("/deliveries", s.handleListApplicationDeliveries)
@@ -244,6 +264,10 @@ func (s *Server) adminRoutes(r chi.Router) {
 				r.Patch("/destinations/{destinationID}", s.handleUpdateDestination)
 				r.Delete("/destinations/{destinationID}", s.handleDeleteDestination)
 				r.Post("/destinations/{destinationID}/rotate-secret", s.handleRotateDestinationSecret)
+
+				r.Get("/payout-limits", s.handleGetPayoutLimits)
+				r.Patch("/payout-limits", s.handleSetPayoutLimits)
+				r.Get("/beneficiaries", s.handleAdminListBeneficiaries)
 			})
 		})
 
@@ -255,6 +279,14 @@ func (s *Server) adminRoutes(r chi.Router) {
 			r.Post("/{paymentID}/expire", s.handleAdminExpirePayment)
 			r.Post("/{paymentID}/refunds", s.handleCreateRefund)
 			r.Get("/{paymentID}/refunds", s.handleListRefunds)
+		})
+
+		r.Route("/payouts", func(r chi.Router) {
+			r.Get("/", s.handleAdminListPayouts)
+			r.Get("/{payoutID}", s.handleAdminGetPayout)
+			r.Post("/{payoutID}/approve", s.handleApprovePayout)
+			r.Post("/{payoutID}/reject", s.handleRejectPayout)
+			r.Post("/{payoutID}/sync", s.handleSyncPayout)
 		})
 
 		r.Get("/refunds", s.handleAdminListRefunds)
