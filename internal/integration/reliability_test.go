@@ -430,3 +430,35 @@ func TestRefundListingStaysWithinTheApplication(t *testing.T) {
 		}
 	}
 }
+
+// TestApplicationAPIIsRateLimited proves the application API is bounded, not
+// just the login endpoint. Without this, a leaked API key — or a client stuck
+// in a retry loop — can hammer PayMux and the gateway behind it.
+func TestApplicationAPIIsRateLimited(t *testing.T) {
+	t.Setenv("PAYMUX_RATE_LIMIT_PER_SECOND", "1")
+	t.Setenv("PAYMUX_RATE_LIMIT_BURST", "3")
+
+	h := newHarness(t)
+	h.setupGatewayAccount()
+	productA := h.setupApplication("Product A", "product-a")
+	productB := h.setupApplication("Product B", "product-b")
+
+	var limited bool
+	for i := 0; i < 12; i++ {
+		resp, _ := h.request(http.MethodGet, "/api/v1/payments", nil, withKey(productA.Key))
+		if resp.StatusCode == http.StatusTooManyRequests {
+			limited = true
+			break
+		}
+	}
+	if !limited {
+		t.Fatal("the application API accepted an unbounded burst")
+	}
+
+	// The budget belongs to the key, not the address: both applications call
+	// from the same test process, and one must not exhaust the other.
+	resp, raw := h.request(http.MethodGet, "/api/v1/payments", nil, withKey(productB.Key))
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("a second application was limited by the first's traffic: %d %s", resp.StatusCode, raw)
+	}
+}

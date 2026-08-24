@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -29,10 +30,46 @@ var version = "dev"
 const housekeepingInterval = time.Hour
 
 func main() {
+	// The container image has no shell or curl, so the binary probes itself
+	// for the container health check.
+	healthcheck := flag.Bool("healthcheck", false, "probe the local metrics endpoint and exit")
+	flag.Parse()
+
+	if *healthcheck {
+		os.Exit(probeHealth())
+	}
 	if err := run(); err != nil {
 		fmt.Fprintln(os.Stderr, "paymux-worker: "+err.Error())
 		os.Exit(1)
 	}
+}
+
+// probeHealth performs the container health check and returns an exit code.
+//
+// The worker's only listener is the metrics server, so that is what proves the
+// process is alive and serving rather than wedged.
+func probeHealth() int {
+	addr := os.Getenv("PAYMUX_METRICS_ADDR")
+	if addr == "" {
+		addr = ":9090"
+	}
+	if addr[0] == ':' {
+		addr = "127.0.0.1" + addr
+	}
+
+	client := &http.Client{Timeout: 3 * time.Second}
+	resp, err := client.Get("http://" + addr + "/health") //nolint:gosec,noctx // self-probe on a fixed local address
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "healthcheck: "+err.Error())
+		return 1
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		fmt.Fprintf(os.Stderr, "healthcheck: HTTP %d\n", resp.StatusCode)
+		return 1
+	}
+	return 0
 }
 
 func run() error {

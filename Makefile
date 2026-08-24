@@ -50,6 +50,10 @@ lint: ## Vet and format-check the Go sources
 lint-full: ## Run golangci-lint, as CI does
 	golangci-lint run ./...
 
+.PHONY: vuln
+vuln: ## Check dependencies and the standard library for known CVEs
+	govulncheck ./...
+
 # ---------------------------------------------------------------------------
 # Dashboard
 # ---------------------------------------------------------------------------

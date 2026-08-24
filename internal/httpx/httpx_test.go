@@ -334,3 +334,56 @@ func TestJSONWritesContentType(t *testing.T) {
 		t.Errorf("body = %s", rr.Body.String())
 	}
 }
+
+// A wildcard origin combined with credentialed responses would let any site
+// drive the admin API with an operator's session cookie. The browser forbids
+// literal "*" with credentials, and reflecting the caller's origin instead is
+// the same hole in disguise — so the wildcard must not be honoured at all.
+func TestCORSRefusesWildcardBecauseResponsesCarryCredentials(t *testing.T) {
+	h := CORS([]string{"*"})(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+
+	rr := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/", nil)
+	r.Header.Set("Origin", "https://evil.example.com")
+	h.ServeHTTP(rr, r)
+
+	if got := rr.Header().Get("Access-Control-Allow-Origin"); got != "" {
+		t.Fatalf("a wildcard configuration reflected %q alongside credentials", got)
+	}
+}
+
+func TestCORSStillAllowsConfiguredOriginsWhenAWildcardIsPresent(t *testing.T) {
+	// An operator who writes "*, https://dash.example.com" should still get
+	// the origin they named, rather than losing access entirely.
+	h := CORS([]string{"*", "https://dash.example.com"})(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+
+	rr := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/", nil)
+	r.Header.Set("Origin", "https://dash.example.com")
+	h.ServeHTTP(rr, r)
+
+	if rr.Header().Get("Access-Control-Allow-Origin") != "https://dash.example.com" {
+		t.Fatal("a named origin was lost because a wildcard was also configured")
+	}
+}
+
+func TestProxyTrustIsConfigurable(t *testing.T) {
+	// Without this being settable, PayMux behind a proxy sees every request as
+	// coming from the proxy: per-client rate limits collapse into one bucket
+	// and the audit trail records the wrong address.
+	defer SetTrustProxyHeaders(false)
+
+	r := httptest.NewRequest(http.MethodGet, "/", nil)
+	r.RemoteAddr = "10.0.0.5:1234"
+	r.Header.Set("X-Forwarded-For", "203.0.113.9, 10.0.0.1")
+
+	SetTrustProxyHeaders(false)
+	if got := ClientIP(r); got != "10.0.0.5" {
+		t.Errorf("with proxy trust off, ClientIP = %q, want the direct peer", got)
+	}
+
+	SetTrustProxyHeaders(true)
+	if got := ClientIP(r); got != "203.0.113.9" {
+		t.Errorf("with proxy trust on, ClientIP = %q, want the original client", got)
+	}
+}

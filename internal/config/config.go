@@ -45,6 +45,15 @@ type Config struct {
 	// for self-hosted setups whose products live on the same private network.
 	AllowPrivateWebhookDestinations bool
 
+	// TrustProxyHeaders believes X-Forwarded-For when PayMux runs behind a
+	// proxy that overwrites it. Leave it off when PayMux is directly exposed.
+	TrustProxyHeaders bool
+
+	// RateLimitPerSecond and RateLimitBurst bound how fast one API key may
+	// call the application API.
+	RateLimitPerSecond float64
+	RateLimitBurst     int
+
 	HTTPClientTimeout   time.Duration
 	WebhookTimeout      time.Duration
 	MaxRequestBodyBytes int64
@@ -76,6 +85,9 @@ func Load() (*Config, error) {
 		DatabaseConnTimeout: getDuration("PAYMUX_DB_CONN_TIMEOUT", 10*time.Second),
 		WorkerConcurrency:   getInt("PAYMUX_WORKER_CONCURRENCY", 20),
 		WorkerPollInterval:  getDuration("PAYMUX_WORKER_POLL_INTERVAL", 2*time.Second),
+		TrustProxyHeaders:   getBool("PAYMUX_TRUST_PROXY_HEADERS", false),
+		RateLimitPerSecond:  getFloat("PAYMUX_RATE_LIMIT_PER_SECOND", 50),
+		RateLimitBurst:      getInt("PAYMUX_RATE_LIMIT_BURST", 100),
 		HTTPClientTimeout:   getDuration("PAYMUX_HTTP_CLIENT_TIMEOUT", 30*time.Second),
 		WebhookTimeout:      getDuration("PAYMUX_WEBHOOK_TIMEOUT", 15*time.Second),
 		MaxRequestBodyBytes: int64(getInt("PAYMUX_MAX_REQUEST_BODY_BYTES", 1<<20)),
@@ -106,6 +118,12 @@ func Load() (*Config, error) {
 	}
 	c.EncryptionKey = key
 
+	if c.RateLimitPerSecond <= 0 {
+		errs = append(errs, errors.New("PAYMUX_RATE_LIMIT_PER_SECOND must be greater than zero"))
+	}
+	if c.RateLimitBurst < 1 {
+		errs = append(errs, errors.New("PAYMUX_RATE_LIMIT_BURST must be at least 1"))
+	}
 	if c.WorkerConcurrency < 1 {
 		errs = append(errs, errors.New("PAYMUX_WORKER_CONCURRENCY must be at least 1"))
 	}
@@ -157,6 +175,18 @@ func getInt(key string, def int) int {
 		return def
 	}
 	return n
+}
+
+func getFloat(key string, def float64) float64 {
+	v, ok := os.LookupEnv(key)
+	if !ok || v == "" {
+		return def
+	}
+	f, err := strconv.ParseFloat(v, 64)
+	if err != nil {
+		return def
+	}
+	return f
 }
 
 func getBool(key string, def bool) bool {

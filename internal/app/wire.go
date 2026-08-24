@@ -18,6 +18,7 @@ import (
 	"github.com/Javapixa-Creative-Studio/PayMux/internal/event"
 	"github.com/Javapixa-Creative-Studio/PayMux/internal/gateway"
 	"github.com/Javapixa-Creative-Studio/PayMux/internal/gateway/midtrans"
+	"github.com/Javapixa-Creative-Studio/PayMux/internal/httpx"
 	"github.com/Javapixa-Creative-Studio/PayMux/internal/metrics"
 	"github.com/Javapixa-Creative-Studio/PayMux/internal/netsafe"
 	"github.com/Javapixa-Creative-Studio/PayMux/internal/notification"
@@ -66,6 +67,10 @@ func Build(cfg *config.Config, db *storage.DB, logger *slog.Logger) (*Container,
 	if err != nil {
 		return nil, fmt.Errorf("app: build sealer: %w", err)
 	}
+
+	// Decided once, at startup: whether a forwarded address may be believed
+	// affects rate limiting and every audit record.
+	httpx.SetTrustProxyHeaders(cfg.TrustProxyHeaders)
 	guard := netsafe.NewGuard(cfg.AllowPrivateWebhookDestinations)
 
 	appRepo := application.NewRepository(db, sealer)

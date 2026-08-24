@@ -154,6 +154,14 @@ func (s *Server) routes() chi.Router {
 func (s *Server) applicationRoutes(r chi.Router) {
 	r.Use(s.authMiddleware.RequireApplication)
 
+	// Limited after authentication so the budget belongs to the API key
+	// rather than the address: several applications may share an egress IP,
+	// and one of them must not be able to exhaust another's allowance. A
+	// leaked key is also bounded this way rather than being free to hammer
+	// the gateway.
+	limiter := httpx.NewRateLimiter(s.cfg.RateLimitPerSecond, s.cfg.RateLimitBurst)
+	r.Use(limiter.Middleware(apiKeyRateLimitKey))
+
 	r.Route("/payments", func(r chi.Router) {
 		r.Post("/", s.handleCreatePayment)
 		r.Get("/", s.handleListPayments)
@@ -306,6 +314,18 @@ func (s *Server) audit(r *http.Request, action, targetType, targetID string, met
 // specific constraint without importing the storage package everywhere.
 func storageIsUnique(err error, constraints ...string) bool {
 	return storage.IsUniqueViolation(err, constraints...)
+}
+
+// apiKeyRateLimitKey identifies the caller for rate limiting.
+//
+// Falling back to the address matters: without it an unauthenticated or
+// malformed request would return an empty key, which the limiter treats as
+// "exempt".
+func apiKeyRateLimitKey(r *http.Request) string {
+	if key := auth.APIKeyFromContext(r.Context()); key != nil {
+		return "key:" + key.ID
+	}
+	return "ip:" + httpx.ClientIP(r)
 }
 
 // routePattern reports the chi route a request matched, e.g.
