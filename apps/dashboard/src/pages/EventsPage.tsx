@@ -100,13 +100,13 @@ export function EventsPage() {
                     className="is-clickable"
                     onClick={() => setInspecting(event)}
                   >
-                    <td>
+                    <td data-label="Event">
                       <Id value={event.id} />
                     </td>
-                    <td>
+                    <td data-label="Type" data-primary="">
                       <Tag tone={tone(event.type)}>{event.type}</Tag>
                     </td>
-                    <td>
+                    <td data-label="Payment">
                       {event.payment_id ? (
                         <Link
                           to={`/payments/${event.payment_id}`}
@@ -119,8 +119,10 @@ export function EventsPage() {
                         '—'
                       )}
                     </td>
-                    <td className="gateway-status">{event.data?.gateway_status || event.gateway}</td>
-                    <td>
+                    <td data-label="Gateway" className="gateway-status">
+                      {event.data?.gateway_status || event.gateway}
+                    </td>
+                    <td data-label="Published">
                       <Timestamp value={event.created_at} />
                     </td>
                   </tr>

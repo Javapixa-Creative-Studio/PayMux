@@ -50,6 +50,14 @@
   --rail-width: 208px;
   --strip-height: 46px;
 
+  /* Phone chrome. The tab bar is fixed, so the page reserves its height plus
+     whatever the device's home indicator occupies. */
+  --tabbar-height: 56px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+  /* 44px is the smallest reliably tappable target on both platforms. */
+  --touch: 44px;
+
   color-scheme: light dark;
 }
 
@@ -837,6 +845,148 @@ textarea:focus {
 }
 
 /* ---------------------------------------------------------------------------
+   The fan-out reflowed as a tree, for phones. Same reading: the gateway feeds
+   the hub, the hub fans out, and a connector's colour is its branch's health.
+   Inert until the breakpoint turns it on.
+   --------------------------------------------------------------------------- */
+
+.fanout__stack {
+  display: none;
+  position: relative;
+  margin: 0;
+  padding: 10px 14px 12px;
+  list-style: none;
+}
+
+.fanout__step {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  min-height: 30px;
+  padding: 4px 0;
+}
+
+.fanout__step-dot {
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  border-radius: 100px;
+  background: var(--surface);
+  border: 2px solid var(--signal-inert);
+  /* Sits on the text baseline rather than the box, so it lines up with the
+     name beside it at any type size. */
+  transform: translateY(1px);
+}
+
+.fanout__step-dot--ok {
+  border-color: var(--signal-settled);
+  background: var(--signal-settled);
+}
+
+.fanout__step-dot--busy {
+  border-color: var(--signal-pending);
+}
+
+.fanout__step-dot--broken {
+  border-color: var(--signal-failed);
+  background: var(--signal-failed);
+}
+
+.fanout__step-dot--idle {
+  border-color: var(--rule-strong);
+}
+
+.fanout__step-dot--hub {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.fanout__step-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.fanout__step-name--hub {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--accent);
+}
+
+.fanout__step-note {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+
+/* The trunk: gateway down to the hub, hub down through the branches. */
+.fanout__step--gateway::after,
+.fanout__step--hub::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 16px;
+  bottom: -4px;
+  border-left: 1px solid var(--rule-strong);
+}
+
+.fanout__step--gateway.fanout__step--broken::after {
+  border-left-color: var(--signal-failed);
+}
+
+.fanout__step--branch {
+  padding-left: 22px;
+}
+
+/*
+ * The elbow into a branch. It starts at the trunk's x and turns in at this
+ * row's dot, which is what makes the list read as a fan-out rather than as a
+ * chain of four things that happened in order.
+ */
+.fanout__step--branch::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: -4px;
+  height: 20px;
+  width: 22px;
+  border-left: 1px solid var(--rule-strong);
+  border-bottom: 1px solid var(--rule-strong);
+  border-bottom-left-radius: 7px;
+}
+
+/* The trunk continues past every branch but the last. */
+.fanout__step--branch:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 16px;
+  bottom: -4px;
+  border-left: 1px solid var(--rule-strong);
+}
+
+.fanout__step--broken::before {
+  border-left-color: var(--rule-strong);
+  border-bottom-color: var(--signal-failed);
+}
+
+.fanout__step--busy::before {
+  border-bottom-color: var(--signal-pending);
+}
+
+.fanout__step--ok::before {
+  border-bottom-color: color-mix(in srgb, var(--signal-settled) 60%, transparent);
+}
+
+.fanout__step--idle::before {
+  border-bottom-style: dashed;
+}
+
+/* ---------------------------------------------------------------------------
    Trace — the signature element. A payment's chain of custody, from the
    gateway's notification to the application's answer.
    --------------------------------------------------------------------------- */
@@ -1199,6 +1349,189 @@ textarea:focus {
 }
 
 /* ---------------------------------------------------------------------------
+   Phone navigation — a tab bar and a More sheet.
+
+   Both are inert above the breakpoint, where the rail does this job. They are
+   declared outside the media query so their appearance is defined once and the
+   query only decides who is on screen.
+   --------------------------------------------------------------------------- */
+
+.tabbar {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: saturate(180%) blur(14px);
+  border-top: 1px solid var(--rule);
+  padding-bottom: var(--safe-bottom);
+}
+
+.tab {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: var(--tabbar-height);
+  padding: 6px 2px;
+  border: none;
+  background: none;
+  color: var(--ink-faint);
+  font-family: var(--font-body);
+  font-size: 10px;
+  text-decoration: none;
+  cursor: pointer;
+  /* The grey flash Android paints on tap fights the active colour. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tab:hover {
+  text-decoration: none;
+}
+
+.tab--active {
+  color: var(--accent);
+}
+
+.tab__glyph {
+  font-size: 17px;
+  line-height: 1;
+}
+
+.tab__label {
+  line-height: 1;
+}
+
+/*
+ * The count rides the glyph rather than sitting in the row, so a tab that
+ * needs attention is legible at a glance down at the thumb.
+ */
+.tab__count {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  margin-left: 4px;
+  min-width: 15px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--signal-failed);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 15px;
+  text-align: center;
+}
+
+.sheet__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgb(18 20 28 / 45%);
+  display: flex;
+  align-items: flex-end;
+}
+
+.sheet {
+  width: 100%;
+  max-height: 82vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px 14px calc(18px + var(--safe-bottom));
+  background: var(--surface);
+  border-top: 1px solid var(--rule);
+  border-radius: 14px 14px 0 0;
+  box-shadow: var(--shadow-overlay);
+  animation: sheet-rise 200ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes sheet-rise {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet {
+    animation: none;
+  }
+}
+
+/* The handle every native sheet has, saying "this drags away". */
+.sheet__grip {
+  width: 36px;
+  height: 4px;
+  margin: 6px auto 10px;
+  border-radius: 999px;
+  background: var(--rule-strong);
+}
+
+.sheet__group + .sheet__group {
+  margin-top: 14px;
+}
+
+.sheet__group-label {
+  padding: 0 4px 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.sheet__link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: var(--touch);
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font-size: 15px;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sheet__link:hover {
+  text-decoration: none;
+}
+
+.sheet__link--active {
+  background: var(--accent-wash);
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.sheet__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--rule);
+}
+
+.sheet__account {
+  min-width: 0;
+  font-size: 12px;
+  color: var(--ink-muted);
+  overflow-wrap: anywhere;
+}
+
+.sheet__footer .button {
+  min-height: var(--touch);
+  flex-shrink: 0;
+}
+
+/* ---------------------------------------------------------------------------
    Responsive
    --------------------------------------------------------------------------- */
 
@@ -1208,31 +1541,353 @@ textarea:focus {
   }
 }
 
+/* ---------------------------------------------------------------------------
+   Phone. Below this width the console stops being a workbench and becomes a
+   triage instrument: navigation moves to the thumb, tables become rows you can
+   read one at a time, and every target grows to something a finger can hit.
+   --------------------------------------------------------------------------- */
+
 @media (max-width: 760px) {
   .shell {
     grid-template-columns: 1fr;
   }
 
+  /* The rail is replaced wholesale, not reflowed. Wrapping ten links into a
+     row cost a full screen of height before any content appeared. */
   .rail {
-    position: static;
-    height: auto;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-    border-right: none;
-    border-bottom: 1px solid var(--rule);
-  }
-
-  .rail__group,
-  .rail__footer {
     display: none;
   }
 
+  .tabbar {
+    display: flex;
+  }
+
   .page {
-    padding: 16px 14px 40px;
+    /* Clears the fixed tab bar, so the last row is never trapped under it. */
+    padding: 14px 12px calc(28px + var(--tabbar-height) + var(--safe-bottom));
   }
 
   .strip {
-    padding: 0 14px;
+    padding: 0 12px;
+    /* A phone has no scrollbar to grab, so the strip is swiped instead and
+       snaps to whichever metric you land on. */
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+  }
+
+  .strip::-webkit-scrollbar {
+    display: none;
+  }
+
+  .strip__metric {
+    scroll-snap-align: start;
+    padding: 0 12px;
+  }
+
+  h1 {
+    font-size: 23px;
+  }
+
+  .page__lede {
+    margin-bottom: 16px;
+  }
+
+  /* The SVG would scale its 13px labels down to 6px; the tree does not. */
+  .fanout__canvas {
+    display: none;
+  }
+
+  .fanout__stack {
+    display: block;
+  }
+
+  .fanout__head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    padding: 11px 14px;
+  }
+
+  .fanout__foot {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 11px 14px calc(11px);
+  }
+
+  .fanout__foot .button,
+  .fanout__foot a {
+    min-height: 0;
+  }
+
+  /* --- Tables become rows ------------------------------------------------
+
+     A seven-column table at 390px is either a horizontal scroll nobody
+     discovers or type nobody can read. Each row becomes a card instead: the
+     cell marked data-primary leads, and the rest are labelled from the header
+     they lost. One markup source still serves both layouts. */
+
+  .panel__scroll {
+    overflow-x: visible;
+  }
+
+  table,
+  tbody,
+  tbody tr,
+  tbody td {
+    display: block;
+    width: auto;
+  }
+
+  thead {
+    display: none;
+  }
+
+  tbody tr {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 11px 12px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  /* The card's title is whichever cell answers "which one is this?", and that
+     is rarely the first column — on payments it is the merchant's own order
+     reference, three columns in. Ordering here rather than in the markup keeps
+     the table's own column order intact. */
+  tbody td[data-primary] {
+    order: -1;
+  }
+
+  tbody tr:last-child {
+    border-bottom: none;
+  }
+
+  tbody td {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 2px 0;
+    border-bottom: none;
+    white-space: normal;
+    text-align: right;
+  }
+
+  /* The label the header used to carry, restored per cell. */
+  tbody td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    text-align: left;
+  }
+
+  /* A cell with nothing worth labelling — an action, or the row's own title. */
+  tbody td[data-primary],
+  tbody td:not([data-label]) {
+    display: block;
+    padding-bottom: 5px;
+    text-align: left;
+  }
+
+  tbody td[data-primary]::before,
+  tbody td:not([data-label])::before {
+    content: none;
+  }
+
+  tbody td[data-primary] {
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  /* An action cell sits at the end of the card, not squeezed beside a label. */
+  tbody td:not([data-label]):last-child:has(.button) {
+    padding-top: 9px;
+  }
+
+  tbody td:not([data-label]):last-child .button {
+    width: 100%;
+  }
+
+  /* A card is as wide as the phone, so the column cap no longer applies. The
+     URL still cannot share a line with its own label without breaking mid-host,
+     so the label moves above it and the value gets the full width. */
+  tbody td.cell--url,
+  tbody td.cell--stack {
+    display: block;
+    max-width: none;
+    overflow: visible;
+    text-overflow: clip;
+    text-align: left;
+  }
+
+  tbody td.cell--url {
+    overflow-wrap: anywhere;
+  }
+
+  tbody td.cell--url::before,
+  tbody td.cell--stack::before {
+    display: block;
+    margin-bottom: 1px;
+  }
+
+  /* The gutter mark moves to the whole card, since there is no first cell to
+     hang it on once the row has stopped being a row. */
+  tbody tr.is-failing td:first-child,
+  tbody tr.is-attention td:first-child {
+    box-shadow: none;
+  }
+
+  tbody tr.is-failing {
+    box-shadow: inset 3px 0 0 var(--signal-failed);
+  }
+
+  tbody tr.is-attention {
+    box-shadow: inset 3px 0 0 var(--signal-pending);
+  }
+
+  /* --- Controls ---------------------------------------------------------- */
+
+  .button {
+    min-height: var(--touch);
+    padding: 8px 14px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .button--small {
+    min-height: 34px;
+    padding: 6px 11px;
+  }
+
+  /* Anything under 16px makes iOS zoom the page on focus and never zoom back. */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+    min-height: var(--touch);
+  }
+
+  input.mono,
+  textarea.mono {
+    font-size: 15px;
+  }
+
+  .filters input,
+  .filters select {
+    width: 100%;
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+
+  /* --- Overlays ---------------------------------------------------------- */
+
+  /* A centred dialog on a phone is a sheet that forgot to rise. */
+  .modal__backdrop {
+    display: flex;
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .modal {
+    max-width: none;
+    max-height: 88vh;
+    padding-bottom: var(--safe-bottom);
+    border-radius: 14px 14px 0 0;
+    border-bottom: none;
+    overscroll-behavior: contain;
+    animation: sheet-rise 200ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .modal__head {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--surface);
+  }
+
+  .modal__head .button {
+    min-height: 34px;
+  }
+
+  .modal__foot .button {
+    flex: 1 1 0;
+  }
+
+  /* --- Detail views ------------------------------------------------------ */
+
+  .summary {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 14px 12px;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .actions .button {
+    flex: 1 1 auto;
+  }
+
+  /* A 68px timestamp column costs a fifth of a phone's width, so the time
+     moves above the entry it belongs to and the spine keeps its own column. */
+  .trace__entry {
+    grid-template-columns: 22px minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .trace__spine {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+
+  .trace__time {
+    grid-column: 2;
+    grid-row: 1;
+    text-align: left;
+    padding: 0 0 2px;
+  }
+
+  .trace__body {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  /* A 128px label column leaves a phone about 210px for the value, which is
+     narrower than a webhook URL. Label above, value across the full width. */
+  .kv {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .kv dt {
+    padding-top: 9px;
+  }
+
+  .kv dt:first-child {
+    padding-top: 0;
+  }
+
+  .kv dd {
+    padding-top: 1px;
+  }
+
+  .signin {
+    padding: 20px 14px calc(20px + var(--safe-bottom));
+  }
+}
+
+/* A phone in landscape has the height of a watch. Nothing should be sticky. */
+@media (max-width: 940px) and (max-height: 460px) {
+  .strip {
+    position: static;
   }
 }

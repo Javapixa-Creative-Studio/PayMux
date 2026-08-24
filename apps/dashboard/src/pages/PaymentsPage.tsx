@@ -138,22 +138,30 @@ export function PaymentsPage() {
                     className="is-clickable"
                     onClick={() => navigate(`/payments/${payment.id}`)}
                   >
-                    <td>
+                    <td data-label="Payment">
                       <Link to={`/payments/${payment.id}`} className="mono">
                         {payment.id}
                       </Link>
                     </td>
-                    <td>{names.get(payment.application_id) ?? <Id value={payment.application_id} />}</td>
-                    <td className="mono">{payment.application_order_id}</td>
-                    <td className="num">
+                    <td data-label="Application">
+                      {names.get(payment.application_id) ?? <Id value={payment.application_id} />}
+                    </td>
+                    <td data-label="Order" data-primary="" className="mono">
+                      {payment.application_order_id}
+                    </td>
+                    <td data-label="Amount" className="num">
                       <Amount minor={payment.amount} currency={payment.currency} />
                     </td>
-                    <td>
+                    <td data-label="Status">
                       <PaymentStatusTag status={payment.status} />
                     </td>
-                    <td className="gateway-status">{payment.gateway_status || '—'}</td>
-                    <td className="gateway-status">{payment.payment_type || '—'}</td>
-                    <td>
+                    <td data-label="Gateway" className="gateway-status">
+                      {payment.gateway_status || '—'}
+                    </td>
+                    <td data-label="Method" className="gateway-status">
+                      {payment.payment_type || '—'}
+                    </td>
+                    <td data-label="Created">
                       <Timestamp value={payment.created_at} />
                     </td>
                   </tr>

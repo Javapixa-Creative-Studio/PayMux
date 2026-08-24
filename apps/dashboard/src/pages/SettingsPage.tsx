@@ -41,7 +41,7 @@ export function SettingsPage() {
               <tbody>
                 {admins.data.data.map((admin) => (
                   <tr key={admin.id}>
-                    <td>
+                    <td data-label="Email">
                       {admin.email}
                       {admin.id === session.data?.id && (
                         <span className="gateway-status" style={{ marginLeft: 8 }}>
@@ -49,11 +49,11 @@ export function SettingsPage() {
                         </span>
                       )}
                     </td>
-                    <td>{admin.name || '—'}</td>
-                    <td>
+                    <td data-label="Name">{admin.name || '—'}</td>
+                    <td data-label="Status">
                       <Tag tone={admin.status === 'active' ? 'settled' : 'inert'}>{admin.status}</Tag>
                     </td>
-                    <td>
+                    <td data-label="Last signed in">
                       <Timestamp value={admin.last_login_at} />
                     </td>
                   </tr>

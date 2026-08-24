@@ -115,15 +115,15 @@ function ApiKeysPanel({ applicationId }: { applicationId: string }) {
             <tbody>
               {keys.data.data.map((key) => (
                 <tr key={key.id}>
-                  <td className="mono">{key.display_prefix}…</td>
-                  <td>{key.name || '—'}</td>
-                  <td>
+                  <td data-label="Key" className="mono">{key.display_prefix}…</td>
+                  <td data-label="Name">{key.name || '—'}</td>
+                  <td data-label="Mode">
                     <Tag tone={key.mode === 'live' ? 'settled' : 'inert'}>{key.mode}</Tag>
                   </td>
-                  <td>
+                  <td data-label="Status">
                     <Tag tone={key.status === 'active' ? 'settled' : 'inert'}>{key.status}</Tag>
                   </td>
-                  <td>
+                  <td data-label="Last used">
                     <Timestamp value={key.last_used_at} />
                   </td>
                   <td>
@@ -334,15 +334,15 @@ function DestinationsPanel({ applicationId }: { applicationId: string }) {
             <tbody>
               {destinations.data.data.map((destination) => (
                 <tr key={destination.id}>
-                  <td className="mono" style={{ maxWidth: 360, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <td data-label="URL" className="mono cell--url">
                     {destination.url}
                   </td>
-                  <td className="gateway-status">
+                  <td data-label="Events" className="gateway-status">
                     {destination.event_types.length === 0
                       ? 'all events'
                       : destination.event_types.join(', ')}
                   </td>
-                  <td>
+                  <td data-label="State">
                     <Tag tone={destination.enabled ? 'settled' : 'inert'}>
                       {destination.enabled ? 'enabled' : 'paused'}
                     </Tag>

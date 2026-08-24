@@ -73,25 +73,25 @@ export function OverviewPage() {
               <tbody>
                 {attention.map((delivery) => (
                   <tr key={delivery.id} className="is-failing">
-                    <td>
+                    <td data-label="Delivery" data-primary="">
                       <Id value={delivery.id} />
                     </td>
-                    <td className="mono" style={{ maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <td data-label="Destination" className="mono cell--url">
                       {delivery.url}
                     </td>
-                    <td>
+                    <td data-label="State">
                       <DeliveryStateTag state={delivery.state} />
                     </td>
-                    <td className="num">
+                    <td data-label="Attempts" className="num">
                       {delivery.attempt_count}/{delivery.max_attempts}
                     </td>
-                    <td>
+                    <td data-label="Last result">
                       <DeliveryResult
                         statusCode={delivery.last_status_code}
                         error={delivery.last_error}
                       />
                     </td>
-                    <td>
+                    <td data-label="Next attempt">
                       {delivery.state === 'dead' ? (
                         <span className="gateway-status">gave up</span>
                       ) : (
@@ -132,19 +132,21 @@ export function OverviewPage() {
               <tbody>
                 {recentPayments.data.data.map((payment) => (
                   <tr key={payment.id}>
-                    <td>
+                    <td data-label="Payment">
                       <Link to={`/payments/${payment.id}`} className="mono">
                         {payment.id}
                       </Link>
                     </td>
-                    <td className="mono">{payment.application_order_id}</td>
-                    <td className="num">
+                    <td data-label="Order" data-primary="" className="mono">
+                      {payment.application_order_id}
+                    </td>
+                    <td data-label="Amount" className="num">
                       <Amount minor={payment.amount} currency={payment.currency} />
                     </td>
-                    <td>
+                    <td data-label="Status">
                       <PaymentStatusTag status={payment.status} />
                     </td>
-                    <td>
+                    <td data-label="Created">
                       <Timestamp value={payment.created_at} />
                     </td>
                   </tr>

@@ -43,14 +43,14 @@ export function ApplicationsPage() {
               <tbody>
                 {applications.data.data.map((app) => (
                   <tr key={app.id}>
-                    <td>
+                    <td data-label="Name" data-primary="">
                       <Link to={`/applications/${app.id}`}>{app.name}</Link>
                     </td>
-                    <td className="mono">{app.slug}</td>
-                    <td>
+                    <td data-label="Slug" className="mono">{app.slug}</td>
+                    <td data-label="Status">
                       <Tag tone={app.status === 'active' ? 'settled' : 'inert'}>{app.status}</Tag>
                     </td>
-                    <td>
+                    <td data-label="Created">
                       <Timestamp value={app.created_at} />
                     </td>
                   </tr>

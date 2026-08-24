@@ -116,23 +116,27 @@ export function RefundsPage() {
               <tbody>
                 {refunds.data.data.map((refund) => (
                   <tr key={refund.id}>
-                    <td>
+                    <td data-label="Refund" data-primary="">
                       <Id value={refund.id} />
                     </td>
-                    <td>
+                    <td data-label="Payment">
                       <Link to={`/payments/${refund.payment_id}`} className="mono">
                         {refund.payment_id}
                       </Link>
                     </td>
-                    <td>{names.get(refund.application_id ?? '') ?? '—'}</td>
-                    <td className="num">
+                    <td data-label="Application">
+                      {names.get(refund.application_id ?? '') ?? '—'}
+                    </td>
+                    <td data-label="Amount" className="num">
                       <Amount minor={refund.amount} currency={refund.currency} />
                     </td>
-                    <td>
+                    <td data-label="Status">
                       <Tag tone={tone(refund.status)}>{refund.status}</Tag>
                     </td>
-                    <td>{refund.failure_reason || refund.reason || '—'}</td>
-                    <td>
+                    <td data-label="Reason" className="cell--stack">
+                      {refund.failure_reason || refund.reason || '—'}
+                    </td>
+                    <td data-label="Created">
                       <Timestamp value={refund.created_at} />
                     </td>
                   </tr>

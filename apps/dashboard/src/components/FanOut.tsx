@@ -54,6 +54,9 @@ export function FanOut({ overview }: { overview: Overview }) {
     Math.max(TOP + (rows - 1) * ROW + 30, hubY + 32) + (hidden > 0 ? 26 : 8);
 
   const broken = apps.filter((a) => branchHealth(a) === 'broken').length;
+  // An unattributed notification is a fault on the gateway link itself: the
+  // callback arrived and verified, but names an order PayMux never created.
+  const gatewayHealth: Health = overview.unrouted_notifications > 0 ? 'broken' : 'ok';
   const dead = apps.reduce((n, a) => n + a.deliveries_dead, 0);
   const failing = apps.reduce((n, a) => n + a.deliveries_failed, 0);
 
@@ -171,6 +174,64 @@ export function FanOut({ overview }: { overview: Overview }) {
           )}
         </svg>
       </div>
+
+      {/*
+        * The same topology for a phone. Scaling the diagram down would take
+        * its 13px labels to 6px, so below the breakpoint it reflows into a
+        * tree instead: the gateway feeds the hub, the hub fans out to the
+        * branches, and the connector into each branch carries its health. The
+        * question the schematic exists to answer survives the reflow.
+        */}
+      <ul className="fanout__stack">
+        <li className={`fanout__step fanout__step--gateway fanout__step--${gatewayHealth}`}>
+          <span className={`fanout__step-dot fanout__step-dot--${gatewayHealth}`} />
+          <span className="fanout__step-name mono">midtrans</span>
+          <span className={`fanout__step-note fanout__sub--${gatewayHealth}`}>
+            {overview.unrouted_notifications > 0
+              ? `${overview.unrouted_notifications} unattributed`
+              : 'verified'}
+          </span>
+        </li>
+
+        <li className="fanout__step fanout__step--hub">
+          <span className="fanout__step-dot fanout__step-dot--hub" />
+          <span className="fanout__step-name fanout__step-name--hub">PayMux</span>
+          <span className="fanout__step-note">
+            {overview.payments.created} payment{overview.payments.created === 1 ? '' : 's'} ·{' '}
+            {overview.payments.paid} paid
+          </span>
+        </li>
+
+        {shown.length === 0 && (
+          <li className="fanout__step fanout__step--branch fanout__step--idle">
+            <span className="fanout__step-dot fanout__step-dot--idle" />
+            <span className="fanout__step-note">no applications yet</span>
+          </li>
+        )}
+
+        {shown.map((app) => {
+          const health = branchHealth(app);
+          return (
+            <li
+              key={app.application_id}
+              className={`fanout__step fanout__step--branch fanout__step--${health}`}
+            >
+              <span className={`fanout__step-dot fanout__step-dot--${health}`} />
+              <span className="fanout__step-name">{app.name}</span>
+              <span className={`fanout__step-note fanout__sub--${health}`}>
+                {describeBranch(app)}
+              </span>
+            </li>
+          );
+        })}
+
+        {hidden > 0 && (
+          <li className="fanout__step fanout__step--branch fanout__step--idle">
+            <span className="fanout__step-dot fanout__step-dot--idle" />
+            <span className="fanout__step-note">and {hidden} more</span>
+          </li>
+        )}
+      </ul>
 
       {(dead > 0 || failing > 0) && (
         <footer className="fanout__foot">

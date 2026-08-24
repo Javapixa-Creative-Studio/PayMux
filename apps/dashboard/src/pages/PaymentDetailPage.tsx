@@ -153,19 +153,19 @@ export function PaymentDetailPage() {
                   <tbody>
                     {deliveries.map((delivery) => (
                       <tr key={delivery.id}>
-                        <td>
+                        <td data-label="Delivery">
                           <Id value={delivery.id} />
                         </td>
-                        <td>
+                        <td data-label="Event">
                           <Id value={delivery.event_id} />
                         </td>
-                        <td>
+                        <td data-label="State">
                           <DeliveryStateTag state={delivery.state} />
                         </td>
-                        <td className="num">
+                        <td data-label="Attempts" className="num">
                           {delivery.attempt_count}/{delivery.max_attempts}
                         </td>
-                        <td>
+                        <td data-label="Last result">
                           <DeliveryResult
                             statusCode={delivery.last_status_code}
                             error={delivery.last_error}
@@ -210,15 +210,17 @@ export function PaymentDetailPage() {
                   <tbody>
                     {refunds.map((refund) => (
                       <tr key={refund.id}>
-                        <td>
+                        <td data-label="Refund">
                           <Id value={refund.id} />
                         </td>
-                        <td className="num">
+                        <td data-label="Amount" className="num">
                           <Amount minor={refund.amount} currency={refund.currency} />
                         </td>
-                        <td className="mono">{refund.status}</td>
-                        <td>{refund.reason || refund.failure_reason || '—'}</td>
-                        <td>
+                        <td data-label="Status" className="mono">{refund.status}</td>
+                        <td data-label="Reason" className="cell--stack">
+                          {refund.reason || refund.failure_reason || '—'}
+                        </td>
+                        <td data-label="Created">
                           <Timestamp value={refund.created_at} />
                         </td>
                       </tr>

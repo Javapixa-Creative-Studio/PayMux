@@ -62,7 +62,7 @@ export function GatewaysPage() {
               <tbody>
                 {accounts.data.data.map((account) => (
                   <tr key={account.id}>
-                    <td>
+                    <td data-label="Name" data-primary="">
                       {account.name}
                       {account.is_default && (
                         <span className="gateway-status" style={{ marginLeft: 8 }}>
@@ -70,22 +70,22 @@ export function GatewaysPage() {
                         </span>
                       )}
                     </td>
-                    <td className="mono">{account.gateway}</td>
-                    <td>
+                    <td data-label="Gateway" className="mono">{account.gateway}</td>
+                    <td data-label="Environment">
                       <Tag tone={account.environment === 'production' ? 'settled' : 'inert'}>
                         {account.environment}
                       </Tag>
                     </td>
-                    <td className="mono">{account.merchant_id || '—'}</td>
-                    <td className="gateway-status">
+                    <td data-label="Merchant" className="mono">{account.merchant_id || '—'}</td>
+                    <td data-label="Server key" className="gateway-status">
                       {account.server_key_set ? '•••••••• set' : 'not set'}
                     </td>
-                    <td>
+                    <td data-label="State">
                       <Tag tone={account.enabled ? 'settled' : 'inert'}>
                         {account.enabled ? 'enabled' : 'disabled'}
                       </Tag>
                     </td>
-                    <td>
+                    <td data-label="Connection" className="cell--stack">
                       <ConnectionStatus account={account} />
                     </td>
                     <td>

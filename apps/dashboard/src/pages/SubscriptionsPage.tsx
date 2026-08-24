@@ -61,21 +61,21 @@ function SubscriptionRow({ subscription }: { subscription: Subscription }) {
 
   return (
     <tr>
-      <td>
+      <td data-label="Subscription" data-primary>
         <Id value={subscription.id} />
       </td>
-      <td>{subscription.name}</td>
-      <td className="num">
+      <td data-label="Name">{subscription.name}</td>
+      <td data-label="Amount" className="num">
         <Amount minor={subscription.amount} currency={subscription.currency} />
       </td>
-      <td className="gateway-status">
+      <td data-label="Interval" className="gateway-status">
         every {subscription.interval_count} {subscription.interval_unit}
         {subscription.interval_count === 1 ? '' : 's'}
       </td>
-      <td>
+      <td data-label="Status">
         <Tag tone={active ? 'settled' : canceled ? 'failed' : 'inert'}>{subscription.status}</Tag>
       </td>
-      <td>
+      <td data-label="Created">
         <Timestamp value={subscription.created_at} />
       </td>
       <td>

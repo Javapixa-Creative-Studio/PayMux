@@ -97,23 +97,25 @@ export function NotificationsPage() {
                     }
                     onClick={() => setInspecting(notification)}
                   >
-                    <td>
+                    <td data-label="Received">
                       <Timestamp value={notification.received_at} />
                     </td>
-                    <td className="mono">{notification.gateway_order_id || '—'}</td>
-                    <td className="gateway-status">
+                    <td data-label="Gateway order" data-primary="" className="mono">
+                      {notification.gateway_order_id || '—'}
+                    </td>
+                    <td data-label="Gateway status" className="gateway-status">
                       {notification.gateway_status || '—'}
                       {notification.fraud_status ? ` · ${notification.fraud_status}` : ''}
                     </td>
-                    <td>
+                    <td data-label="Signature">
                       <Tag tone={notification.signature_verified ? 'settled' : 'failed'}>
                         {notification.signature_verified ? 'verified' : 'invalid'}
                       </Tag>
                     </td>
-                    <td>
+                    <td data-label="Outcome">
                       <RoutingTag status={notification.routing_status} />
                     </td>
-                    <td>
+                    <td data-label="Payment">
                       {notification.payment_id ? (
                         <Link
                           to={`/payments/${notification.payment_id}`}

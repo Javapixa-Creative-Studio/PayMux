@@ -86,7 +86,7 @@ export function DeliveriesPage() {
                           : undefined
                     }
                   >
-                    <td>
+                    <td data-label="Delivery" data-primary="">
                       <button
                         type="button"
                         className="id"
@@ -96,28 +96,25 @@ export function DeliveriesPage() {
                         {delivery.id}
                       </button>
                     </td>
-                    <td
-                      className="mono"
-                      style={{ maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis' }}
-                    >
+                    <td data-label="Destination" className="mono cell--url">
                       {delivery.url}
                     </td>
-                    <td>
+                    <td data-label="State">
                       <DeliveryStateTag state={delivery.state} />
                     </td>
-                    <td className="num">
+                    <td data-label="Attempts" className="num">
                       {delivery.attempt_count}/{delivery.max_attempts}
                     </td>
-                    <td>
+                    <td data-label="Last result">
                       <DeliveryResult
                         statusCode={delivery.last_status_code}
                         error={delivery.last_error}
                       />
                     </td>
-                    <td className="num gateway-status">
+                    <td data-label="Time" className="num gateway-status">
                       {delivery.last_duration_ms != null ? `${delivery.last_duration_ms}ms` : '—'}
                     </td>
-                    <td>
+                    <td data-label="Next attempt">
                       {delivery.state === 'succeeded' ? (
                         <span className="gateway-status">delivered</span>
                       ) : delivery.state === 'dead' ? (
@@ -199,12 +196,14 @@ function AttemptsDialog({ id, onClose }: { id: string; onClose: () => void }) {
               <tbody>
                 {detail.data.attempts.map((attempt) => (
                   <tr key={attempt.id}>
-                    <td className="num">{attempt.attempt_number}</td>
-                    <td>
+                    <td data-label="#" className="num">{attempt.attempt_number}</td>
+                    <td data-label="Result">
                       <DeliveryResult statusCode={attempt.status_code} error={attempt.error} />
                     </td>
-                    <td className="num gateway-status">{attempt.duration_ms}ms</td>
-                    <td>
+                    <td data-label="Time" className="num gateway-status">
+                      {attempt.duration_ms}ms
+                    </td>
+                    <td data-label="When">
                       <Timestamp value={attempt.created_at} />
                     </td>
                   </tr>
