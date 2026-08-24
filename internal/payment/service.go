@@ -434,7 +434,7 @@ func BuildPayload(p *Payment, eventType event.Type) event.Payload {
 		ApplicationOrderID:   p.ApplicationOrderID,
 		GatewayOrderID:       p.GatewayOrderID,
 		GatewayTransactionID: p.GatewayTransactionID,
-		Status:               p.NormalizedStatus,
+		Status:               string(p.NormalizedStatus),
 		GatewayStatus:        p.GatewayStatus,
 		FraudStatus:          p.FraudStatus,
 		PaymentType:          p.PaymentType,

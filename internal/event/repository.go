@@ -36,7 +36,8 @@ func (r *Repository) q(ctx context.Context) storage.Querier { return r.db.FromCo
 const eventColumns = `
 	id, sequence, application_id, type, gateway,
 	coalesce(payment_id, ''), coalesce(refund_id, ''), coalesce(subscription_id, ''),
-	coalesce(gateway_event_id, ''), coalesce(dedupe_key, ''), payload, created_at`
+	coalesce(payout_id, ''), coalesce(gateway_event_id, ''), coalesce(dedupe_key, ''),
+	payload, created_at`
 
 // Create stores an event.
 //
@@ -60,12 +61,12 @@ func (r *Repository) Create(ctx context.Context, e *Event) error {
 	row := r.q(ctx).QueryRow(ctx, `
 		INSERT INTO events
 			(id, application_id, type, gateway, payment_id, refund_id,
-			 subscription_id, gateway_event_id, dedupe_key, payload)
+			 subscription_id, payout_id, gateway_event_id, dedupe_key, payload)
 		VALUES ($1, $2, $3, $4, nullif($5, ''), nullif($6, ''), nullif($7, ''),
-		        nullif($8, ''), nullif($9, ''), $10)
+		        nullif($8, ''), nullif($9, ''), nullif($10, ''), $11)
 		RETURNING `+eventColumns,
 		e.ID, e.ApplicationID, string(e.Type), e.Gateway, e.PaymentID,
-		e.RefundID, e.SubscriptionID, e.GatewayEventID, e.DedupeKey, payload,
+		e.RefundID, e.SubscriptionID, e.PayoutID, e.GatewayEventID, e.DedupeKey, payload,
 	)
 	if err := scanEvent(row, e); err != nil {
 		if storage.IsUniqueViolation(err, ConstraintDedupeKey) {
@@ -188,8 +189,8 @@ func scanEvent(row scanner, e *Event) error {
 	)
 	err := row.Scan(
 		&e.ID, &e.Sequence, &e.ApplicationID, &eventType, &e.Gateway,
-		&e.PaymentID, &e.RefundID, &e.SubscriptionID, &e.GatewayEventID,
-		&e.DedupeKey, &payload, &e.CreatedAt,
+		&e.PaymentID, &e.RefundID, &e.SubscriptionID, &e.PayoutID,
+		&e.GatewayEventID, &e.DedupeKey, &payload, &e.CreatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
