@@ -38,6 +38,10 @@ tags:
     description: Full and partial refunds.
   - name: Subscriptions
     description: Recurring billing, where the merchant account has it activated.
+  - name: Payouts
+    description: |
+      Paying money out. Off until the gateway account holds disbursement
+      credentials and the application has been permitted to disburse.
   - name: Events
     description: The normalized events PayMux publishes.
   - name: Deliveries
@@ -418,6 +422,234 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/NotFound" }
 
+  /api/v1/beneficiaries:
+    post:
+      tags: [Payouts]
+      summary: Register a payout destination
+      description: |
+        A payout names a beneficiary rather than an account number, so a
+        destination is reviewed once and reused. Aliases are unique within an
+        application.
+      operationId: createBeneficiary
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateBeneficiaryRequest" }
+      responses:
+        "201":
+          description: The beneficiary.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Beneficiary" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "409":
+          description: An alias already in use by this application.
+    get:
+      tags: [Payouts]
+      summary: List payout destinations
+      operationId: listBeneficiaries
+      responses:
+        "200":
+          description: A page of beneficiaries.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Beneficiary" }
+                  has_more: { type: boolean }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/v1/beneficiaries/{beneficiaryId}:
+    parameters:
+      - name: beneficiaryId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      tags: [Payouts]
+      summary: Read a payout destination
+      operationId: getBeneficiary
+      responses:
+        "200":
+          description: The beneficiary.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Beneficiary" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [Payouts]
+      summary: Change a payout destination
+      description: |
+        Editing the account number or bank clears any verification: the
+        confirmation was about the old number and says nothing about the new
+        one.
+      operationId: updateBeneficiary
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                account: { type: string }
+                bank: { type: string }
+                email: { type: string }
+                disabled: { type: boolean }
+      responses:
+        "200":
+          description: The updated beneficiary.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Beneficiary" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [Payouts]
+      summary: Remove a payout destination
+      description: |
+        Refused while payouts still reference it: the record is part of the
+        history of where money went.
+      operationId: deleteBeneficiary
+      responses:
+        "204": { description: Removed. }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/v1/beneficiaries/{beneficiaryId}/verify:
+    parameters:
+      - name: beneficiaryId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      tags: [Payouts]
+      summary: Ask the bank who owns this account
+      description: |
+        The last point at which a wrong account number is still cheap. The
+        bank's answer is recorded rather than judged: names differ legitimately,
+        so compare it yourself before sending money.
+      operationId: verifyBeneficiary
+      responses:
+        "200":
+          description: The beneficiary, with the name the bank holds.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Beneficiary" }
+        "412":
+          description: The gateway account has no disbursement credentials.
+        "422":
+          description: The gateway could not confirm the account.
+
+  /api/v1/payout-banks:
+    get:
+      tags: [Payouts]
+      summary: List valid beneficiary banks
+      description: |
+        Bank codes are the gateway's vocabulary, not PayMux's. Use `gopay` or
+        `ovo` with a phone number to pay an e-wallet.
+      operationId: listPayoutBanks
+      responses:
+        "200":
+          description: The banks this gateway can pay out to.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        code: { type: string, example: bni }
+                        name: { type: string, example: Bank Negara Indonesia }
+        "412":
+          description: The gateway account has no disbursement credentials.
+
+  /api/v1/payouts:
+    post:
+      tags: [Payouts]
+      summary: Request a payout
+      description: |
+        Money leaving the merchant balance. Refused unless the gateway account
+        holds disbursement credentials and the application has been permitted
+        to disburse, both of which are off by default.
+
+        Answers `202` when the payout awaits approval, because nothing has been
+        sent; `201` only when the application is configured to skip approval.
+
+        Reusing `application_payout_id` returns the original payout. That is the
+        mechanism rather than a convenience: a client retrying a request whose
+        answer it never saw must not later discover it sent the money twice.
+      operationId: createPayout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreatePayoutRequest" }
+      responses:
+        "201":
+          description: Released without approval, and queued for submission.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Payout" }
+        "202":
+          description: Recorded and awaiting approval. Nothing has been sent.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Payout" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403":
+          description: This application is not permitted to disburse.
+        "412":
+          description: The gateway account has no disbursement credentials.
+        "422":
+          description: Over a per-payout or daily limit, or the beneficiary is disabled.
+    get:
+      tags: [Payouts]
+      summary: List this application's payouts
+      operationId: listPayouts
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [REQUESTED, APPROVED, SUBMITTED, UNRESOLVED, COMPLETED, FAILED, REJECTED]
+      responses:
+        "200":
+          description: A page of payouts.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Payout" }
+                  has_more: { type: boolean }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/v1/payouts/{payoutId}:
+    parameters:
+      - name: payoutId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      tags: [Payouts]
+      summary: Read a payout
+      operationId: getPayout
+      responses:
+        "200":
+          description: The payout.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Payout" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
   /api/v1/events:
     get:
       tags: [Events]
@@ -749,6 +981,12 @@ components:
         - subscription.enabled
         - subscription.disabled
         - subscription.canceled
+        - payout.requested
+        - payout.approved
+        - payout.rejected
+        - payout.submitted
+        - payout.completed
+        - payout.failed
 
     DeliveryState:
       type: string
@@ -940,6 +1178,127 @@ components:
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
 
+    Beneficiary:
+      type: object
+      properties:
+        id: { type: string, example: ben_01ARZ3NDEKTSV4RRFFQ69G5FAV }
+        object: { type: string, const: beneficiary }
+        application_id: { type: string }
+        alias:
+          type: string
+          description: Your own handle for this destination, unique within your application.
+          example: supplier-a
+        name: { type: string, example: PT Supplier A }
+        account:
+          type: string
+          description: A bank account number, or a phone number for an e-wallet.
+          example: "1172993826"
+        bank:
+          type: string
+          description: A bank code, or `gopay` / `ovo`.
+          example: bni
+        email: { type: string }
+        verified_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the bank last confirmed this account exists.
+        verified_name:
+          type: string
+          description: |
+            The name the bank holds for the account, recorded verbatim. It is
+            not compared automatically: names differ legitimately, and whether
+            two of them are the same person is a judgement.
+        disabled_at: { type: string, format: date-time, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    CreateBeneficiaryRequest:
+      type: object
+      required: [alias, name, account, bank]
+      properties:
+        alias: { type: string, example: supplier-a }
+        name: { type: string, example: PT Supplier A }
+        account: { type: string, example: "1172993826" }
+        bank: { type: string, example: bni }
+        email: { type: string }
+        metadata: { type: object, additionalProperties: true }
+
+    CreatePayoutRequest:
+      type: object
+      required: [application_payout_id, amount]
+      properties:
+        application_payout_id:
+          type: string
+          description: |
+            Your own reference, unique within your application. Reusing one
+            returns the original payout rather than making a second.
+          example: PO-2026-0042
+        beneficiary_alias:
+          type: string
+          description: Your handle for the destination. Supply this or `beneficiary_id`.
+          example: supplier-a
+        beneficiary_id: { type: string }
+        amount:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Minor units. For IDR that is whole rupiah.
+          example: 250000
+        currency: { type: string, default: IDR }
+        notes:
+          type: string
+          maxLength: 100
+          description: |
+            Rides along to the beneficiary's statement. Banks restrict the
+            characters they accept, so PayMux sanitises rather than refusing
+            the payout.
+        metadata: { type: object, additionalProperties: true }
+
+    Payout:
+      type: object
+      properties:
+        id: { type: string, example: pyo_01ARZ3NDEKTSV4RRFFQ69G5FAV }
+        object: { type: string, const: payout }
+        application_id: { type: string }
+        application_payout_id: { type: string }
+        gateway: { type: string, example: midtrans }
+        reference_no:
+          type: string
+          description: |
+            The gateway's own identifier. Absent while PayMux does not yet know
+            whether the payout was accepted.
+        beneficiary_id: { type: string }
+        beneficiary_name:
+          type: string
+          description: |
+            A copy of the destination as it was when the payout was requested.
+            Editing the address book later does not rewrite where money went.
+        beneficiary_account: { type: string }
+        beneficiary_bank: { type: string }
+        amount: { type: integer, format: int64 }
+        currency: { type: string }
+        notes: { type: string }
+        status:
+          type: string
+          enum: [REQUESTED, APPROVED, SUBMITTED, UNRESOLVED, COMPLETED, FAILED, REJECTED]
+          description: |
+            `REQUESTED` waits on a person and has moved nothing. `APPROVED` is
+            released but not yet sent. `SUBMITTED` is with the gateway and can
+            no longer be stopped. `UNRESOLVED` means PayMux sent it and cannot
+            tell what happened, so the money may or may not be moving: do not
+            re-issue it, because a replacement carries a new idempotency key
+            and the gateway would treat it as a second instruction.
+        gateway_status: { type: string }
+        failure_code: { type: string }
+        failure_reason: { type: string }
+        reject_reason: { type: string }
+        approved_at: { type: string, format: date-time }
+        submitted_at: { type: string, format: date-time }
+        completed_at: { type: string, format: date-time }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
     CreateSubscriptionRequest:
       type: object
       required: [name, amount, payment_token, interval_unit]
@@ -1032,6 +1391,8 @@ components:
         application_id: { type: string }
         payment_id: { type: string }
         refund_id: { type: string }
+        subscription_id: { type: string }
+        payout_id: { type: string }
         gateway_event_id: { type: string }
         data: { $ref: "#/components/schemas/EventPayload" }
         created_at: { type: string, format: date-time }
@@ -1061,6 +1422,20 @@ components:
       properties:
         gateway: { type: string }
         environment: { type: string, enum: [sandbox, production] }
+        client_key:
+          type: string
+          description: |
+            Names the merchant to the gateway's checkout script. Safe to put in
+            a page: it authorises nothing on its own.
+          example: SB-Mid-client-abc123
+        checkout_script_url:
+          type: string
+          description: |
+            The browser script that renders the gateway's checkout in place,
+            for applications that would rather show a dialog than send the
+            customer away. Reported here so an application never hardcodes a
+            gateway hostname that changes with the environment.
+          example: https://app.sandbox.midtrans.com/snap/snap.js
         capabilities:
           type: object
           properties:
@@ -1070,6 +1445,11 @@ components:
             subscriptions: { type: boolean }
             cancel: { type: boolean }
             expire: { type: boolean }
+            disbursement:
+              type: boolean
+              description: |
+                False until the account holds disbursement credentials,
+                whatever the adapter is capable of.
 
     ListEnvelope:
       type: object

@@ -24,11 +24,15 @@ PayMux provides:
 - payment creation through Snap, with the token and redirect URL your app needs
 - transaction management: status sync, cancel, expire, refund, partial refund
 - subscriptions where the merchant account has recurring billing activated
+- disbursement: paying money out to a named beneficiary, off by default and
+  bounded per application
 - centralised gateway notifications, verified and attributed to their owner
 - normalized events delivered to each application, signed with HMAC-SHA256
 - automatic retries with backoff, a dead-letter state and manual replay
 - strict isolation: one application can never see or touch another's payments
-- an operations dashboard for payments, events, deliveries and gateways
+- an operations dashboard for payments, payouts, events, deliveries and
+  gateways, with an in-app integration guide, a light and dark theme, and a
+  layout that works on a phone
 
 ---
 
@@ -77,6 +81,25 @@ docker compose up -d
 
 Sign in to the dashboard with the bootstrap credentials, then remove them from
 `.env`: they are only used to create the first account.
+
+### See it working
+
+Two demo storefronts ship with the repository. They are the quickest way to
+understand what PayMux does, because the claim is hard to believe until you
+click it: two independent shops, one merchant account, neither able to see the
+other's orders.
+
+```bash
+docker compose --profile demo up -d
+```
+
+| Shop         | URL                     | Checkout               |
+| ------------ | ----------------------- | ---------------------- |
+| Kopi Rakyat  | <http://localhost:9911> | dialog, in the page    |
+| Margin Notes | <http://localhost:9921> | redirect to the gateway |
+
+They need one API key and one webhook secret each, created in the dashboard.
+See [examples/README.md](examples/README.md).
 
 ### Running the backend directly
 
@@ -238,7 +261,15 @@ refund.created       refund.completed    refund.failed
 
 subscription.created subscription.updated
 subscription.enabled subscription.disabled subscription.canceled
+
+payout.requested     payout.approved     payout.rejected
+payout.submitted     payout.completed    payout.failed
 ```
+
+There is deliberately no event for a payout whose outcome PayMux cannot
+determine. That state says something about PayMux rather than about the payout,
+and telling an application "we are unsure" invites them to act on it. They hear
+from us when there is an answer.
 
 ### Retries
 
@@ -252,6 +283,77 @@ After seven attempts the delivery is marked **dead** and stays visible in the
 dashboard, where it can be replayed. A `4xx` other than 408, 425 or 429 stops
 the retries immediately: your endpoint has said the request itself is wrong,
 and repeating it will not change that.
+
+---
+
+## Paying money out
+
+Everything above moves money inward, where the worst case of a mistake is a
+payment that gets refunded through the gateway that took it. A payout has no
+such backstop: it leaves the merchant balance for an account the caller names,
+and there is no chargeback on a disbursement.
+
+So it is off in three separate places, and a payout happens only when all three
+are true:
+
+1. The **gateway account** holds disbursement credentials. Midtrans issues
+   these separately from the payment server key, and only after approving the
+   account for disbursement.
+2. The **application** has payouts enabled, under Applications → the
+   application → *Paying money out*.
+3. Somebody **approves** the payout, unless approval is turned off, which
+   PayMux refuses to allow without a spending limit.
+
+### Why the per-application limit is not optional
+
+PayMux exists so several applications can share one merchant account. Inbound
+that is harmless: application A cannot take application B's money. Outbound,
+every application with an API key spends from the *same balance*. Without
+limits, one leaked API key drains what every other application collected.
+
+The daily limit counts payouts still in flight, including ones whose outcome is
+unknown, because money the gateway already has cannot be spent twice.
+
+### Sending one
+
+A payout names a **beneficiary**, never a raw account number. A destination is
+reviewed once and reused, so a typo cannot send money to a stranger.
+
+```bash
+curl -X POST http://localhost:8080/api/v1/beneficiaries   -H "Authorization: Bearer $PAYMUX_KEY"   -H 'Content-Type: application/json'   -d '{"alias":"supplier-a","name":"PT Supplier A","account":"1172993826","bank":"bni"}'
+
+curl -X POST http://localhost:8080/api/v1/payouts   -H "Authorization: Bearer $PAYMUX_KEY"   -H 'Content-Type: application/json'   -d '{"application_payout_id":"PO-0042","beneficiary_alias":"supplier-a","amount":250000}'
+```
+
+`202` means accepted, not sent: a payout awaiting approval has moved nothing.
+You get `201` only when the application is configured to skip approval.
+
+Reusing `application_payout_id` returns the original payout. That is the
+mechanism, not a convenience: a client that retries a request it never saw the
+answer to must not discover later that it sent the money twice.
+
+### The state that matters
+
+| Status | Means |
+| ------ | ----- |
+| `REQUESTED` | Waiting on a person. Nothing sent. |
+| `APPROVED` | Released, queued. Still nothing sent. |
+| `SUBMITTED` | The gateway has it. PayMux can no longer stop it. |
+| `UNRESOLVED` | Sent, and PayMux cannot tell what happened. |
+| `COMPLETED` | The beneficiary was paid. |
+| `FAILED` | It did not happen; the funds stayed put. |
+| `REJECTED` | Refused before anything was attempted. |
+
+`UNRESOLVED` is the one worth understanding. The connection failed at the one
+moment where failure is ambiguous, so the money may or may not be moving.
+PayMux resolves it by re-sending under the *original* idempotency key, which
+the gateway answers with the original result rather than transferring again.
+
+**Never re-issue a payout that is `UNRESOLVED`.** A new payout carries a new
+key, and the gateway would treat it as a second instruction.
+
+See [docs/production.md](docs/production.md) for the operational side: what to
+alert on, and what to do when one is stranded.
 
 ---
 
@@ -277,6 +379,18 @@ PATCH  /api/v1/subscriptions/{id}
 POST   /api/v1/subscriptions/{id}/enable
 POST   /api/v1/subscriptions/{id}/disable
 POST   /api/v1/subscriptions/{id}/cancel
+
+POST   /api/v1/beneficiaries
+GET    /api/v1/beneficiaries
+GET    /api/v1/beneficiaries/{id}
+PATCH  /api/v1/beneficiaries/{id}
+DELETE /api/v1/beneficiaries/{id}
+POST   /api/v1/beneficiaries/{id}/verify
+GET    /api/v1/payout-banks
+
+POST   /api/v1/payouts
+GET    /api/v1/payouts
+GET    /api/v1/payouts/{id}
 
 GET    /api/v1/events
 GET    /api/v1/deliveries
@@ -306,7 +420,11 @@ paymux_delivery_total{outcome}
 paymux_delivery_failures_total{reason}
 paymux_delivery_duration_seconds{outcome}
 paymux_delivery_queue_depth{state}
+paymux_payouts_total{status,gateway}
 ```
+
+`paymux_payouts_total{status="UNRESOLVED"}` above zero means money may have
+moved without PayMux knowing, and is the one worth paging on.
 
 Labels are deliberately coarse: route patterns rather than paths, status
 classes rather than codes, because a payment identifier in a label would make
@@ -352,6 +470,23 @@ unvalidated blob to a payment gateway under your merchant credentials.
 
 ---
 
+## The dashboard
+
+Beyond the operational screens, two things are worth knowing about:
+
+**Integration** is a guide written for the person building against your
+instance, not for the operator running it. It lives in the console because the
+two things a developer needs are both there: the endpoints, and their own API
+key. The examples name your instance's real address, so they can be copied
+rather than adapted.
+
+**Appearance** follows the operating system by default, with an explicit light
+or dark override in the sidebar footer. Below 900px tables become cards and
+below 760px navigation moves to a bottom tab bar, so an operator can triage a
+failing delivery from a phone.
+
+---
+
 ## Architecture
 
 ```text
@@ -365,6 +500,7 @@ internal/
   application/  applications, API keys, webhook destinations
   auth/         administrator sessions and API-key authentication
   payment/      the payment lifecycle and idempotency
+  payout/       money out: beneficiaries, limits, approval, reconciliation
   subscription/ recurring billing
   notification/ inbound gateway callbacks: verify, attribute, apply
   event/        the normalized event model
@@ -379,7 +515,7 @@ internal/
 migrations/     versioned SQL schema
 docs/           OpenAPI specification and operator documentation
 deployments/    Dockerfiles and nginx configuration
-examples/       worked integrations
+examples/       worked integrations and two runnable demo storefronts
 ```
 
 Gateway-specific code lives only in the adapter. The payment domain speaks the
@@ -396,6 +532,10 @@ second gateway a matter of writing an adapter rather than rewriting the core.
 - API keys are stored as SHA-256 hashes; the plaintext is shown once.
 - Administrator passwords use Argon2id.
 - Gateway server keys and webhook secrets are sealed with AES-256-GCM.
+- Disbursement credentials are held apart from the payment server key and
+  sealed under their own contexts, so a leak of one is not a leak of the other.
+- An approver cannot approve their own payout request. The database refuses it,
+  not a handler.
 - Outbound webhook destinations are blocked from private, loopback, link-local
   and cloud-metadata ranges, checked again at connection time so a hostname
   cannot change its answer between validation and delivery.
@@ -456,6 +596,11 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 PayMux is Midtrans-first, and its architecture is gateway-agnostic. The
 long-term goal is one integration for applications and several payment gateways
 behind it.
+
+Disbursement is implemented end to end, but every path to the gateway has been
+exercised only against refused placeholder credentials: Midtrans gates Iris
+behind separate merchant approval. Real sandbox keys are the only way to
+confirm the final hop.
 
 ## License
 

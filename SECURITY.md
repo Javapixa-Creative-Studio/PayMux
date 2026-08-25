@@ -40,6 +40,9 @@ In scope:
 - outbound webhook signing
 - SSRF through webhook destinations
 - encryption of gateway credentials and webhook secrets
+- anything that lets a payout happen that should not: bypassing an
+  application's disbursement permission or its spending limits, approving a
+  payout as its own requester, or making one request move money twice
 - injection, privilege escalation, or leakage of secrets through the API,
   logs or error messages
 
@@ -73,6 +76,7 @@ PayMux is self-hosted, so several controls are yours to configure:
 
 - card numbers, CVVs, or any raw card credential
 - gateway server keys in plaintext
+- disbursement creator or approver keys in plaintext
 - webhook signing secrets in plaintext
 - authorization headers from gateway traffic
 
