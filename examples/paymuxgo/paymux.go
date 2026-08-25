@@ -1,10 +1,10 @@
-// Package main is a worked example of integrating an application with PayMux.
+// Package paymuxgo is a worked PayMux client for an application to copy.
 //
 // It is deliberately small and dependency-free: everything an application
-// genuinely needs is one HTTP call to create a payment, and one signature
-// check on the way back. Copy the two functions in this file into your own
-// service and you have a complete integration.
-package main
+// needs is opening a payment and verifying the event that comes back, and
+// both are here with nothing else in the way. Lift the directory into your
+// own service and delete what you do not use.
+package paymuxgo
 
 import (
 	"bytes"

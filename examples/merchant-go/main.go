@@ -10,6 +10,8 @@ import (
 	"os"
 	"sync"
 	"time"
+
+	"github.com/Javapixa-Creative-Studio/PayMux/examples/paymuxgo"
 )
 
 // This example is a miniature storefront. It does the two things every
@@ -37,7 +39,7 @@ func main() {
 	}
 
 	shop := &shop{
-		paymux: NewClient(baseURL, apiKey),
+		paymux: paymuxgo.NewClient(baseURL, apiKey),
 		secret: secret,
 		orders: make(map[string]string),
 	}
@@ -54,7 +56,7 @@ func main() {
 }
 
 type shop struct {
-	paymux *Client
+	paymux *paymuxgo.Client
 	secret string
 
 	// orders stands in for your database: order reference to fulfilment
@@ -80,12 +82,12 @@ func (s *shop) checkout(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 	defer cancel()
 
-	payment, err := s.paymux.CreatePayment(ctx, CreatePaymentRequest{
+	payment, err := s.paymux.CreatePayment(ctx, paymuxgo.CreatePaymentRequest{
 		ApplicationOrderID: req.OrderID,
 		Amount:             req.Amount,
 		Currency:           "IDR",
-		Customer:           &Customer{Email: req.Email},
-		Items: []Item{
+		Customer:           &paymuxgo.Customer{Email: req.Email},
+		Items: []paymuxgo.Item{
 			// Item prices must sum to the amount, or the gateway rejects it.
 			{ID: "SKU-1", Name: "Example product", Price: req.Amount, Quantity: 1},
 		},
@@ -93,7 +95,7 @@ func (s *shop) checkout(w http.ResponseWriter, r *http.Request) {
 	}, "order-"+req.OrderID) // derived from the order, so a retry matches
 
 	if err != nil {
-		var apiErr *APIError
+		var apiErr *paymuxgo.APIError
 		if errors.As(err, &apiErr) {
 			log.Printf("paymux refused the payment: %v", apiErr)
 			http.Error(w, apiErr.Message, http.StatusBadGateway)
@@ -125,7 +127,7 @@ func (s *shop) receive(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	event, err := VerifyWebhook(s.secret, r.Header, body)
+	event, err := paymuxgo.VerifyWebhook(s.secret, r.Header, body)
 	if err != nil {
 		// Answering 401 tells PayMux the delivery was refused. It will retry,
 		// which is what you want if the cause was a secret you had not yet

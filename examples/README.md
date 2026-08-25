@@ -4,6 +4,41 @@ Worked integrations, kept deliberately small. An application needs to do two
 things with PayMux, open a payment, and verify the event that comes back, 
 and these show both with nothing else in the way.
 
+## demo-shop
+
+Two browsable storefronts, to make PayMux's premise visible rather than
+described. Kopi Rakyat sells coffee, Margin Notes sells books, and both collect
+into one Midtrans account while neither can see the other's orders.
+
+```bash
+docker compose --profile demo up -d
+```
+
+Then open [localhost:9911](http://localhost:9911) and
+[localhost:9921](http://localhost:9921), buy something, and pay it in the
+Midtrans sandbox. The order moves to `paid` on the shop's own Orders page when
+the signed webhook arrives, not when the browser comes back, which is the
+distinction most integrations blur.
+
+It needs four values in your `.env`, one API key and one webhook secret per
+shop, each created in the PayMux dashboard under its own application:
+
+```
+SHOP_A_API_KEY=pmx_test_…
+SHOP_A_WEBHOOK_SECRET=whsec_…
+SHOP_B_API_KEY=pmx_test_…
+SHOP_B_WEBHOOK_SECRET=whsec_…
+```
+
+Point each application's destination at `http://host.docker.internal:9911` or
+`:9921` respectively. From inside a container, `127.0.0.1` is the container's
+own loopback rather than your machine, which is the single most common reason
+a local webhook never arrives.
+
+It is one binary run twice. The catalogue, name and colour come from the
+environment, so the difference you see between the two shops is exactly the
+difference PayMux sees: two API keys.
+
 ## merchant-go
 
 A miniature storefront in Go with no dependencies beyond the standard library.
@@ -43,7 +78,8 @@ first, and leave it off in production, where it disables the SSRF protection.
 
 ### What to copy
 
-`paymux.go` is the part worth lifting into your own service:
+The `paymuxgo` package is the part worth lifting into your own service, and
+both examples here use it unchanged:
 
 - `Client.CreatePayment`: one POST, with an `Idempotency-Key` derived from
   your own order so a retry after a timeout returns the original payment
@@ -52,8 +88,8 @@ first, and leave it off in production, where it disables the SSRF protection.
   delivery whose timestamp is outside a five-minute window, which is what stops
   a captured delivery being replayed later
 
-`main.go` is the surrounding storefront, and exists to show where those two
-calls sit in a real request flow.
+`merchant-go/main.go` is the surrounding storefront, and exists to show where
+those two calls sit in a real request flow.
 
 ### The three things integrations get wrong
 
