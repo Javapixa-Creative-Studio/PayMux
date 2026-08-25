@@ -105,7 +105,22 @@ type order struct {
 	Status    string
 	PaymentID string
 	Placed    time.Time
-	Settled   time.Time
+	// Settled is when the webhook arrived, which is rarely when the order was
+	// placed. Showing both is the clearest way to make the point that a shop
+	// learns about payment separately from taking the order.
+	Settled time.Time
+}
+
+// Waited reports how long the order sat between being placed and being paid.
+func (o *order) Waited() string {
+	if o.Settled.IsZero() {
+		return ""
+	}
+	d := o.Settled.Sub(o.Placed).Round(time.Second)
+	if d < time.Minute {
+		return fmt.Sprintf("%ds", int(d.Seconds()))
+	}
+	return fmt.Sprintf("%dm %ds", int(d.Minutes()), int(d.Seconds())%60)
 }
 
 type shop struct {

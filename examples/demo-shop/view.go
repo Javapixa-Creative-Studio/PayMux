@@ -180,6 +180,7 @@ var page = template.Must(template.New("page").Funcs(template.FuncMap{
           <th class="hide-sm">Product</th>
           <th class="num">Amount</th>
           <th>Status</th>
+          <th class="hide-sm">Took</th>
           <th class="hide-sm">Payment</th>
         </tr>
       </thead>
@@ -192,6 +193,7 @@ var page = template.Must(template.New("page").Funcs(template.FuncMap{
             <td>
               <span class="pill {{if eq .Status "paid"}}paid{{else if eq .Status "awaiting payment"}}waiting{{else}}failed{{end}}">{{.Status}}</span>
             </td>
+            <td class="mono hide-sm">{{if .Waited}}{{.Waited}}{{else}}—{{end}}</td>
             <td class="mono hide-sm">{{if .PaymentID}}{{.PaymentID}}{{else}}—{{end}}</td>
           </tr>
         {{end}}
@@ -203,7 +205,9 @@ var page = template.Must(template.New("page").Funcs(template.FuncMap{
   <div class="note">
     This table is this shop's own record. It only ever contains this shop's
     orders, even though every other shop on this PayMux collects into the same
-    merchant account.
+    merchant account. <strong>Took</strong> is the gap between placing the
+    order and the webhook arriving, which is the interval a checkout that
+    fulfils on the redirect quietly ignores.
   </div>
 {{end}}
 
