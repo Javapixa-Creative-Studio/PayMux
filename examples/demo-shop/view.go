@@ -14,6 +14,7 @@ var page = template.Must(template.New("page").Funcs(template.FuncMap{
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{.Shop}}</title>
+{{if .Popup}}<script src="{{.CheckoutJS}}" data-client-key="{{.ClientKey}}"></script>{{end}}
 <style>
   :root {
     --accent: {{.Accent}};
@@ -108,7 +109,7 @@ var page = template.Must(template.New("page").Funcs(template.FuncMap{
         <span class="sku">{{.SKU}}</span>
         <span class="name">{{.Name}}</span>
         <span class="price">{{rupiah .Price}}</span>
-        <form method="post" action="/buy">
+        <form method="post" action="/buy" data-sku="{{.SKU}}">
           <input type="hidden" name="sku" value="{{.SKU}}">
           <button type="submit">Buy</button>
         </form>
@@ -116,10 +117,58 @@ var page = template.Must(template.New("page").Funcs(template.FuncMap{
     {{end}}
   </div>
   <div class="note">
-    Buying sends you to the real Midtrans sandbox. Nothing is charged. When you
-    finish paying, this shop hears about it through a signed webhook from
-    PayMux, not by watching the browser come back.
+    {{if .Popup}}
+      Checkout opens here in a dialog, without leaving the shop. Nothing is
+      charged: it is the real Midtrans sandbox.
+    {{else}}
+      Buying sends you to the Midtrans sandbox and back. Nothing is charged.
+    {{end}}
+    Either way this shop learns the payment succeeded from a signed webhook,
+    not from the browser returning, so an order still completes if the customer
+    closes the tab.
   </div>
+
+  {{if .Popup}}
+  <script>
+    // Progressive enhancement: without this the forms still post and the
+    // customer is redirected, which is why the markup is a real form rather
+    // than a button waiting for JavaScript.
+    document.querySelectorAll('form[data-sku]').forEach(function (form) {
+      form.addEventListener('submit', function (event) {
+        event.preventDefault();
+        var button = form.querySelector('button');
+        button.disabled = true;
+        button.textContent = 'Opening…';
+
+        fetch('/buy', {
+          method: 'POST',
+          headers: { 'Accept': 'application/json' },
+          body: new FormData(form),
+        })
+          .then(function (r) { if (!r.ok) throw new Error('checkout failed'); return r.json(); })
+          .then(function (data) {
+            snap.pay(data.token, {
+              // The shop does not fulfil on any of these. They only decide
+              // where the customer goes next; the webhook decides what the
+              // order becomes.
+              onSuccess: function () { location.href = '/orders'; },
+              onPending: function () { location.href = '/orders'; },
+              onError:   function () { location.href = '/orders'; },
+              onClose:   function () {
+                button.disabled = false;
+                button.textContent = 'Buy';
+              },
+            });
+          })
+          .catch(function () {
+            button.disabled = false;
+            button.textContent = 'Buy';
+            alert('Could not start checkout. The shop log will say why.');
+          });
+      });
+    });
+  </script>
+  {{end}}
 {{end}}
 
 {{if eq .View "orders"}}

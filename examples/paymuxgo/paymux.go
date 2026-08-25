@@ -224,3 +224,60 @@ func Sign(secret string, timestamp int64, deliveryID string, body []byte) string
 	mac.Write(body)
 	return "v1=" + hex.EncodeToString(mac.Sum(nil))
 }
+
+// Capabilities is what this PayMux instance's gateway can do, and what a
+// browser needs to show its checkout in place.
+type Capabilities struct {
+	Gateway     string `json:"gateway"`
+	Environment string `json:"environment"`
+	// ClientKey names the merchant to the checkout script. It is safe to put
+	// in a page: it authorises nothing on its own.
+	ClientKey         string `json:"client_key"`
+	CheckoutScriptURL string `json:"checkout_script_url"`
+	Capabilities      struct {
+		Checkout      bool `json:"checkout"`
+		Refund        bool `json:"refund"`
+		PartialRefund bool `json:"partial_refund"`
+		Subscriptions bool `json:"subscriptions"`
+		Disbursement  bool `json:"disbursement"`
+	} `json:"capabilities"`
+}
+
+// GetCapabilities asks what the configured gateway supports.
+//
+// Worth calling at startup rather than hardcoding: which gateway is behind
+// PayMux, which environment it points at and what it can do are the merchant's
+// configuration, not the application's.
+func (c *Client) GetCapabilities(ctx context.Context) (*Capabilities, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet,
+		c.BaseURL+"/api/v1/gateway/capabilities", nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Authorization", "Bearer "+c.APIKey)
+
+	resp, err := c.HTTP.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode >= 400 {
+		var envelope struct {
+			Error APIError `json:"error"`
+		}
+		_ = json.Unmarshal(body, &envelope)
+		envelope.Error.Status = resp.StatusCode
+		return nil, &envelope.Error
+	}
+	var out Capabilities
+	if err := json.Unmarshal(body, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}

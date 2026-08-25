@@ -8,7 +8,8 @@
 // Everything a real integration does is here and nothing else is:
 //
 //	GET  /                  the catalogue
-//	POST /buy               opens a payment, redirects the customer to pay
+//	POST /buy               opens a payment; redirects, or answers JSON so the
+//	                        page can show the gateway's dialog in place
 //	GET  /orders            what this shop knows about its own orders
 //	POST /webhooks/paymux   the signed event, verified, that fulfils an order
 //
@@ -18,6 +19,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"html/template"
@@ -26,6 +28,7 @@ import (
 	"net/http"
 	"os"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -47,6 +50,27 @@ func main() {
 		log.Fatal("set PAYMUX_API_KEY and PAYMUX_WEBHOOK_SECRET; both are shown " +
 			"once, when you create them in the PayMux dashboard")
 	}
+
+	shop.popup = envOr("SHOP_CHECKOUT", "popup") == "popup"
+	if shop.popup {
+		// Ask PayMux what the browser needs. If it cannot answer, fall back to
+		// redirecting rather than rendering a dialog that will not open: a
+		// checkout that works is better than the one that was asked for.
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		caps, err := shop.paymux.GetCapabilities(ctx)
+		cancel()
+		switch {
+		case err != nil:
+			log.Printf("could not read gateway capabilities, falling back to redirect: %v", err)
+			shop.popup = false
+		case caps.ClientKey == "" || caps.CheckoutScriptURL == "":
+			log.Printf("gateway reports no browser checkout, falling back to redirect")
+			shop.popup = false
+		default:
+			shop.clientKey, shop.checkoutJS = caps.ClientKey, caps.CheckoutScriptURL
+		}
+	}
+	log.Printf("checkout style: %s", map[bool]string{true: "popup", false: "redirect"}[shop.popup])
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", shop.storefront)
@@ -91,6 +115,18 @@ type shop struct {
 	catalogue []product
 	paymux    *paymuxgo.Client
 	secret    string
+
+	// popup shows the gateway's checkout in a dialog instead of navigating
+	// away. Which one suits a shop is a shop's decision: a dialog keeps the
+	// customer on the page, a redirect survives browsers that block scripts
+	// and is the simpler thing to get right.
+	popup bool
+	// What the browser needs to render that dialog, discovered from PayMux at
+	// startup rather than configured here. Which gateway is behind PayMux and
+	// which environment it points at is the merchant's business, not this
+	// shop's.
+	clientKey  string
+	checkoutJS string
 
 	mu     sync.Mutex
 	orders map[string]*order
@@ -156,6 +192,10 @@ func (s *shop) buy(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		s.setStatus(reference, "could not start payment: "+err.Error(), "")
 		log.Printf("checkout failed for %s: %v", reference, err)
+		if strings.Contains(r.Header.Get("Accept"), "application/json") {
+			http.Error(w, "could not start payment", http.StatusBadGateway)
+			return
+		}
 		http.Redirect(w, r, "/orders", http.StatusSeeOther)
 		return
 	}
@@ -164,6 +204,16 @@ func (s *shop) buy(w http.ResponseWriter, r *http.Request) {
 	s.orders[reference].PaymentID = payment.ID
 	s.mu.Unlock()
 
+	// One handler, two shapes. A page using the dialog asks with fetch and
+	// wants the token; a plain form post wants to be sent to the gateway.
+	if strings.Contains(r.Header.Get("Accept"), "application/json") {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]string{
+			"token":     payment.SnapToken,
+			"reference": reference,
+		})
+		return
+	}
 	http.Redirect(w, r, payment.RedirectURL, http.StatusSeeOther)
 }
 
@@ -265,6 +315,9 @@ func (s *shop) render(w http.ResponseWriter, view string, data map[string]any) {
 	data["Tagline"] = s.tagline
 	data["Accent"] = template.CSS(s.accent)
 	data["View"] = view
+	data["Popup"] = s.popup
+	data["ClientKey"] = s.clientKey
+	data["CheckoutJS"] = template.URL(s.checkoutJS)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := page.Execute(w, data); err != nil {
 		log.Printf("render: %v", err)

@@ -53,6 +53,16 @@ func (a *Adapter) SetMetrics(recorder RequestRecorder) {
 	a.client.Metrics = recorder
 }
 
+// CheckoutScriptURL returns Snap's browser script for this account's
+// environment. The client key that goes with it is on the account and is safe
+// to expose: it identifies the merchant to the script and authorises nothing.
+func (a *Adapter) CheckoutScriptURL() string {
+	if a.account.Environment == gateway.Sandbox {
+		return snapSandboxURL + "/snap/snap.js"
+	}
+	return snapProductionURL + "/snap/snap.js"
+}
+
 // Name identifies the adapter.
 func (a *Adapter) Name() string { return Name }
 

@@ -233,9 +233,15 @@ func toGatewayAddress(a *addressRequest) *gateway.Address {
 
 // capabilitiesResponse reports what a gateway account can do (PRD §85).
 type capabilitiesResponse struct {
-	Gateway      string               `json:"gateway"`
-	Environment  string               `json:"environment"`
-	Capabilities gateway.Capabilities `json:"capabilities"`
+	Gateway     string `json:"gateway"`
+	Environment string `json:"environment"`
+	// ClientKey and CheckoutScriptURL are what a browser needs to show the
+	// gateway's checkout in a dialog rather than by navigating away. The
+	// client key is safe to publish: it names the merchant to the script and
+	// authorises nothing on its own.
+	ClientKey         string               `json:"client_key,omitempty"`
+	CheckoutScriptURL string               `json:"checkout_script_url,omitempty"`
+	Capabilities      gateway.Capabilities `json:"capabilities"`
 }
 
 // handleCapabilities lets an application discover which operations are
@@ -251,9 +257,14 @@ func (s *Server) handleCapabilities(w http.ResponseWriter, r *http.Request) {
 		fail(w, r, err, genericMissing)
 		return
 	}
-	httpx.JSON(w, r, http.StatusOK, capabilitiesResponse{
+	body := capabilitiesResponse{
 		Gateway:      account.Gateway,
 		Environment:  string(account.Environment),
+		ClientKey:    account.ClientKey,
 		Capabilities: gateway.CapabilitiesFor(adapter),
-	})
+	}
+	if checkout, ok := adapter.(gateway.CheckoutGateway); ok {
+		body.CheckoutScriptURL = checkout.CheckoutScriptURL()
+	}
+	httpx.JSON(w, r, http.StatusOK, body)
 }

@@ -58,6 +58,15 @@ type RefundGateway interface {
 // that can be cancelled independently of the transaction (PRD §30).
 type CheckoutGateway interface {
 	CancelCheckoutSession(ctx context.Context, token string) error
+
+	// CheckoutScriptURL is the browser script that renders the gateway's
+	// hosted checkout in place, for applications that would rather show a
+	// dialog than send the customer away.
+	//
+	// PayMux reports it so an application never has to hardcode a gateway's
+	// hostnames or know which environment it is pointed at. That is the whole
+	// arrangement: the merchant configures the gateway once, here.
+	CheckoutScriptURL() string
 }
 
 // SubscriptionGateway is implemented by gateways supporting recurring

@@ -126,6 +126,10 @@ services:
       SHOP_TAGLINE: Single-origin beans, roasted weekly
       SHOP_CATALOGUE: coffee
       SHOP_ACCENT: "#b4541f"
+      # The two shops deliberately differ here: one keeps the customer on the
+      # page, the other sends them to the gateway and back. Both are supported
+      # and the choice belongs to the shop.
+      SHOP_CHECKOUT: ${SHOP_A_CHECKOUT:-popup}
       SHOP_ADDR: ":9911"
       # Reached from inside the compose network, not from the browser.
       PAYMUX_URL: http://api:8080
@@ -156,6 +160,7 @@ services:
       SHOP_TAGLINE: Second-hand books, first-rate condition
       SHOP_CATALOGUE: books
       SHOP_ACCENT: "#2f6f5e"
+      SHOP_CHECKOUT: ${SHOP_B_CHECKOUT:-redirect}
       SHOP_ADDR: ":9921"
       PAYMUX_URL: http://api:8080
       PAYMUX_API_KEY: ${SHOP_B_API_KEY:-}

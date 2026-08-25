@@ -39,6 +39,42 @@ It is one binary run twice. The catalogue, name and colour come from the
 environment, so the difference you see between the two shops is exactly the
 difference PayMux sees: two API keys.
 
+### Dialog or redirect
+
+`SHOP_CHECKOUT` picks how a shop takes payment, and the two demo shops are
+deliberately set differently so both are visible:
+
+- `popup` shows the gateway's checkout in a dialog and keeps the customer on
+  the page. Kopi Rakyat does this.
+- `redirect` sends them to the gateway and back, which needs no JavaScript.
+  Margin Notes does this.
+
+A shop asking for `popup` needs two things in the browser: the checkout script
+and the merchant's client key. It does not configure either. It asks PayMux at
+startup:
+
+```bash
+curl -s "$PAYMUX_URL/api/v1/gateway/capabilities" -H "Authorization: Bearer $PAYMUX_KEY"
+```
+
+```json
+{
+  "gateway": "midtrans",
+  "environment": "sandbox",
+  "client_key": "SB-Mid-client-…",
+  "checkout_script_url": "https://app.sandbox.midtrans.com/snap/snap.js"
+}
+```
+
+Which gateway is behind PayMux and which environment it points at is the
+merchant's configuration, so an application that hardcoded those hostnames
+would break the day the merchant moved to production. The client key is safe
+to put in a page: it names the merchant to the script and authorises nothing.
+
+The Buy control stays a real form even in `popup` mode, and the script only
+intercepts its submit. A browser that never runs the script still checks out,
+by redirecting.
+
 ## merchant-go
 
 A miniature storefront in Go with no dependencies beyond the standard library.
