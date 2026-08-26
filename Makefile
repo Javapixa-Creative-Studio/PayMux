@@ -82,13 +82,21 @@ dashboard-test: ## Run the dashboard tests
 # Local environment
 # ---------------------------------------------------------------------------
 
+COMPOSE_PG := -f docker-compose.yml -f docker-compose.postgres.yml
+
 .PHONY: up
-up: ## Start the full stack with docker compose
+up: ## Start api, worker and dashboard against your own PostgreSQL
 	docker compose up -d --build
+	@$(MAKE) --no-print-directory ports
+
+.PHONY: up-postgres
+up-postgres: ## Start the stack and a PostgreSQL container with it
+	docker compose $(COMPOSE_PG) up -d --build
+	@$(MAKE) --no-print-directory ports
 
 .PHONY: down
-down: ## Stop the stack
-	docker compose down
+down: ## Stop the stack, including a bundled PostgreSQL if one was started
+	docker compose $(COMPOSE_PG) down
 
 .PHONY: logs
 logs: ## Follow the stack's logs
@@ -96,7 +104,31 @@ logs: ## Follow the stack's logs
 
 .PHONY: db
 db: ## Start only PostgreSQL, for running the backend locally
-	docker compose up -d postgres
+	docker compose $(COMPOSE_PG) up -d postgres
+
+.PHONY: ports
+ports: ## Show where each service listens, for binding domains
+	@echo ""
+	@echo "  Bind a domain to the container port, not the published one. A host"
+	@echo "  like Easypanel or Coolify talks to the container directly."
+	@echo ""
+	@printf "  %-11s %-15s %s
+" "SERVICE" "CONTAINER PORT" "WHAT IT SERVES"
+	@printf "  %-11s %-15s %s
+" "----------" "--------------" "-------------------------------------"
+	@printf "  %-11s %-15s %s
+" "api" "8080" "REST API and /webhooks/midtrans. Public."
+	@printf "  %-11s %-15s %s
+" "dashboard" "80" "Operations UI. Public, on its own domain."
+	@printf "  %-11s %-15s %s
+" "worker" "9090" "Prometheus metrics. Keep this internal."
+	@echo ""
+	@echo "  The worker has no API. It is unauthenticated on 9090, so give it no"
+	@echo "  domain and no published port unless Prometheus needs to reach it."
+	@echo ""
+	@echo "  Published on this host right now:"
+	@docker compose $(COMPOSE_PG) ps --format "    {{.Service}}  {{.Ports}}" 2>/dev/null || 		echo "    (nothing running)"
+	@echo ""
 
 .PHONY: key
 key: ## Generate an encryption key for PAYMUX_ENCRYPTION_KEY

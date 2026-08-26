@@ -1,41 +1,31 @@
+# PayMux: API, worker and dashboard.
+#
+# This file does not start a database. Point DATABASE_URL at the PostgreSQL you
+# already run, which is the common case for anything past a laptop. If you want
+# compose to run one for you, layer the companion file on top:
+#
+#   docker compose up -d                      # your own PostgreSQL
+#   make up-postgres                          # a PostgreSQL container as well
+#
+# `make ports` prints where each service listens, which is what you need when
+# binding domains on a host like Easypanel, Coolify or a plain reverse proxy.
 name: paymux
 
 services:
-  postgres:
-    image: postgres:17-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-paymux}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-paymux}
-      POSTGRES_DB: ${POSTGRES_DB:-paymux}
-    # Deliberately not published. The database is reachable on the compose
-    # network by the services that need it; exposing it on the host is a
-    # development convenience that becomes an attack surface in production.
-    # Set POSTGRES_PORT and uncomment to reach it with psql locally.
-    # ports:
-    #   - "${POSTGRES_PORT:-5432}:5432"
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-paymux} -d ${POSTGRES_DB:-paymux}"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
   api:
     build:
       context: .
       dockerfile: deployments/api.Dockerfile
     restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
     environment:
       PAYMUX_ENV: ${PAYMUX_ENV:-development}
       PAYMUX_HTTP_ADDR: ":8080"
       PAYMUX_BASE_URL: ${PAYMUX_BASE_URL:-http://localhost:8080}
       PAYMUX_LOG_LEVEL: ${PAYMUX_LOG_LEVEL:-info}
-      DATABASE_URL: postgres://${POSTGRES_USER:-paymux}:${POSTGRES_PASSWORD:-paymux}@postgres:5432/${POSTGRES_DB:-paymux}?sslmode=disable
+      # Your database. Empty here on purpose: docker-compose.postgres.yml
+      # overrides it when compose is the one running PostgreSQL. A managed
+      # instance usually wants ?sslmode=require rather than disable.
+      DATABASE_URL: ${DATABASE_URL:-}
       PAYMUX_ENCRYPTION_KEY: ${PAYMUX_ENCRYPTION_KEY:?set PAYMUX_ENCRYPTION_KEY in .env}
       PAYMUX_ADMIN_EMAIL: ${PAYMUX_ADMIN_EMAIL:-}
       PAYMUX_ADMIN_PASSWORD: ${PAYMUX_ADMIN_PASSWORD:-}
@@ -58,13 +48,13 @@ services:
       context: .
       dockerfile: deployments/worker.Dockerfile
     restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
     environment:
       PAYMUX_ENV: ${PAYMUX_ENV:-development}
       PAYMUX_LOG_LEVEL: ${PAYMUX_LOG_LEVEL:-info}
-      DATABASE_URL: postgres://${POSTGRES_USER:-paymux}:${POSTGRES_PASSWORD:-paymux}@postgres:5432/${POSTGRES_DB:-paymux}?sslmode=disable
+      # Your database. Empty here on purpose: docker-compose.postgres.yml
+      # overrides it when compose is the one running PostgreSQL. A managed
+      # instance usually wants ?sslmode=require rather than disable.
+      DATABASE_URL: ${DATABASE_URL:-}
       PAYMUX_ENCRYPTION_KEY: ${PAYMUX_ENCRYPTION_KEY:?set PAYMUX_ENCRYPTION_KEY in .env}
       PAYMUX_WORKER_CONCURRENCY: ${PAYMUX_WORKER_CONCURRENCY:-20}
       PAYMUX_ALLOW_PRIVATE_WEBHOOK_DESTINATIONS: ${PAYMUX_ALLOW_PRIVATE_WEBHOOK_DESTINATIONS:-false}
@@ -176,6 +166,3 @@ services:
       resources:
         limits:
           memory: 64M
-
-volumes:
-  postgres-data:
