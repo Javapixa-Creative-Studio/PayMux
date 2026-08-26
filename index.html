@@ -1697,45 +1697,44 @@ docker compose up -d</pre>
     'events': 'event',
     'money out': 'uang keluar',
     'api': 'api',
-    'inside': 'isi',
+    'inside': 'arsitektur',
     'quick start': 'mulai',
-    'GitHub ↗': 'GitHub ↗',
 
     /* ── hero ── */
     'One merchant account. Every product you run.':
       'Satu akun merchant.<br> <span>Semua produk yang Anda jalankan.</span>',
     'Payment gateway configuration is merchant-wide. One notification URL serves everything you build, so the second application forces a choice between coupling your products together or inventing order_id prefix conventions. PayMux takes ownership of the gateway integration instead: your applications talk to PayMux, PayMux talks to Midtrans, and because PayMux opened every transaction it knows exactly who owns each notification.':
-      'Konfigurasi payment gateway berlaku untuk seluruh merchant. Satu notification URL melayani semua yang Anda bangun, sehingga aplikasi kedua memaksa Anda memilih: menyatukan produk-produk Anda, atau mengarang konvensi prefix <code class="mono" style="color:var(--paper)">order_id</code>. PayMux justru mengambil alih integrasi gateway-nya: aplikasi Anda berbicara ke PayMux, PayMux berbicara ke Midtrans, dan karena PayMux yang membuka setiap transaksi, ia tahu persis siapa pemilik setiap notifikasi.',
+      'Pengaturan payment gateway berlaku untuk satu akun merchant, bukan per aplikasi. Satu notification URL dipakai bersama semua produk Anda, jadi begitu ada aplikasi kedua, pilihannya tinggal dua: menyatukan semua produk jadi satu, atau mengarang aturan prefix <code class="mono" style="color:var(--paper)">order_id</code> sendiri. PayMux mengambil alih integrasi gateway-nya. Aplikasi Anda cukup bicara ke PayMux, PayMux yang bicara ke Midtrans. Dan karena PayMux yang membuka setiap transaksi, dia tahu persis notifikasi ini punya siapa.',
     'Run it yourself': 'Jalankan sendiri',
-    'Read the source ↗': 'Baca sumbernya ↗',
+    'Read the source ↗': 'Baca kodenya ↗',
     'Gateway': 'Gateway',
     'Snap and Core API, one adapter': 'Snap dan Core API, satu adapter',
     'Event types': 'Jenis event',
     'Payments, refunds, subscriptions, payouts': 'Pembayaran, refund, langganan, payout',
     'Delivery attempts': 'Percobaan kirim',
-    'Then dead, visible, and replayable': 'Lalu mati, tetap terlihat, bisa diulang',
+    'Then dead, visible, and replayable': 'Lalu berhenti, tetap tercatat, bisa dikirim ulang',
     'Endpoints': 'Endpoint',
     'Under /api/v1, one bearer key': 'Di bawah <span class="mono">/api/v1</span>, satu bearer key',
 
     /* ── isolation ── */
     'Isolation': 'Isolasi',
-    'Send a payment. Watch who gets told.': 'Kirim pembayaran. Lihat siapa yang diberi tahu.',
+    'Send a payment. Watch who gets told.': 'Kirim pembayaran. Lihat siapa yang dapat kabarnya.',
     'Three applications, one Midtrans account. Open a payment from any of them and follow it out to the gateway and back. The notification returns to exactly one application, and the other two are never told it happened.':
-      'Tiga aplikasi, satu akun Midtrans. Buka pembayaran dari salah satunya, lalu ikuti perjalanannya ke gateway dan kembali. Notifikasinya pulang ke tepat satu aplikasi, dan dua lainnya tidak pernah tahu itu terjadi.',
+      'Tiga aplikasi, satu akun Midtrans. Buka pembayaran dari salah satunya, lalu ikuti jalannya sampai ke gateway dan kembali lagi. Notifikasinya hanya sampai ke satu aplikasi. Dua yang lain tidak pernah tahu transaksi itu ada.',
     'Routing bay · sandbox': 'Panel routing · sandbox',
     'Kopi Rakyat pays': 'Kopi Rakyat bayar',
     'Margin Notes pays': 'Margin Notes bayar',
     'Third app pays': 'Aplikasi ketiga bayar',
     'Reset': 'Atur ulang',
-    'app_01 · checkout in a dialog': 'app_01 · checkout dalam dialog',
+    'app_01 · checkout in a dialog': 'app_01 · checkout lewat dialog',
     'app_02 · redirect to the gateway': 'app_02 · redirect ke gateway',
     'Third app': 'Aplikasi ketiga',
-    'app_03 · the one you add next': 'app_03 · yang Anda tambahkan berikutnya',
-    'nothing delivered': 'belum ada yang dikirim',
+    'app_03 · the one you add next': 'app_03 · yang berikutnya Anda tambah',
+    'nothing delivered': 'belum ada kiriman',
     'Because PayMux creates every transaction, it knows with certainty which application owns each notification: no prefix parsing, no guessing. README — Why':
-      'Karena PayMux yang membuat setiap transaksi, ia tahu dengan pasti aplikasi mana yang memiliki setiap notifikasi: tanpa parsing prefix, tanpa menebak.<cite>README — Why</cite>',
+      'Karena PayMux yang membuat setiap transaksi, dia tahu persis notifikasi ini milik aplikasi mana. Tidak perlu membaca prefix, tidak perlu menebak.<cite>README — Why</cite>',
     'Two of these applications ship with the repository as browsable storefronts. Kopi Rakyat sells coffee in a checkout dialog, Margin Notes sells books through a gateway redirect. It is one binary run twice — the only difference between the two shops is exactly the difference PayMux sees: two API keys.':
-      'Dua dari aplikasi ini ikut di dalam repositori sebagai etalase yang bisa dijelajahi. Kopi Rakyat menjual kopi lewat dialog checkout, Margin Notes menjual buku lewat redirect ke gateway. Keduanya satu binary yang dijalankan dua kali — satu-satunya beda antara kedua toko itu persis sama dengan beda yang dilihat PayMux: dua API key.',
+      'Dua dari aplikasi ini ikut di dalam repo, sebagai toko yang bisa Anda buka sendiri. Kopi Rakyat jualan kopi dengan checkout berupa dialog, Margin Notes jualan buku lewat redirect ke gateway. Keduanya binary yang sama, dijalankan dua kali. Satu-satunya pembeda antara kedua toko itu sama persis dengan yang dilihat PayMux: dua API key yang berbeda.',
     'the event your endpoint receives': 'event yang diterima endpoint Anda',
     'POST · signed': 'POST · ditandatangani',
 
@@ -1743,28 +1742,28 @@ docker compose up -d</pre>
     'Taking a payment': 'Menerima pembayaran',
     'Your backend calls PayMux instead of Midtrans.': 'Backend Anda memanggil PayMux, bukan Midtrans.',
     'One bearer key, one endpoint. You get back the Snap token and the redirect URL your frontend needs, and the Midtrans server key never leaves PayMux.':
-      'Satu bearer key, satu endpoint. Anda menerima Snap token dan redirect URL yang dibutuhkan frontend Anda, dan server key Midtrans tidak pernah keluar dari PayMux.',
+      'Satu bearer key, satu endpoint. Anda dapat Snap token dan redirect URL yang dibutuhkan frontend. Server key Midtrans tidak pernah keluar dari PayMux.',
     'request': 'request',
     'response': 'response',
     'Idempotency': 'Idempotensi',
     'A retry with the same Idempotency-Key returns the original payment rather than opening a second transaction. Reusing a key with a different body is rejected as a conflict.':
-      'Percobaan ulang dengan <span class="mono" style="color:var(--paper)">Idempotency-Key</span> yang sama mengembalikan pembayaran aslinya, bukan membuka transaksi kedua. Memakai ulang key dengan body berbeda ditolak sebagai konflik.',
+      'Kirim ulang dengan <span class="mono" style="color:var(--paper)">Idempotency-Key</span> yang sama, yang kembali pembayaran yang lama — bukan transaksi baru. Kalau key-nya sama tapi isinya beda, request-nya ditolak sebagai konflik.',
     'Keys are scoped to an environment': 'Key terikat pada satu environment',
     'A pmx_test_… key works against a sandbox gateway account and pmx_live_… against a production one. PayMux refuses the mismatch rather than letting a test credential move real money.':
-      'Key <span class="mono" style="color:var(--paper)">pmx_test_…</span> bekerja dengan akun gateway sandbox dan <span class="mono" style="color:var(--paper)">pmx_live_…</span> dengan akun production. PayMux menolak ketidakcocokannya, alih-alih membiarkan kredensial test memindahkan uang sungguhan.',
+      'Key <span class="mono" style="color:var(--paper)">pmx_test_…</span> hanya jalan dengan akun gateway sandbox, <span class="mono" style="color:var(--paper)">pmx_live_…</span> hanya dengan production. Kalau tertukar, PayMux menolak — daripada kredensial test dipakai memindahkan uang sungguhan.',
     'Amounts': 'Nominal',
     'Integers in the currency’s minor unit. For IDR that is one rupiah, so 150000 is Rp 150.000.':
-      'Bilangan bulat dalam satuan terkecil mata uangnya. Untuk IDR itu satu rupiah, jadi <span class="mono" style="color:var(--paper)">150000</span> berarti Rp 150.000.',
+      'Angka bulat dalam satuan terkecil mata uangnya. Untuk IDR itu rupiah, jadi <span class="mono" style="color:var(--paper)">150000</span> berarti Rp 150.000.',
 
     /* ── events and delivery ── */
     'Events and delivery': 'Event dan pengiriman',
-    'Normalized, signed, and retried until you answer.': 'Dinormalkan, ditandatangani, diulang sampai Anda menjawab.',
+    'Normalized, signed, and retried until you answer.': 'Dirapikan, ditandatangani, dikirim ulang sampai Anda menjawab.',
     'PayMux verifies the gateway’s notification, attributes it to its owner, and turns it into one of 23 event types. Every delivery is signed with your destination’s own HMAC-SHA256 secret over <timestamp>.<delivery id>.<raw body>.':
-      'PayMux memverifikasi notifikasi dari gateway, menetapkan pemiliknya, lalu mengubahnya menjadi satu dari 23 jenis event. Setiap pengiriman ditandatangani dengan secret HMAC-SHA256 milik destination Anda sendiri atas <span class="mono" style="color:var(--paper)">&lt;timestamp&gt;.&lt;delivery id&gt;.&lt;raw body&gt;</span>.',
+      'PayMux memverifikasi notifikasi dari gateway, menentukan siapa pemiliknya, lalu mengubahnya jadi salah satu dari 23 jenis event. Setiap pengiriman ditandatangani pakai secret HMAC-SHA256 milik destination Anda sendiri, atas <span class="mono" style="color:var(--paper)">&lt;timestamp&gt;.&lt;delivery id&gt;.&lt;raw body&gt;</span>.',
     'Delivery simulator': 'Simulator pengiriman',
     'real schedule, accelerated': 'jadwal asli, dipercepat',
-    'Your endpoint returns 200': 'Endpoint Anda menjawab 200',
-    '500, every time': '500, setiap kali',
+    'Your endpoint returns 200': 'Endpoint Anda jawab 200',
+    '500, every time': '500, terus-terusan',
     '500, then recovers': '500, lalu pulih',
     '400 Bad Request': '400 Bad Request',
     'immediately': 'langsung',
@@ -1774,209 +1773,209 @@ docker compose up -d</pre>
     '+1 hour': '+1 jam',
     '+6 hours': '+6 jam',
     '+24 hours': '+24 jam',
-    'dead': 'mati',
+    'dead': 'berhenti',
     'the first attempt': 'percobaan pertama',
-    'quick, because most failures are momentary': 'cepat, karena sebagian besar kegagalan hanya sesaat',
-    'a destination down for a working day still gets its delivery': 'destination yang mati seharian kerja tetap menerima kirimannya',
-    'visible in the dashboard, and replayable': 'terlihat di dashboard, dan bisa diulang',
-    'Seven attempts, then the delivery is marked dead.': 'Tujuh percobaan, lalu pengirimannya ditandai mati.',
+    'quick, because most failures are momentary': 'cepat, karena kebanyakan gangguan cuma sebentar',
+    'a destination down for a working day still gets its delivery': 'server yang mati satu hari kerja penuh pun masih kebagian kirimannya',
+    'visible in the dashboard, and replayable': 'tetap tercatat di dashboard, bisa dikirim ulang',
+    'Seven attempts, then the delivery is marked dead.': 'Tujuh percobaan, lalu pengirimannya ditandai berhenti.',
     'Each delay carries up to ±10% jitter, so a destination coming back online is not hit by every pending delivery at the same instant. A 4xx other than 408, 425 or 429 stops the retries immediately: your endpoint has said the request itself is wrong, and repeating it will not change that.':
-      'Setiap jeda membawa jitter hingga ±10%, sehingga destination yang baru kembali online tidak dihantam semua pengiriman tertunda pada detik yang sama. Kode <span class="mono" style="color:var(--paper)">4xx</span> selain 408, 425 atau 429 menghentikan percobaan ulang seketika: endpoint Anda sudah menyatakan request-nya sendiri salah, dan mengulanginya tidak akan mengubah itu.',
-    'verify against the raw body, before parsing': 'verifikasi terhadap raw body, sebelum parsing',
+      'Tiap jeda diberi jitter sampai ±10%, supaya server yang baru hidup lagi tidak langsung dihantam semua kiriman tertunda sekaligus. Kode <span class="mono" style="color:var(--paper)">4xx</span> selain 408, 425, dan 429 langsung menghentikan percobaan ulang: endpoint Anda sudah bilang request-nya memang salah, dan mengulanginya tidak akan mengubah apa pun.',
+    'verify against the raw body, before parsing': 'verifikasi terhadap raw body, sebelum di-parse',
     'Treat the event as at-least-once: PayMux retries until you answer 2xx, so make your handler idempotent on id. README — Verifying the signature':
-      'Perlakukan event sebagai at-least-once: PayMux mengulang sampai Anda menjawab 2xx, jadi buat handler Anda idempoten terhadap <span class="mono" style="font-style:normal;font-size:.9em">id</span>.<cite>README — Verifying the signature</cite>',
+      'Anggap setiap event bisa datang lebih dari sekali: PayMux terus mengulang sampai Anda menjawab 2xx, jadi buat handler Anda idempoten terhadap <span class="mono" style="font-style:normal;font-size:.9em">id</span>.<cite>README — Verifying the signature</cite>',
     'Signature check': 'Cek signature',
-    'real HMAC-SHA256, computed in your browser': 'HMAC-SHA256 asli, dihitung di browser Anda',
+    'real HMAC-SHA256, computed in your browser': 'HMAC-SHA256 asli, dihitung langsung di browser Anda',
     'destination secret': 'secret destination',
-    'raw request body — edit it and the signature stops matching': 'raw request body — ubah, dan signature-nya berhenti cocok',
+    'raw request body — edit it and the signature stops matching': 'raw request body — ubah sedikit saja, signature-nya langsung tidak cocok',
     'signed string': 'string yang ditandatangani',
     'computed': 'hasil hitung',
-    'header sent': 'header terkirim',
+    'header sent': 'header yang dikirim',
     'checking': 'memeriksa',
     'accept': 'terima',
     'reject': 'tolak',
     'The signed string is the timestamp, the delivery id and the raw body, joined by dots.':
-      'String yang ditandatangani adalah timestamp, delivery id, dan raw body, disambung dengan titik.',
+      'String yang ditandatangani terdiri dari timestamp, delivery id, dan raw body, disambung dengan titik.',
     'Change the amount': 'Ubah nominalnya',
     'Restore': 'Kembalikan',
 
     /* ── money out ── */
     'Money out': 'Uang keluar',
-    'A payout has no backstop, so it is off in three places.': 'Payout tak punya jaring pengaman, jadi ia dimatikan di tiga tempat.',
+    'A payout has no backstop, so it is off in three places.': 'Uang yang keluar tidak bisa ditarik balik, jadi dikunci di tiga tempat.',
     'Everything above moves money inward, where the worst case of a mistake is a payment that gets refunded through the gateway that took it. A disbursement leaves the merchant balance for an account the caller names, and there is no chargeback on it. A payout happens only when all three of these are true.':
-      'Semua di atas memindahkan uang ke dalam, di mana kesalahan terburuknya adalah pembayaran yang di-refund lewat gateway yang menerimanya. Disbursement meninggalkan saldo merchant menuju rekening yang disebut si pemanggil, dan tidak ada chargeback untuk itu. Payout hanya terjadi kalau ketiga hal ini benar semua.',
+      'Semua yang di atas soal uang masuk. Kalau ada yang salah, paling buruk pembayarannya tinggal di-refund lewat gateway yang menerimanya. Disbursement beda: uangnya keluar dari saldo merchant ke rekening yang disebut si pemanggil, dan tidak ada chargeback untuk itu. Payout baru jalan kalau ketiga syarat ini terpenuhi semua.',
     'Payout simulator': 'Simulator payout',
-    'the refusals below are PayMux’s real ones': 'penolakan di bawah ini penolakan asli PayMux',
-    'The gateway account holds disbursement credentials': 'Akun gateway memegang kredensial disbursement',
+    'the refusals below are PayMux’s real ones': 'penolakan di bawah ini persis seperti aslinya',
+    'The gateway account holds disbursement credentials': 'Akun gateway punya kredensial disbursement',
     'Midtrans issues these separately from the payment server key, and only after approving the account for disbursement. PayMux seals them under their own encryption context, so a leak of the payment key is not a leak of this one.':
-      'Midtrans menerbitkannya terpisah dari server key pembayaran, dan hanya setelah menyetujui akun itu untuk disbursement. PayMux menyegelnya di konteks enkripsi tersendiri, sehingga bocornya payment key bukan berarti bocornya yang ini.',
-    'The application is permitted to disburse': 'Aplikasi diizinkan melakukan disbursement',
+      'Midtrans menerbitkannya terpisah dari server key pembayaran, dan baru dikeluarkan setelah akun Anda disetujui untuk disbursement. PayMux menyimpannya dengan kunci enkripsi tersendiri, jadi bocornya payment key tidak otomatis membocorkan yang ini.',
+    'The application is permitted to disburse': 'Aplikasinya diizinkan mencairkan dana',
     'Off by default, and deliberately the first thing checked: everything else about a payout is irrelevant if the application was never allowed to make one.':
-      'Mati secara default, dan sengaja jadi hal pertama yang diperiksa: semua hal lain tentang payout tidak relevan kalau aplikasinya memang tidak pernah diizinkan membuatnya.',
+      'Mati dari awal, dan sengaja jadi hal pertama yang dicek: syarat lain tidak ada gunanya kalau aplikasinya memang tidak pernah diizinkan mencairkan dana.',
     'daily limit': 'limit harian',
-    'Somebody approves it': 'Ada orang yang menyetujuinya',
+    'Somebody approves it': 'Ada yang menyetujui',
     'An approver cannot approve their own request — the database refuses it, not a handler. Turn approval off and PayMux insists on a spending limit in its place.':
-      'Penyetuju tidak bisa menyetujui permintaannya sendiri — basis datanya yang menolak, bukan handler. Matikan persetujuan, dan PayMux menuntut limit pengeluaran sebagai gantinya.',
+      'Yang menyetujui tidak boleh orang yang mengajukan — dan yang menolak database-nya langsung, bukan kode handler. Kalau persetujuan Anda matikan, PayMux menuntut limit pengeluaran sebagai gantinya.',
     'amount': 'nominal',
     'Request payout': 'Ajukan payout',
-    'Turn the gates on and request a payout.': 'Nyalakan gerbangnya lalu ajukan payout.',
+    'Turn the gates on and request a payout.': 'Nyalakan ketiga syaratnya, lalu ajukan payout.',
     'Nothing has been sent.': 'Belum ada yang dikirim.',
     'Inbound, sharing a merchant account is harmless: application A cannot take application B’s money. Outbound, every application with an API key spends from the same balance. Without limits, one leaked API key drains what every other application collected. README — Why the per-application limit is not optional':
-      'Untuk uang masuk, berbagi akun merchant tidak berbahaya: aplikasi A tidak bisa mengambil uang aplikasi B. Untuk uang keluar, setiap aplikasi yang punya API key membelanjakan saldo yang sama. Tanpa limit, satu API key yang bocor menguras apa yang dikumpulkan semua aplikasi lain.<cite style="color:var(--out)">README — Why the per-application limit is not optional</cite>',
+      'Untuk uang masuk, berbagi akun merchant aman-aman saja: aplikasi A tidak bisa mengambil uang aplikasi B. Untuk uang keluar, semua aplikasi yang punya API key belanja dari saldo yang sama. Tanpa limit, satu API key yang bocor bisa menghabiskan uang yang dikumpulkan aplikasi lain.<cite style="color:var(--out)">README — Why the per-application limit is not optional</cite>',
     'The daily limit counts payouts still in flight, including ones whose outcome is unknown, because money the gateway already has cannot be spent twice. A payout also names a beneficiary, never a raw account number: a destination is reviewed once and reused, so a typo cannot send money to a stranger.':
-      'Limit harian menghitung payout yang masih berjalan, termasuk yang hasilnya belum diketahui, karena uang yang sudah dipegang gateway tidak bisa dibelanjakan dua kali. Payout juga menyebut <strong style="color:var(--paper);font-weight:500">beneficiary</strong>, bukan nomor rekening mentah: satu tujuan ditinjau sekali lalu dipakai ulang, sehingga salah ketik tidak bisa mengirim uang ke orang asing.',
-    '202 means accepted, not sent': '202 berarti diterima, bukan terkirim',
+      'Limit harian ikut menghitung payout yang masih jalan, termasuk yang hasilnya belum jelas, karena uang yang sudah dipegang gateway tidak bisa dibelanjakan dua kali. Payout juga selalu menyebut <strong style="color:var(--paper);font-weight:500">beneficiary</strong>, bukan nomor rekening mentah: satu tujuan diperiksa sekali lalu dipakai berulang, jadi salah ketik tidak bisa mengirim uang ke orang yang tidak dikenal.',
+    '202 means accepted, not sent': '202 artinya diterima, bukan terkirim',
     'The state that matters': 'Status yang penting',
     'Status': 'Status',
     'Means': 'Artinya',
     'Waiting on a person. Nothing sent.': 'Menunggu orang. Belum ada yang dikirim.',
-    'Released, queued. Still nothing sent.': 'Dilepas, masuk antrean. Tetap belum ada yang dikirim.',
-    'The gateway has it. PayMux can no longer stop it.': 'Gateway sudah memegangnya. PayMux tak bisa lagi menghentikannya.',
+    'Released, queued. Still nothing sent.': 'Sudah disetujui, masuk antrean. Tetap belum dikirim.',
+    'The gateway has it. PayMux can no longer stop it.': 'Sudah di tangan gateway. PayMux tidak bisa lagi membatalkan.',
     'Sent, and PayMux cannot tell what happened. Never re-issue one of these: a new payout carries a new idempotency key, and the gateway would treat it as a second instruction. PayMux resolves it by re-sending under the original key.':
-      'Terkirim, dan PayMux tidak bisa memastikan apa yang terjadi. Jangan pernah menerbitkan ulang yang satu ini: payout baru membawa idempotency key baru, dan gateway akan menganggapnya instruksi kedua. PayMux menyelesaikannya dengan mengirim ulang memakai key aslinya.',
-    'The beneficiary was paid.': 'Beneficiary sudah dibayar.',
-    'It did not happen; the funds stayed put.': 'Tidak terjadi; dananya tetap di tempat.',
-    'Refused before anything was attempted.': 'Ditolak sebelum apa pun dicoba.',
+      'Sudah dikirim, tapi PayMux tidak tahu hasilnya. Jangan pernah mengajukan ulang yang ini: payout baru membawa idempotency key baru, dan gateway akan menganggapnya perintah kedua. PayMux menyelesaikannya sendiri dengan mengirim ulang memakai key yang lama.',
+    'The beneficiary was paid.': 'Uangnya sampai ke beneficiary.',
+    'It did not happen; the funds stayed put.': 'Tidak jadi; uangnya tetap di tempat.',
+    'Refused before anything was attempted.': 'Ditolak sebelum sempat dicoba.',
     'There is deliberately no event for a payout whose outcome PayMux cannot determine. That state says something about PayMux rather than about the payout. Applications hear from us when there is an answer.':
-      'Sengaja tidak ada event untuk payout yang hasilnya tak bisa dipastikan PayMux. Status itu bicara tentang PayMux, bukan tentang payout-nya. Aplikasi mendengar dari kami ketika sudah ada jawabannya.',
+      'Sengaja tidak ada event untuk payout yang hasilnya belum bisa dipastikan PayMux. Status itu bercerita tentang PayMux, bukan tentang payout-nya. Aplikasi baru kami kabari setelah ada jawaban pastinya.',
 
     /* ── api ── */
     'The API': 'API',
     'Thirty endpoints, one bearer key.': 'Tiga puluh endpoint, satu bearer key.',
     'Applications authenticate with Authorization: Bearer pmx_live_…. The full contract is the OpenAPI specification in the repository.':
-      'Aplikasi berautentikasi dengan <span class="mono" style="color:var(--paper)">Authorization: Bearer pmx_live_…</span>. Kontrak lengkapnya ada di spesifikasi OpenAPI dalam repositori.',
+      'Aplikasi mengautentikasi diri lewat <span class="mono" style="color:var(--paper)">Authorization: Bearer pmx_live_…</span>. Kontrak lengkapnya ada di spesifikasi OpenAPI di dalam repo.',
     'application API': 'API aplikasi',
     'operational': 'operasional',
-    'unauthenticated — keep off the public network': 'tanpa autentikasi — jauhkan dari jaringan publik',
-    'Gateway-specific options are namespaced and validated': 'Opsi khusus gateway diberi namespace dan divalidasi',
+    'unauthenticated — keep off the public network': 'tanpa autentikasi — jangan diekspos ke internet',
+    'Gateway-specific options are namespaced and validated': 'Opsi khusus gateway punya namespace sendiri dan divalidasi',
     'Common parameters are normalized. Anything Midtrans-specific goes in a gateway_options.midtrans block, and unknown fields are rejected rather than forwarded: PayMux never passes an unvalidated blob to a payment gateway under your merchant credentials.':
-      'Parameter umum dinormalkan. Apa pun yang khusus Midtrans masuk ke blok <span class="mono" style="color:var(--paper)">gateway_options.midtrans</span>, dan field tak dikenal ditolak, bukan diteruskan: PayMux tidak pernah meneruskan blob yang belum divalidasi ke payment gateway memakai kredensial merchant Anda.',
-    'The metric worth paging on': 'Metrik yang layak membangunkan Anda',
+      'Parameter umum sudah dirapikan. Yang khusus Midtrans masuk ke blok <span class="mono" style="color:var(--paper)">gateway_options.midtrans</span>, dan field yang tidak dikenal ditolak, bukan diteruskan: PayMux tidak pernah meneruskan data mentah yang belum divalidasi ke payment gateway dengan kredensial merchant Anda.',
+    'The metric worth paging on': 'Metrik yang pantas membangunkan Anda',
     'paymux_payouts_total{status="UNRESOLVED"} above zero means money may have moved without PayMux knowing. Labels across all eleven metric families are deliberately coarse — route patterns rather than paths, status classes rather than codes — because a payment identifier in a label would make the series unbounded.':
-      '<span class="mono" style="color:var(--alarm)">paymux_payouts_total{status="UNRESOLVED"}</span> di atas nol berarti uang mungkin sudah berpindah tanpa diketahui PayMux. Label di sebelas famili metrik sengaja dibuat kasar — pola route alih-alih path, kelas status alih-alih kode — karena identifier pembayaran di dalam label akan membuat seri-nya tak terbatas.',
+      '<span class="mono" style="color:var(--alarm)">paymux_payouts_total{status="UNRESOLVED"}</span> di atas nol artinya ada uang yang mungkin sudah berpindah tanpa diketahui PayMux. Label di sebelas famili metrik sengaja dibuat kasar — pola route, bukan path; kelas status, bukan kode angka — karena satu ID pembayaran di dalam label akan membuat jumlah seri-nya meledak.',
 
     /* ── inside ── */
-    'Inside': 'Isi',
-    'Two Go binaries and a database.': 'Dua binary Go dan satu basis data.',
+    'Inside': 'Arsitektur',
+    'Two Go binaries and a database.': 'Dua binary Go dan satu database.',
     'No broker, no cache, no queue service. The delivery queue is a table, and the worker leases from it. Gateway-specific code lives only in the adapter, which is what makes a second gateway a matter of writing an adapter rather than rewriting the core.':
-      'Tanpa broker, tanpa cache, tanpa layanan antrean. Antrean pengirimannya sebuah tabel, dan worker menyewa dari situ. Kode khusus gateway hanya tinggal di adapter-nya, dan itulah yang membuat gateway kedua cukup soal menulis adapter, bukan menulis ulang intinya.',
-    'repository layout': 'struktur repositori',
+      'Tanpa broker, tanpa cache, tanpa layanan antrean. Antrean pengirimannya cuma sebuah tabel, dan worker mengambil tugas dari situ. Kode khusus gateway hanya ada di adapter-nya. Itu sebabnya menambah gateway kedua cukup dengan menulis adapter baru, bukan membongkar intinya.',
+    'repository layout': 'struktur repo',
     '116 Go files': '116 berkas Go',
-    'What secrets are done with': 'Apa yang dilakukan pada secret',
+    'What secrets are done with': 'Bagaimana secret disimpan',
     'Gateway server keys and webhook secrets are sealed with AES-256-GCM. API keys are stored as SHA-256 hashes and the plaintext is shown once, at creation. Administrator passwords use Argon2id. PayMux never stores card numbers, CVVs or any raw card credential.':
-      'Server key gateway dan secret webhook disegel dengan AES-256-GCM. API key disimpan sebagai hash SHA-256 dan plaintext-nya hanya ditampilkan sekali, saat dibuat. Kata sandi administrator memakai Argon2id. PayMux tidak pernah menyimpan nomor kartu, CVV, atau kredensial kartu mentah apa pun.',
-    'Outbound destinations are checked twice': 'Destination keluar diperiksa dua kali',
+      'Server key gateway dan secret webhook dienkripsi dengan AES-256-GCM. API key disimpan sebagai hash SHA-256, dan teks aslinya cuma ditampilkan sekali, waktu dibuat. Password administrator pakai Argon2id. PayMux tidak pernah menyimpan nomor kartu, CVV, atau data kartu mentah apa pun.',
+    'Outbound destinations are checked twice': 'Alamat webhook dicek dua kali',
     'Webhook destinations are blocked from private, loopback, link-local and cloud-metadata ranges, and checked again at connection time, so a hostname cannot change its answer between validation and delivery.':
-      'Destination webhook diblokir dari rentang private, loopback, link-local dan cloud-metadata, lalu diperiksa lagi saat koneksi dibuka, sehingga sebuah hostname tidak bisa mengubah jawabannya antara validasi dan pengiriman.',
-    'Inbound callbacks are verified first': 'Callback masuk diverifikasi lebih dulu',
+      'Destination webhook ditolak kalau mengarah ke rentang private, loopback, link-local, atau cloud-metadata. Pengecekannya diulang lagi saat koneksi dibuka, supaya sebuah hostname tidak bisa berubah jawaban antara saat divalidasi dan saat benar-benar dikirimi data.',
+    'Inbound callbacks are verified first': 'Callback masuk diverifikasi dulu',
     'Midtrans notifications are verified against the documented signature before anything is applied to a payment.':
-      'Notifikasi Midtrans diverifikasi terhadap signature yang terdokumentasi sebelum apa pun diterapkan ke sebuah pembayaran.',
+      'Notifikasi Midtrans diverifikasi terhadap signature resminya sebelum apa pun diterapkan ke sebuah pembayaran.',
     'The dashboard': 'Dashboard',
     'Payments, refunds, payouts, events, deliveries, notifications, applications, subscriptions, gateways and settings — plus an Integration guide written for the developer building against your instance, with examples that name your instance’s real address so they can be copied rather than adapted. Appearance follows the operating system with an explicit override. Below 900px tables become cards and below 760px navigation moves to a bottom tab bar, so an operator can triage a failing delivery from a phone.':
-      'Pembayaran, refund, payout, event, pengiriman, notifikasi, aplikasi, langganan, gateway dan setelan — ditambah panduan <strong style="color:var(--paper);font-weight:500">Integration</strong> yang ditulis untuk developer yang membangun terhadap instance Anda, dengan contoh yang menyebut alamat asli instance Anda sehingga bisa disalin, bukan disesuaikan. Tampilannya mengikuti sistem operasi dengan opsi override eksplisit. Di bawah 900px tabel berubah jadi kartu dan di bawah 760px navigasinya pindah ke tab bar bawah, sehingga operator bisa menangani pengiriman yang gagal dari ponsel.',
+      'Pembayaran, refund, payout, event, pengiriman, notifikasi, aplikasi, langganan, gateway, dan pengaturan — plus panduan <strong style="color:var(--paper);font-weight:500">Integration</strong> yang ditulis untuk developer yang menyambungkan aplikasinya ke instance Anda, lengkap dengan contoh yang sudah memakai alamat instance Anda sendiri, jadi tinggal disalin. Temanya ikut sistem operasi, dan bisa dikunci terang atau gelap. Di bawah 900px tabel berubah jadi kartu, di bawah 760px navigasinya pindah ke tab bar bawah, supaya pengiriman yang gagal bisa ditangani dari HP.',
 
     /* ── status ── */
     'What is not proven yet.': 'Yang belum terbukti.',
     'Disbursement has never reached a real gateway': 'Disbursement belum pernah sampai ke gateway sungguhan',
     'It is implemented end to end, and every path to the gateway has been exercised — but only against refused placeholder credentials, because Midtrans gates Iris behind separate merchant approval. Real sandbox keys are the only way to confirm the final hop.':
-      'Ia sudah diimplementasikan dari ujung ke ujung, dan setiap jalur ke gateway sudah dilatih — tetapi hanya melawan kredensial placeholder yang ditolak, karena Midtrans mengunci Iris di balik persetujuan merchant tersendiri. Key sandbox sungguhan adalah satu-satunya cara memastikan lompatan terakhirnya.',
+      'Kodenya sudah lengkap dari hulu ke hilir, dan semua jalur menuju gateway sudah diuji — tapi baru melawan kredensial palsu yang memang pasti ditolak, karena Midtrans mengunci Iris di balik persetujuan merchant terpisah. Cuma key sandbox asli yang bisa memastikan langkah terakhirnya benar-benar jalan.',
     'Everything on the inbound side — payments, refunds, subscriptions, notifications, events and delivery — runs against the Midtrans sandbox, and the integration tests exercise the whole path: three applications sharing one gateway account, a payment taken by one of them, and the signed event reaching only its owner.':
-      'Semua di sisi masuk — pembayaran, refund, langganan, notifikasi, event dan pengiriman — berjalan melawan sandbox Midtrans, dan uji integrasinya melatih seluruh jalurnya: tiga aplikasi berbagi satu akun gateway, satu pembayaran diterima salah satunya, dan event bertanda tangan itu hanya sampai ke pemiliknya.',
-    'One gateway today': 'Satu gateway hari ini',
+      'Semua yang di sisi uang masuk — pembayaran, refund, langganan, notifikasi, event, dan pengiriman — sudah diuji melawan sandbox Midtrans. Test integrasinya menjalankan seluruh alurnya: tiga aplikasi berbagi satu akun gateway, satu pembayaran masuk lewat salah satunya, dan event bertanda tangan itu cuma sampai ke pemiliknya.',
+    'One gateway today': 'Satu gateway untuk sekarang',
     'PayMux is Midtrans-first and its architecture is gateway-agnostic. The long-term goal is one integration for applications and several payment gateways behind it. Nothing on this page claims a gateway that is not in the repository.':
-      'PayMux mendahulukan Midtrans dan arsitekturnya agnostik terhadap gateway. Tujuan jangka panjangnya satu integrasi untuk aplikasi dengan beberapa payment gateway di belakangnya. Tidak ada satu pun di halaman ini yang mengklaim gateway yang tidak ada di repositori.',
-    'Before it handles a real transaction': 'Sebelum ia menangani transaksi sungguhan',
+      'PayMux mendahulukan Midtrans, tapi arsitekturnya tidak terikat ke gateway mana pun. Tujuan jangka panjangnya satu integrasi untuk aplikasi Anda, dengan beberapa payment gateway di belakangnya. Tidak ada satu pun klaim di halaman ini soal gateway yang belum ada di repo.',
+    'Before it handles a real transaction': 'Sebelum dipakai untuk transaksi sungguhan',
     'PayMux serves plain HTTP and expects TLS termination in front of it. Read docs/production.md first: it covers the encryption key’s recovery characteristics (there are none), the settings whose defaults are wrong for production, backups, what to alert on, and what PayMux deliberately does not do.':
-      'PayMux melayani HTTP biasa dan mengharapkan terminasi TLS di depannya. Baca <span class="mono" style="color:var(--paper)">docs/production.md</span> lebih dulu: isinya sifat pemulihan encryption key (tidak ada), setelan yang default-nya salah untuk production, backup, apa yang perlu dijadikan alert, dan apa yang sengaja tidak dilakukan PayMux.',
+      'PayMux melayani HTTP biasa dan mengharapkan TLS diterminasi di depannya. Baca <span class="mono" style="color:var(--paper)">docs/production.md</span> dulu: isinya soal apa yang terjadi kalau encryption key hilang (jawabannya: tidak ada yang bisa diselamatkan), setelan yang nilai default-nya salah untuk production, backup, apa yang perlu dipasangi alert, dan apa saja yang sengaja tidak dikerjakan PayMux.',
 
     /* ── get it ── */
     'Get PayMux': 'Dapatkan PayMux',
-    'Two binaries, a database, and your own gateway keys.': 'Dua binary, satu basis data, dan gateway key milik Anda sendiri.',
+    'Two binaries, a database, and your own gateway keys.': 'Dua binary, satu database, dan gateway key milik Anda sendiri.',
     'PayMux is self-hosted: you run it, you hold the keys, and nothing about your merchant account passes through anyone else. Requirements are Docker, or Go 1.25+ and PostgreSQL 15+.':
-      'PayMux di-hosting sendiri: Anda yang menjalankannya, Anda yang memegang key-nya, dan tidak ada apa pun tentang akun merchant Anda yang lewat pihak lain. Kebutuhannya Docker, atau Go 1.25+ dan PostgreSQL 15+.',
+      'PayMux Anda hosting sendiri: Anda yang menjalankan, Anda yang pegang key-nya, dan tidak ada satu pun data akun merchant Anda yang lewat pihak lain. Butuhnya Docker, atau Go 1.25+ dan PostgreSQL 15+.',
     'install': 'instalasi',
     'Then connect your gateway': 'Lalu sambungkan gateway Anda',
     'Add your Midtrans merchant ID, client key and server key in the dashboard, and press Test connection. PayMux asks the gateway for a transaction that cannot exist: an answer of “no such transaction” proves the credentials were accepted, and nothing is left behind in your merchant account. Create an application, an API key and a webhook destination, then point the gateway’s Payment Notification URL at /webhooks/midtrans on your deployment.':
-      'Masukkan merchant ID, client key dan server key Midtrans Anda di dashboard, lalu tekan <strong style="color:var(--paper);font-weight:500">Test connection</strong>. PayMux menanyakan sebuah transaksi yang mustahil ada kepada gateway: jawaban “tidak ada transaksi seperti itu” membuktikan kredensialnya diterima, dan tidak ada apa pun yang tertinggal di akun merchant Anda. Buat sebuah aplikasi, satu API key dan satu webhook destination, lalu arahkan Payment Notification URL milik gateway ke <span class="mono" style="color:var(--paper)">/webhooks/midtrans</span> pada deployment Anda.',
-    'Two storefronts to prove it': 'Dua etalase sebagai buktinya',
+      'Masukkan merchant ID, client key, dan server key Midtrans Anda di dashboard, lalu tekan <strong style="color:var(--paper);font-weight:500">Test connection</strong>. PayMux menanyakan sebuah transaksi yang mustahil ada ke gateway: kalau jawabannya “transaksi tidak ditemukan”, berarti kredensialnya diterima — dan tidak ada sampah yang tertinggal di akun merchant Anda. Setelah itu buat satu aplikasi, satu API key, dan satu webhook destination, lalu arahkan Payment Notification URL di Midtrans ke <span class="mono" style="color:var(--paper)">/webhooks/midtrans</span> di deployment Anda.',
+    'Two storefronts to prove it': 'Dua toko sebagai buktinya',
     'The repository ships a demo profile with two independent shops that collect into one merchant account and cannot see each other’s orders. It is the claim on this page, running, in about a minute. Setup is in examples/README.md.':
-      'Repositorinya menyertakan profil demo berisi dua toko independen yang menampung ke satu akun merchant dan tak bisa saling melihat pesanan. Itulah klaim di halaman ini, berjalan, dalam sekitar satu menit. Penyiapannya ada di <span class="mono" style="color:var(--paper)">examples/README.md</span>.',
-    'Clone the repository ↗': 'Clone repositorinya ↗',
-    'Read the production notes ↗': 'Baca catatan produksi ↗',
+      'Repo-nya menyertakan profil demo berisi dua toko terpisah yang uangnya masuk ke satu akun merchant, dan tidak bisa saling melihat pesanan. Itu persis klaim di halaman ini, tapi jalan beneran, dalam waktu sekitar satu menit. Cara menyiapkannya ada di <span class="mono" style="color:var(--paper)">examples/README.md</span>.',
+    'Clone the repository ↗': 'Clone repo-nya ↗',
+    'Read the production notes ↗': 'Baca catatan production ↗',
 
     /* ── footer ── */
     'Open-source payment gateway multiplexer and webhook router, by Javapixa Creative Studio.':
       'Multiplexer payment gateway dan webhook router open-source, dari Javapixa Creative Studio.',
-    'Repository': 'Repositori',
-    'Source': 'Sumber',
+    'Repository': 'Repo',
+    'Source': 'Kode',
     'Contributing': 'Kontribusi',
     'Documentation': 'Dokumentasi',
-    'Production': 'Produksi',
+    'Production': 'Production',
     'Examples': 'Contoh',
     'Security': 'Keamanan',
     'Reporting': 'Pelaporan',
     'Code of conduct': 'Kode etik',
-    'Apache-2.0 · Midtrans-first, gateway-agnostic': 'Apache-2.0 · Midtrans dulu, agnostik terhadap gateway',
+    'Apache-2.0 · Midtrans-first, gateway-agnostic': 'Apache-2.0 · Midtrans lebih dulu, terbuka untuk gateway lain',
     'Not affiliated with Midtrans': 'Tidak berafiliasi dengan Midtrans',
 
     /* ── strings the simulators write at runtime ── */
-    'Pick an application to open a payment.': 'Pilih sebuah aplikasi untuk membuka pembayaran.',
+    'Pick an application to open a payment.': 'Pilih salah satu aplikasi untuk membuka pembayaran.',
     'router': 'router',
-    'attributing': 'menetapkan',
+    'attributing': 'mencocokkan',
     'one account': 'satu akun',
-    'not told': 'tak diberi tahu',
+    'not told': 'tidak dikabari',
     'one URL for the whole merchant account': 'satu URL untuk seluruh akun merchant',
     'The customer pays in the Midtrans sandbox.': 'Pelanggannya membayar di sandbox Midtrans.',
-    'Delivered on the first attempt. Nothing is retried.': 'Terkirim pada percobaan pertama. Tidak ada yang diulang.',
-    'no visibility': 'tak terlihat',
+    'Delivered on the first attempt. Nothing is retried.': 'Terkirim di percobaan pertama. Tidak ada yang perlu diulang.',
+    'no visibility': 'tidak kelihatan',
     'payment.paid · delivered': 'payment.paid · terkirim',
-    'not attempted': 'tak dicoba',
-    'replayable': 'bisa diulang',
+    'not attempted': 'tidak dicoba',
+    'replayable': 'bisa dikirim ulang',
     'The body matches what was signed, so the delivery is genuine. Verify against the raw body, before parsing.':
-      'Body-nya cocok dengan yang ditandatangani, jadi pengirimannya asli. Verifikasi terhadap <b>raw</b> body, sebelum parsing.',
+      'Isi body-nya sama dengan yang ditandatangani, jadi kiriman ini asli. Verifikasi selalu terhadap <b>raw</b> body, sebelum di-parse.',
     'One byte changed and the signature no longer matches. PayMux signs the exact bytes it sent, so a rewritten amount cannot pass.':
-      '<b>Satu byte berubah dan signature-nya tidak lagi cocok.</b> PayMux menandatangani byte persis yang dikirimnya, jadi nominal yang ditulis ulang tak bisa lolos.',
+      '<b>Satu byte berubah, signature-nya langsung tidak cocok.</b> PayMux menandatangani byte yang persis dikirimnya, jadi nominal yang diubah di tengah jalan tidak akan lolos.',
     'Live signing needs a secure context. The construction is shown in the Go snippet above.':
-      'Penandatanganan langsung butuh secure context. Susunannya ditampilkan di cuplikan Go di atas.',
-    'unavailable': 'tak tersedia',
+      'Perhitungan langsung butuh secure context. Cara menyusunnya ada di potongan Go di atas.',
+    'unavailable': 'tidak tersedia',
     'Retries stopped. A 4xx other than 408, 425 or 429 says the request itself is wrong, and repeating it will not change that.':
-      '<b>Percobaan ulang berhenti.</b> Kode 4xx selain 408, 425 atau 429 menyatakan request-nya sendiri salah, dan mengulanginya tidak akan mengubah itu.',
+      '<b>Percobaan ulang berhenti.</b> Kode 4xx selain 408, 425, dan 429 artinya request-nya memang salah, dan mengulanginya tidak akan mengubah apa pun.',
     'Dead after seven attempts. It stays visible in the dashboard and can be replayed by hand.':
-      '<b>Mati</b> setelah tujuh percobaan. Ia tetap terlihat di dashboard dan bisa diulang secara manual.',
+      '<b>Berhenti</b> setelah tujuh percobaan. Datanya tetap ada di dashboard dan bisa dikirim ulang manual.',
     'Refused. Approval cannot be turned off without a daily spending limit. Something has to bound what one leaked API key can spend.':
-      '<b>Ditolak.</b> Persetujuan tak bisa dimatikan tanpa limit pengeluaran harian. Harus ada yang membatasi seberapa banyak satu API key yang bocor bisa membelanjakan.',
+      '<b>Ditolak.</b> Persetujuan tidak bisa dimatikan tanpa limit pengeluaran harian. Harus ada yang membatasi berapa banyak uang yang bisa dihabiskan satu API key kalau bocor.',
     'Checked first, deliberately: everything else about a payout is irrelevant if the application was never allowed to make one. Nothing sent.':
-      'Sengaja diperiksa pertama: semua hal lain tentang payout tidak relevan kalau aplikasinya memang tidak pernah diizinkan membuatnya. <b>Belum ada yang dikirim.</b>',
+      'Sengaja dicek paling awal: syarat lain tidak ada gunanya kalau aplikasinya memang tidak pernah diizinkan mencairkan dana. <b>Belum ada yang dikirim.</b>',
     'Midtrans issues disbursement credentials separately, and only after approving the account for it. Nothing sent.':
-      'Midtrans menerbitkan kredensial disbursement secara terpisah, dan hanya setelah menyetujui akunnya untuk itu. <b>Belum ada yang dikirim.</b>',
+      'Midtrans menerbitkan kredensial disbursement secara terpisah, dan baru setelah akunnya disetujui untuk itu. <b>Belum ada yang dikirim.</b>',
     '202 means accepted, not sent. A payout awaiting approval has moved nothing, and the approver cannot be the person who requested it.':
-      '<b>202 berarti diterima, bukan terkirim.</b> Payout yang menunggu persetujuan belum memindahkan apa pun, dan penyetujunya tak boleh orang yang mengajukannya.',
+      '<b>202 artinya diterima, bukan terkirim.</b> Payout yang masih menunggu persetujuan belum memindahkan apa pun, dan yang menyetujui tidak boleh orang yang mengajukan.',
     'Released without a person, because approval is off and a spending limit stands in its place. Next stop is SUBMITTED, after which PayMux can no longer stop it.':
-      'Dilepas tanpa orang, karena persetujuan dimatikan dan limit pengeluaran berdiri sebagai gantinya. Perhentian berikutnya <b>SUBMITTED</b>, dan setelah itu PayMux tak bisa lagi menghentikannya.'
+      'Langsung dilepas tanpa persetujuan orang, karena approval dimatikan dan limit pengeluaran yang menggantikannya. Status berikutnya <b>SUBMITTED</b> — setelah itu PayMux tidak bisa lagi membatalkan.'
   };
 
   /* Runtime strings that carry a number or a name. Ordered; first hit wins. */
   var PATTERNS = [
     [/^POST \/api\/v1\/payments<\/b> — <b>(.+?)<\/b> opens a payment with its own key\.$/,
-      'POST /api/v1/payments</b> — <b>$1</b> membuka pembayaran dengan key-nya sendiri.'],
+      'POST /api/v1/payments</b> — <b>$1</b> membuka pembayaran pakai key-nya sendiri.'],
     [/^PayMux opens the Snap transaction and mints <b>gateway_order_id (.+?)<\/b>$/,
-      'PayMux membuka transaksi Snap dan mencetak <b>gateway_order_id $1</b>'],
+      'PayMux membuka transaksi Snap dan membuat <b>gateway_order_id $1</b>'],
     [/^POST \/webhooks\/midtrans<\/b> — one notification URL for the whole merchant account\. Signature verified\.$/,
-      'POST /webhooks/midtrans</b> — satu notification URL untuk seluruh akun merchant. Signature terverifikasi.'],
+      'POST /webhooks/midtrans</b> — satu notification URL untuk seluruh akun merchant. Signature-nya sudah diverifikasi.'],
     [/^PayMux opened this transaction, so it knows who owns it\. <b>No prefix parsing, no guessing\.<\/b>$/,
-      'PayMux yang membuka transaksi ini, jadi ia tahu siapa pemiliknya. <b>Tanpa parsing prefix, tanpa menebak.</b>'],
+      'PayMux yang membuka transaksi ini, jadi dia tahu pemiliknya. <b>Tidak membaca prefix, tidak menebak.</b>'],
     [/^<b>payment\.paid<\/b> delivered to <b>(.+?)<\/b>, signed with that destination’s own secret\.$/,
-      '<b>payment.paid</b> terkirim ke <b>$1</b>, ditandatangani dengan secret milik destination itu sendiri.'],
+      '<b>payment.paid</b> terkirim ke <b>$1</b>, ditandatangani pakai secret milik destination itu sendiri.'],
     [/^Delivered to <b>(.+?)<\/b>\. The other two applications were never told it happened\.$/,
-      'Terkirim ke <b>$1</b>. Dua aplikasi lainnya tidak pernah diberi tahu itu terjadi.'],
+      'Terkirim ke <b>$1</b>. Dua aplikasi lain tidak pernah tahu ini terjadi.'],
     [/^Attempt <b>(\d+)<\/b> of 7 failed\. Next retry in (.+?)\.$/,
-      'Percobaan <b>$1</b> dari 7 gagal. Ulang berikutnya dalam $2.'],
+      'Percobaan <b>$1</b> dari 7 gagal. Percobaan berikutnya $2 lagi.'],
     [/^Delivered on attempt <b>(\d+)<\/b>, fifteen minutes after the first failure\. The widening schedule is what buys that\.$/,
-      'Terkirim pada percobaan <b>$1</b>, lima belas menit setelah kegagalan pertama. Jadwal yang melebar itulah yang membelinya.'],
+      'Terkirim di percobaan <b>$1</b>, lima belas menit setelah gagal yang pertama. Justru karena jedanya makin panjang, kiriman ini akhirnya masuk.'],
     [/^Rp ([\d.,]+) is already in flight today\. The limit counts payouts whose outcome is still unknown, because money the gateway already has cannot be spent twice\. <b>Nothing sent\.<\/b>$/,
-      'Rp $1 sudah berjalan hari ini. Limitnya menghitung payout yang hasilnya masih belum diketahui, karena uang yang sudah dipegang gateway tidak bisa dibelanjakan dua kali. <b>Belum ada yang dikirim.</b>'],
+      'Rp $1 sudah jalan hari ini. Limitnya ikut menghitung payout yang hasilnya belum jelas, karena uang yang sudah dipegang gateway tidak bisa dibelanjakan dua kali. <b>Belum ada yang dikirim.</b>'],
     [/^(\d+) · delivered$/, '$1 · terkirim'],
-    [/^IDR · <b([^>]*)>([\d.,]+)<\/b> already in flight today$/, 'IDR · <b$1>$2</b> sedang berjalan hari ini'],
+    [/^IDR · <b([^>]*)>([\d.,]+)<\/b> already in flight today$/, 'IDR · <b$1>$2</b> sudah jalan hari ini'],
     [/^IDR to <b>(.+?)<\/b>$/, 'IDR ke <b>$1</b>']
   ];
 
@@ -1987,11 +1986,11 @@ docker compose up -d</pre>
     },
     id: {
       title: 'PayMux — satu akun merchant, semua produk yang Anda jalankan',
-      desc: 'PayMux adalah multiplexer payment gateway dan webhook router open-source. Beberapa aplikasi berbagi satu akun Midtrans, masing-masing dengan key sendiri, event bertanda tangan sendiri, dan tanpa cara melihat pembayaran aplikasi lain.'
+      desc: 'PayMux adalah multiplexer payment gateway dan webhook router open-source. Beberapa aplikasi bisa berbagi satu akun Midtrans: masing-masing punya key sendiri, menerima event bertanda tangan sendiri, dan tidak bisa melihat pembayaran aplikasi lain.'
     }
   };
 
-  var SEL = 'h1,h2,h3,h4,p,.lede,.eyebrow,.tag,.sim-title,.sim-hint,.bay-title,.voice,' +
+  var SEL = 'h1,h2,h3,h4,p,#simOut,.lede,.eyebrow,.tag,.sim-title,.sim-hint,.bay-title,.voice,' +
     '.rung dt,.rung dd,.rung .rstate,.fld>span,.sig-row>span,' +
     '.code-top span,.tbl th,.tbl td,.foot a,.foot-note span,.navlinks a,.btn,.key,.chip,' +
     '.lrow-id strong,.lrow-id span,.fact dt,.fact dd small,.limit>span,.verdict';
@@ -2004,7 +2003,7 @@ docker compose up -d</pre>
 
   function nodes() {
     return Array.prototype.filter.call(document.querySelectorAll(SEL), function (el) {
-      return !el.closest('pre') && !el.querySelector('h1,h2,h3,p,div,pre,table');
+      return (!el.closest('pre') || el.id === 'simOut') && !el.querySelector('h1,h2,h3,p,div,pre,table');
     });
   }
 
@@ -2057,10 +2056,10 @@ docker compose up -d</pre>
         if (el && touched.indexOf(el) < 0) touched.push(el);
       });
       touched.forEach(function (el) {
-        if (el.closest && el.closest('pre')) return;
+        if (el.closest && el.closest('pre') && el.id !== 'simOut') return;
         if (el.matches && el.matches(SEL)) toID(el);
         Array.prototype.forEach.call(el.querySelectorAll ? el.querySelectorAll(SEL) : [], function (c) {
-          if (!c.closest('pre')) toID(c);
+          if (!c.closest('pre') || c.id === 'simOut') toID(c);
         });
       });
       applying = false;
