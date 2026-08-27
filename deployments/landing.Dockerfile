@@ -15,6 +15,7 @@
 # container port 80.
 FROM nginx:1.29-alpine
 
+COPY deployments/nginx-security-headers.conf /etc/nginx/security-headers.conf
 COPY deployments/landing.nginx.conf /etc/nginx/conf.d/default.conf
 COPY index.html /usr/share/nginx/html/index.html
 
