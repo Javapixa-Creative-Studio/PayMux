@@ -1,0 +1,46 @@
+# The dashboard, on its own.
+#
+# Paths in this file resolve against the project directory, not against
+# this file's location, which is why the build context below is `.` and
+# not `..` despite the file living in deployments/.
+#
+#   docker compose --project-directory . -f deployments/compose.dashboard.yml up -d
+#
+# See compose.api.yml for why --project-directory is needed. `make
+# deploy-dashboard` does it for you.
+#
+# VITE_API_BASE_URL is baked into the bundle at build time, not read at run
+# time: Vite inlines VITE_* variables. Point it at the API's public URL and
+# rebuild whenever that URL changes -- restarting is not enough.
+#
+# The browser talks to the API directly, so this service needs no network
+# path to it and deliberately declares no depends_on. Whatever origin you set
+# here must also appear in the API's PAYMUX_CORS_ORIGINS, or the dashboard
+# will load and then fail every request.
+#
+# Behind a reverse proxy, delete the ports block and bind the domain to
+# container port 80.
+name: paymux-dashboard
+
+services:
+  dashboard:
+    image: paymux-dashboard:${VERSION:-dev}
+    build:
+      context: .
+      dockerfile: deployments/dashboard.Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
+    restart: unless-stopped
+    ports:
+      - "${PAYMUX_DASHBOARD_PORT:-5173}:80"
+    healthcheck:
+      # 127.0.0.1, not localhost: nginx listens on 0.0.0.0 only, /etc/hosts
+      # also maps localhost to ::1, and busybox wget tries IPv6 first.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 128M

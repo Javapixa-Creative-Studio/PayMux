@@ -49,6 +49,7 @@ coverage.out
 # Local tooling that no image builds from
 Makefile
 docker-compose*.yml
+deployments/compose.*.yml
 .dockerignore
 
 # Documentation

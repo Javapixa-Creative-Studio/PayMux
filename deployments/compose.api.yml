@@ -1,0 +1,68 @@
+# The API, on its own.
+#
+# One service per file, for a platform that deploys one app per compose file:
+# Easypanel, Coolify, Dokploy and the like. ../docker-compose.yml remains the
+# right choice for one host running the whole stack.
+#
+# Paths in this file resolve against the project directory, not against
+# this file's location, which is why the build context below is `.` and
+# not `..` despite the file living in deployments/.
+#
+#   docker compose --project-directory . -f deployments/compose.api.yml up -d
+#
+# --project-directory matters. Compose reads .env from the project directory,
+# which otherwise defaults to this file's directory and would miss the .env at
+# the repository root. `make deploy-api` does this for you.
+#
+# No database here. DATABASE_URL must point at PostgreSQL you already run; a
+# managed instance usually wants ?sslmode=require rather than disable.
+#
+# Behind a reverse proxy that reaches the container directly, delete the ports
+# block below and bind the domain to container port 8080. Turn
+# PAYMUX_TRUST_PROXY_HEADERS on at the same time.
+name: paymux-api
+
+services:
+  api:
+    image: paymux-api:${VERSION:-dev}
+    build:
+      context: .
+      dockerfile: deployments/api.Dockerfile
+      args:
+        VERSION: ${VERSION:-dev}
+    restart: unless-stopped
+    environment:
+      PAYMUX_ENV: ${PAYMUX_ENV:-development}
+      PAYMUX_HTTP_ADDR: ":8080"
+      PAYMUX_BASE_URL: ${PAYMUX_BASE_URL:-http://localhost:8080}
+      PAYMUX_LOG_LEVEL: ${PAYMUX_LOG_LEVEL:-info}
+      DATABASE_URL: ${DATABASE_URL:-}
+      PAYMUX_ENCRYPTION_KEY: ${PAYMUX_ENCRYPTION_KEY:?set PAYMUX_ENCRYPTION_KEY in .env}
+      PAYMUX_ADMIN_EMAIL: ${PAYMUX_ADMIN_EMAIL:-}
+      PAYMUX_ADMIN_PASSWORD: ${PAYMUX_ADMIN_PASSWORD:-}
+      PAYMUX_CORS_ORIGINS: ${PAYMUX_CORS_ORIGINS:-http://localhost:5173}
+      # Optional, and deliberately empty rather than repeated. The binary
+      # treats an empty value as unset and applies its own default, so the
+      # defaults live in internal/config and not in two places at once.
+      PAYMUX_LOG_JSON: ${PAYMUX_LOG_JSON:-}
+      PAYMUX_DB_MAX_CONNS: ${PAYMUX_DB_MAX_CONNS:-}
+      PAYMUX_DB_MIN_CONNS: ${PAYMUX_DB_MIN_CONNS:-}
+      PAYMUX_DB_CONN_TIMEOUT: ${PAYMUX_DB_CONN_TIMEOUT:-}
+      PAYMUX_ADMIN_SESSION_TTL: ${PAYMUX_ADMIN_SESSION_TTL:-}
+      PAYMUX_RATE_LIMIT_PER_SECOND: ${PAYMUX_RATE_LIMIT_PER_SECOND:-}
+      PAYMUX_RATE_LIMIT_BURST: ${PAYMUX_RATE_LIMIT_BURST:-}
+      PAYMUX_MAX_REQUEST_BODY_BYTES: ${PAYMUX_MAX_REQUEST_BODY_BYTES:-}
+      PAYMUX_HTTP_CLIENT_TIMEOUT: ${PAYMUX_HTTP_CLIENT_TIMEOUT:-}
+      PAYMUX_METRICS_ENABLED: ${PAYMUX_METRICS_ENABLED:-}
+      PAYMUX_TRUST_PROXY_HEADERS: ${PAYMUX_TRUST_PROXY_HEADERS:-}
+    ports:
+      - "${PAYMUX_API_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "/paymux-api", "-healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M

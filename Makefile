@@ -110,6 +110,37 @@ landing: ## Build and serve the landing page on its own
 	docker compose --profile landing up -d --build landing
 	@echo "  landing  http://localhost:$${PAYMUX_LANDING_PORT:-7881}  (container port 80)"
 
+# ---------------------------------------------------------------------------
+# One service per file
+#
+# For a platform that deploys one app per compose file rather than a stack.
+# --project-directory is not optional: compose reads .env from the project
+# directory, which would otherwise be deployments/ and would miss the .env at
+# the repository root.
+# ---------------------------------------------------------------------------
+
+SOLO := docker compose --project-directory . -f deployments/compose
+
+.PHONY: deploy-api
+deploy-api: ## Start only the API, from its own compose file
+	$(SOLO).api.yml up -d --build
+
+.PHONY: deploy-worker
+deploy-worker: ## Start only the worker, from its own compose file
+	$(SOLO).worker.yml up -d --build
+
+.PHONY: deploy-dashboard
+deploy-dashboard: ## Start only the dashboard, from its own compose file
+	$(SOLO).dashboard.yml up -d --build
+
+.PHONY: deploy-landing
+deploy-landing: ## Start only the landing page, from its own compose file
+	$(SOLO).landing.yml up -d --build
+
+.PHONY: deploy-config
+deploy-config: ## Validate every per-service compose file
+	@for s in api worker dashboard landing; do printf "  %-10s " "$$s"; $(SOLO).$$s.yml config -q && echo "ok"; done
+
 .PHONY: down
 down: ## Stop the stack, including a bundled PostgreSQL if one was started
 	docker compose $(COMPOSE_PG) down
