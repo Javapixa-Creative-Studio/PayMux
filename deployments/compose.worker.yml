@@ -1,0 +1,56 @@
+# The worker, on its own.
+#
+# Paths in this file resolve against the project directory, not against
+# this file's location, which is why the build context below is `.` and
+# not `..` despite the file living in deployments/.
+#
+#   docker compose --project-directory . -f deployments/compose.worker.yml up -d
+#
+# See compose.api.yml for why --project-directory is needed. `make deploy-worker`
+# does it for you.
+#
+# No database here. DATABASE_URL must point at the same PostgreSQL the API
+# uses; the worker and the API share one database and reach it independently.
+#
+# The worker has no API. It serves unauthenticated Prometheus metrics on 9090
+# and publishes no port at all: give it no domain, and reach it over a private
+# network if Prometheus needs to scrape it.
+name: paymux-worker
+
+services:
+  worker:
+    image: paymux-worker:${VERSION:-dev}
+    build:
+      context: .
+      dockerfile: deployments/worker.Dockerfile
+      args:
+        VERSION: ${VERSION:-dev}
+    restart: unless-stopped
+    environment:
+      PAYMUX_ENV: ${PAYMUX_ENV:-development}
+      PAYMUX_LOG_LEVEL: ${PAYMUX_LOG_LEVEL:-info}
+      DATABASE_URL: ${DATABASE_URL:-}
+      PAYMUX_ENCRYPTION_KEY: ${PAYMUX_ENCRYPTION_KEY:?set PAYMUX_ENCRYPTION_KEY in .env}
+      PAYMUX_WORKER_CONCURRENCY: ${PAYMUX_WORKER_CONCURRENCY:-20}
+      PAYMUX_ALLOW_PRIVATE_WEBHOOK_DESTINATIONS: ${PAYMUX_ALLOW_PRIVATE_WEBHOOK_DESTINATIONS:-false}
+      PAYMUX_METRICS_ADDR: ":9090"
+      # Optional; empty means unset. See the note on compose.api.yml.
+      PAYMUX_LOG_JSON: ${PAYMUX_LOG_JSON:-}
+      PAYMUX_DB_MAX_CONNS: ${PAYMUX_DB_MAX_CONNS:-}
+      PAYMUX_DB_MIN_CONNS: ${PAYMUX_DB_MIN_CONNS:-}
+      PAYMUX_DB_CONN_TIMEOUT: ${PAYMUX_DB_CONN_TIMEOUT:-}
+      PAYMUX_WORKER_POLL_INTERVAL: ${PAYMUX_WORKER_POLL_INTERVAL:-}
+      PAYMUX_WEBHOOK_TIMEOUT: ${PAYMUX_WEBHOOK_TIMEOUT:-}
+      PAYMUX_HTTP_CLIENT_TIMEOUT: ${PAYMUX_HTTP_CLIENT_TIMEOUT:-}
+      PAYMUX_METRICS_ENABLED: ${PAYMUX_METRICS_ENABLED:-}
+    healthcheck:
+      # The worker serves /health beside its metrics, so an unhealthy worker
+      # is visible rather than silently draining nothing.
+      test: ["CMD", "/paymux-worker", "-healthcheck"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M

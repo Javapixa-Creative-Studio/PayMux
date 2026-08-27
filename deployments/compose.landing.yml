@@ -1,0 +1,39 @@
+# The landing page, on its own.
+#
+# Paths in this file resolve against the project directory, not against
+# this file's location, which is why the build context below is `.` and
+# not `..` despite the file living in deployments/.
+#
+#   docker compose --project-directory . -f deployments/compose.landing.yml up -d
+#
+# See compose.api.yml for why --project-directory is needed. `make
+# deploy-landing` does it for you.
+#
+# The public marketing page. It has nothing to do with running PayMux, needs
+# no database, no API and no secrets, and is the one service here that can be
+# deployed entirely on its own.
+#
+# Behind a reverse proxy, delete the ports block and bind the domain to
+# container port 80.
+name: paymux-landing
+
+services:
+  landing:
+    image: paymux-landing:${VERSION:-dev}
+    build:
+      context: .
+      dockerfile: deployments/landing.Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${PAYMUX_LANDING_PORT:-7881}:80"
+    healthcheck:
+      # 127.0.0.1, not localhost: nginx listens on 0.0.0.0 only, /etc/hosts
+      # also maps localhost to ::1, and busybox wget tries IPv6 first.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 64M

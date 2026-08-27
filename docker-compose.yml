@@ -16,6 +16,8 @@ services:
     build:
       context: .
       dockerfile: deployments/api.Dockerfile
+      args:
+        VERSION: ${VERSION:-dev}
     restart: unless-stopped
     environment:
       PAYMUX_ENV: ${PAYMUX_ENV:-development}
@@ -30,7 +32,25 @@ services:
       PAYMUX_ADMIN_EMAIL: ${PAYMUX_ADMIN_EMAIL:-}
       PAYMUX_ADMIN_PASSWORD: ${PAYMUX_ADMIN_PASSWORD:-}
       PAYMUX_CORS_ORIGINS: ${PAYMUX_CORS_ORIGINS:-http://localhost:5173}
-      PAYMUX_ALLOW_PRIVATE_WEBHOOK_DESTINATIONS: ${PAYMUX_ALLOW_PRIVATE_WEBHOOK_DESTINATIONS:-false}
+      # Optional, and deliberately empty rather than repeated. The binary
+      # treats an empty value as unset and applies its own default, so the
+      # defaults live in internal/config and not in two places at once.
+      PAYMUX_LOG_JSON: ${PAYMUX_LOG_JSON:-}
+      PAYMUX_DB_MAX_CONNS: ${PAYMUX_DB_MAX_CONNS:-}
+      PAYMUX_DB_MIN_CONNS: ${PAYMUX_DB_MIN_CONNS:-}
+      PAYMUX_DB_CONN_TIMEOUT: ${PAYMUX_DB_CONN_TIMEOUT:-}
+      PAYMUX_ADMIN_SESSION_TTL: ${PAYMUX_ADMIN_SESSION_TTL:-}
+      PAYMUX_RATE_LIMIT_PER_SECOND: ${PAYMUX_RATE_LIMIT_PER_SECOND:-}
+      PAYMUX_RATE_LIMIT_BURST: ${PAYMUX_RATE_LIMIT_BURST:-}
+      PAYMUX_MAX_REQUEST_BODY_BYTES: ${PAYMUX_MAX_REQUEST_BODY_BYTES:-}
+      PAYMUX_HTTP_CLIENT_TIMEOUT: ${PAYMUX_HTTP_CLIENT_TIMEOUT:-}
+      PAYMUX_METRICS_ENABLED: ${PAYMUX_METRICS_ENABLED:-}
+      # Turn on when a reverse proxy fronts PayMux and overwrites
+      # X-Forwarded-For, which is what docker-compose.proxied.yml is for. Left
+      # off behind a proxy, every request appears to come from the proxy:
+      # per-key rate limits collapse into one bucket and the audit trail
+      # records the proxy instead of the caller.
+      PAYMUX_TRUST_PROXY_HEADERS: ${PAYMUX_TRUST_PROXY_HEADERS:-}
     ports:
       - "${PAYMUX_API_PORT:-8080}:8080"
     healthcheck:
@@ -47,6 +67,8 @@ services:
     build:
       context: .
       dockerfile: deployments/worker.Dockerfile
+      args:
+        VERSION: ${VERSION:-dev}
     restart: unless-stopped
     environment:
       PAYMUX_ENV: ${PAYMUX_ENV:-development}
@@ -59,6 +81,15 @@ services:
       PAYMUX_WORKER_CONCURRENCY: ${PAYMUX_WORKER_CONCURRENCY:-20}
       PAYMUX_ALLOW_PRIVATE_WEBHOOK_DESTINATIONS: ${PAYMUX_ALLOW_PRIVATE_WEBHOOK_DESTINATIONS:-false}
       PAYMUX_METRICS_ADDR: ":9090"
+      # Optional; empty means unset. See the note on the api service.
+      PAYMUX_LOG_JSON: ${PAYMUX_LOG_JSON:-}
+      PAYMUX_DB_MAX_CONNS: ${PAYMUX_DB_MAX_CONNS:-}
+      PAYMUX_DB_MIN_CONNS: ${PAYMUX_DB_MIN_CONNS:-}
+      PAYMUX_DB_CONN_TIMEOUT: ${PAYMUX_DB_CONN_TIMEOUT:-}
+      PAYMUX_WORKER_POLL_INTERVAL: ${PAYMUX_WORKER_POLL_INTERVAL:-}
+      PAYMUX_WEBHOOK_TIMEOUT: ${PAYMUX_WEBHOOK_TIMEOUT:-}
+      PAYMUX_HTTP_CLIENT_TIMEOUT: ${PAYMUX_HTTP_CLIENT_TIMEOUT:-}
+      PAYMUX_METRICS_ENABLED: ${PAYMUX_METRICS_ENABLED:-}
     healthcheck:
       # The worker serves /health beside its metrics, so an unhealthy worker
       # is visible rather than silently draining nothing.
@@ -83,7 +114,9 @@ services:
     ports:
       - "${PAYMUX_DASHBOARD_PORT:-5173}:80"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost/"]
+      # 127.0.0.1, not localhost: nginx listens on 0.0.0.0 only, /etc/hosts
+      # also maps localhost to ::1, and busybox wget tries IPv6 first.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -109,7 +142,9 @@ services:
     ports:
       - "${PAYMUX_LANDING_PORT:-7881}:80"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost/"]
+      # 127.0.0.1, not localhost: nginx listens on 0.0.0.0 only, /etc/hosts
+      # also maps localhost to ::1, and busybox wget tries IPv6 first.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
       interval: 30s
       timeout: 5s
       retries: 3

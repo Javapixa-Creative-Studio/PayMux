@@ -30,4 +30,8 @@ USER nonroot:nonroot
 # the port; do not give this one a domain.
 EXPOSE 9090
 
+# Exec form: the distroless runtime has no shell to expand a string.
+HEALTHCHECK --interval=15s --timeout=5s --retries=5 \
+  CMD ["/paymux-worker", "-healthcheck"]
+
 ENTRYPOINT ["/paymux-worker"]

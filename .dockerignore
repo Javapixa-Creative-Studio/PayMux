@@ -1,0 +1,58 @@
+# What never belongs in a build context.
+#
+# Without this file the context is ~157 MB, nearly all of it the dashboard's
+# node_modules, and it is sent to the daemon on every build of every service
+# including the Go ones that have no use for it. Two entries below are not
+# about size at all:
+#
+#   .env / .env.prod  `COPY . .` in the Go images puts them in a build layer.
+#                     They never reach the published image, which copies out
+#                     only the binary, but they sit in the build cache and in
+#                     `docker build --target build`.
+#
+#   node_modules      dashboard.Dockerfile runs `npm ci` and then copies the
+#   *.tsbuildinfo     source in. Whatever the host has would land on top of
+#                     the install, and a stale tsbuildinfo makes `tsc -b`
+#                     believe the project is current and skip the type-check.
+#
+# Kept on purpose: go.mod, go.sum, apps/, internal/, examples/, deployments/,
+# the root index.html the landing page is built from, and migrations/, whose
+# .sql files are embedded into the binaries (migrations/migrations.go).
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Version control and editor state
+.git
+.gitattributes
+.github
+.gitignore
+.idea
+.vscode
+*.iml
+
+# Dependencies, installed inside the image instead
+**/node_modules
+
+# Build output and incremental state
+**/dist
+**/*.tsbuildinfo
+/bin
+/out
+*.exe
+*.test
+*.out
+coverage.out
+
+# Local tooling that no image builds from
+Makefile
+docker-compose*.yml
+deployments/compose.*.yml
+.dockerignore
+
+# Documentation
+*.md
+docs
+LICENSE

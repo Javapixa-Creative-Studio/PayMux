@@ -15,7 +15,13 @@
 # container port 80.
 FROM nginx:1.29-alpine
 
+COPY deployments/nginx-security-headers.conf /etc/nginx/security-headers.conf
 COPY deployments/landing.nginx.conf /etc/nginx/conf.d/default.conf
 COPY index.html /usr/share/nginx/html/index.html
 
 EXPOSE 80
+
+# The comment above recommends deploying this image on its own, so it
+# carries its own healthcheck rather than relying on docker-compose.yml.
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD ["wget", "-qO-", "http://127.0.0.1/"]
