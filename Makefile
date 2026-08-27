@@ -114,33 +114,47 @@ landing: ## Build and serve the landing page on its own
 # One service per file
 #
 # For a platform that deploys one app per compose file rather than a stack.
+#
 # --project-directory is not optional: compose reads .env from the project
-# directory, which would otherwise be deployments/ and would miss the .env at
-# the repository root.
+# directory, which would otherwise be deployments/ and would miss the
+# repository root.
+#
+# Each service is handed only the env files it should ever see. The dashboard
+# and the landing page get no shared file at all, because neither needs a
+# database URL or an encryption key and neither should be given one. The API
+# and the worker share .env.shared, because they must agree on both: the API
+# seals gateway secrets into the database and the worker reads them back.
 # ---------------------------------------------------------------------------
 
-SOLO := docker compose --project-directory . -f deployments/compose
+SOLO := docker compose --project-directory .
+
+ENV_API       := --env-file .env.shared --env-file .env.api
+ENV_WORKER    := --env-file .env.shared --env-file .env.worker
+ENV_DASHBOARD := --env-file .env.dashboard
+ENV_LANDING   := --env-file .env.landing
 
 .PHONY: deploy-api
 deploy-api: ## Start only the API, from its own compose file
-	$(SOLO).api.yml up -d --build
+	$(SOLO) $(ENV_API) -f deployments/compose.api.yml up -d --build
 
 .PHONY: deploy-worker
 deploy-worker: ## Start only the worker, from its own compose file
-	$(SOLO).worker.yml up -d --build
+	$(SOLO) $(ENV_WORKER) -f deployments/compose.worker.yml up -d --build
 
 .PHONY: deploy-dashboard
 deploy-dashboard: ## Start only the dashboard, from its own compose file
-	$(SOLO).dashboard.yml up -d --build
+	$(SOLO) $(ENV_DASHBOARD) -f deployments/compose.dashboard.yml up -d --build
 
 .PHONY: deploy-landing
 deploy-landing: ## Start only the landing page, from its own compose file
-	$(SOLO).landing.yml up -d --build
+	$(SOLO) $(ENV_LANDING) -f deployments/compose.landing.yml up -d --build
 
 .PHONY: deploy-config
-deploy-config: ## Validate every per-service compose file
-	@for s in api worker dashboard landing; do printf "  %-10s " "$$s"; $(SOLO).$$s.yml config -q && echo "ok"; done
-
+deploy-config: ## Validate every per-service compose file against its env files
+	@$(SOLO) $(ENV_API) -f deployments/compose.api.yml config -q && echo "  api        ok"
+	@$(SOLO) $(ENV_WORKER) -f deployments/compose.worker.yml config -q && echo "  worker     ok"
+	@$(SOLO) $(ENV_DASHBOARD) -f deployments/compose.dashboard.yml config -q && echo "  dashboard  ok"
+	@$(SOLO) $(ENV_LANDING) -f deployments/compose.landing.yml config -q && echo "  landing    ok"
 .PHONY: down
 down: ## Stop the stack, including a bundled PostgreSQL if one was started
 	docker compose $(COMPOSE_PG) down

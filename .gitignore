@@ -3,6 +3,9 @@
 .env.local
 .env.*
 !.env.example
+# The per-service templates too. The real .env.<service> files they are
+# copied to stay ignored by the .env.* rule above.
+!.env.*.example
 *.local
 
 # Build output

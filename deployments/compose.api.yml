@@ -14,6 +14,14 @@
 # which otherwise defaults to this file's directory and would miss the .env at
 # the repository root. `make deploy-api` does this for you.
 #
+# Environment comes from two files, not one:
+#
+#   .env.shared   DATABASE_URL and PAYMUX_ENCRYPTION_KEY, shared with the
+#                 worker and required to be identical there. The API seals
+#                 gateway secrets into the database and the worker reads
+#                 them back, so a mismatch fails at dispatch, not startup.
+#   .env.api       everything only this service reads.
+#
 # No database here. DATABASE_URL must point at PostgreSQL you already run; a
 # managed instance usually wants ?sslmode=require rather than disable.
 #
@@ -37,7 +45,7 @@ services:
       PAYMUX_BASE_URL: ${PAYMUX_BASE_URL:-http://localhost:8080}
       PAYMUX_LOG_LEVEL: ${PAYMUX_LOG_LEVEL:-info}
       DATABASE_URL: ${DATABASE_URL:-}
-      PAYMUX_ENCRYPTION_KEY: ${PAYMUX_ENCRYPTION_KEY:?set PAYMUX_ENCRYPTION_KEY in .env}
+      PAYMUX_ENCRYPTION_KEY: ${PAYMUX_ENCRYPTION_KEY:?set PAYMUX_ENCRYPTION_KEY in .env.shared}
       PAYMUX_ADMIN_EMAIL: ${PAYMUX_ADMIN_EMAIL:-}
       PAYMUX_ADMIN_PASSWORD: ${PAYMUX_ADMIN_PASSWORD:-}
       PAYMUX_CORS_ORIGINS: ${PAYMUX_CORS_ORIGINS:-http://localhost:5173}

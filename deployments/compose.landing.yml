@@ -15,6 +15,9 @@
 #
 # Behind a reverse proxy, delete the ports block and bind the domain to
 # container port 80.
+# Environment comes from .env.landing alone. There is deliberately no
+# .env.shared here: this service needs no database, no API and no secrets of any kind,
+# and should never be handed either.
 name: paymux-landing
 
 services:

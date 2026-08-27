@@ -9,6 +9,14 @@
 # See compose.api.yml for why --project-directory is needed. `make deploy-worker`
 # does it for you.
 #
+# Environment comes from two files, not one:
+#
+#   .env.shared   DATABASE_URL and PAYMUX_ENCRYPTION_KEY, shared with the
+#                 api and required to be identical there. The API seals
+#                 gateway secrets into the database and the worker reads
+#                 them back, so a mismatch fails at dispatch, not startup.
+#   .env.worker    everything only this service reads.
+#
 # No database here. DATABASE_URL must point at the same PostgreSQL the API
 # uses; the worker and the API share one database and reach it independently.
 #
@@ -30,7 +38,7 @@ services:
       PAYMUX_ENV: ${PAYMUX_ENV:-development}
       PAYMUX_LOG_LEVEL: ${PAYMUX_LOG_LEVEL:-info}
       DATABASE_URL: ${DATABASE_URL:-}
-      PAYMUX_ENCRYPTION_KEY: ${PAYMUX_ENCRYPTION_KEY:?set PAYMUX_ENCRYPTION_KEY in .env}
+      PAYMUX_ENCRYPTION_KEY: ${PAYMUX_ENCRYPTION_KEY:?set PAYMUX_ENCRYPTION_KEY in .env.shared}
       PAYMUX_WORKER_CONCURRENCY: ${PAYMUX_WORKER_CONCURRENCY:-20}
       PAYMUX_ALLOW_PRIVATE_WEBHOOK_DESTINATIONS: ${PAYMUX_ALLOW_PRIVATE_WEBHOOK_DESTINATIONS:-false}
       PAYMUX_METRICS_ADDR: ":9090"
