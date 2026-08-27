@@ -93,6 +93,32 @@ services:
           memory: 128M
 
   # ---------------------------------------------------------------------------
+  # Landing page.
+  #
+  # The public marketing page, which has nothing to do with running PayMux.
+  # Opt in with `docker compose --profile landing up`, or deploy it on its own
+  # from deployments/landing.Dockerfile.
+  # ---------------------------------------------------------------------------
+
+  landing:
+    profiles: ["landing"]
+    build:
+      context: .
+      dockerfile: deployments/landing.Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${PAYMUX_LANDING_PORT:-7881}:80"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+
+  # ---------------------------------------------------------------------------
   # Demo storefronts.
   #
   # Two shops, one image, one merchant account. They exist to make PayMux's

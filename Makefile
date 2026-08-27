@@ -94,6 +94,16 @@ up-postgres: ## Start the stack and a PostgreSQL container with it
 	docker compose $(COMPOSE_PG) up -d --build
 	@$(MAKE) --no-print-directory ports
 
+.PHONY: up-proxied
+up-proxied: ## Start without publishing host ports, for a platform that proxies
+	docker compose -f docker-compose.yml -f docker-compose.proxied.yml up -d --build
+	@$(MAKE) --no-print-directory ports
+
+.PHONY: landing
+landing: ## Build and serve the landing page on its own
+	docker compose --profile landing up -d --build landing
+	@echo "  landing  http://localhost:$${PAYMUX_LANDING_PORT:-7881}  (container port 80)"
+
 .PHONY: down
 down: ## Stop the stack, including a bundled PostgreSQL if one was started
 	docker compose $(COMPOSE_PG) down
