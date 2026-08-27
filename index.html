@@ -1,0 +1,2096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PayMux — one merchant account, every product you run</title>
+<meta name="description" content="PayMux is an open-source payment gateway multiplexer and webhook router. Several applications share one Midtrans account, each with its own keys, its own signed events, and no way to see another's payments.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:ital,wght@1,400;1,500&display=swap" rel="stylesheet">
+<style>
+/* ─────────────────────────────────────────────────────────────
+   PayMux — instrument enclosure
+   Palette encodes the product's own distinction:
+   money in is reversible (mint), money out is not (amber).
+   ───────────────────────────────────────────────────────────── */
+:root{
+  --ink:#0A0D12;
+  --panel:#10151C;
+  --panel-2:#151C26;
+  --raise:#1B2430;
+  --line:#232D3A;
+  --line-soft:#1A222C;
+  --paper:#E9EAE4;
+  --muted:#7E8A99;
+  --dim:#5A6673;
+  --in:#63D3BE;
+  --out:#F0A65C;
+  --alarm:#E2695F;
+  --max:1180px;
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:'IBM Plex Sans',system-ui,-apple-system,sans-serif;
+  --serif:'IBM Plex Serif',Georgia,serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+body{
+  margin:0;background:var(--ink);color:var(--paper);
+  font-family:var(--sans);font-size:16px;line-height:1.6;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+}
+a{color:inherit}
+::selection{background:var(--in);color:var(--ink)}
+:focus-visible{outline:2px solid var(--in);outline-offset:3px;border-radius:2px}
+
+/* ── typographic scale ── */
+h1,h2,h3{margin:0;font-weight:600;letter-spacing:-.02em;line-height:1.12}
+h1{font-size:clamp(2.1rem,5.2vw,3.6rem);letter-spacing:-.035em}
+h2{font-size:clamp(1.55rem,3.2vw,2.15rem)}
+h3{font-size:1.02rem;letter-spacing:-.01em}
+p{margin:0}
+.lede{font-size:clamp(1rem,1.6vw,1.12rem);color:var(--muted);line-height:1.62;max-width:60ch}
+.mono{font-family:var(--mono)}
+
+/* the one editorial register: verbatim lines in the project's own voice */
+.voice{
+  font-family:var(--serif);font-style:italic;font-size:clamp(1.05rem,2vw,1.3rem);
+  line-height:1.5;color:var(--paper);max-width:44ch;
+  border-left:2px solid var(--line);padding-left:1.15rem;
+}
+.voice cite{display:block;margin-top:.7rem;font:500 .68rem/1 var(--mono);
+  font-style:normal;letter-spacing:.13em;text-transform:uppercase;color:var(--dim)}
+
+/* ── shell ── */
+.wrap{max-width:var(--max);margin:0 auto;padding:0 clamp(1.15rem,4vw,2rem)}
+.section{padding:clamp(4rem,9vw,7rem) 0;border-top:1px solid var(--line-soft)}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:.55rem;
+  font:500 .68rem/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--dim);
+}
+.eyebrow::before{content:'';width:1.6rem;height:1px;background:var(--line)}
+.head{display:flex;flex-direction:column;gap:.95rem;margin-bottom:2.6rem}
+
+/* ── nav ── */
+header{position:fixed;inset:0 0 auto 0;z-index:60;
+  background:color-mix(in srgb,var(--ink) 88%,transparent);
+  backdrop-filter:blur(14px);border-bottom:1px solid var(--line-soft)}
+.nav{max-width:var(--max);margin:0 auto;padding:0 clamp(1.15rem,4vw,2rem);
+  height:56px;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.brand{display:flex;align-items:center;gap:.6rem;font:600 .95rem/1 var(--sans);letter-spacing:-.02em;text-decoration:none}
+.brand .mark{width:22px;height:22px;flex:none}
+.brand b{font-weight:600}
+.brand .mx{color:var(--in)}
+.navlinks{display:flex;gap:1.6rem;font:400 .78rem/1 var(--mono);color:var(--muted)}
+.navlinks a{text-decoration:none;transition:color .15s}
+.navlinks a:hover{color:var(--paper)}
+@media (max-width:880px){.navlinks{display:none}}
+.ghost{
+  font:500 .76rem/1 var(--mono);text-decoration:none;color:var(--paper);
+  border:1px solid var(--line);padding:.5rem .8rem;border-radius:3px;
+  display:inline-flex;align-items:center;gap:.5rem;transition:border-color .15s,background .15s;white-space:nowrap;
+}
+.ghost:hover{border-color:var(--dim);background:var(--panel)}
+
+/* ── hero ── */
+.hero{padding:calc(56px + clamp(3rem,7vw,5rem)) 0 clamp(2.5rem,5vw,3.5rem)}
+.hero h1 span{color:var(--in)}
+.hero .lede{margin-top:1.4rem}
+.cta{display:flex;flex-wrap:wrap;gap:.7rem;margin-top:2rem;align-items:center}
+.btn{
+  font:500 .82rem/1 var(--mono);text-decoration:none;cursor:pointer;
+  padding:.78rem 1.1rem;border-radius:3px;display:inline-flex;align-items:center;gap:.6rem;
+  border:1px solid transparent;background:transparent;color:var(--paper);
+  transition:transform .12s,background .15s,border-color .15s;
+}
+.btn-primary{background:var(--in);color:#06231E;font-weight:600}
+.btn-primary:hover{background:#7BE0CC}
+.btn-secondary{border-color:var(--line);color:var(--paper);background:var(--panel)}
+.btn-secondary:hover{border-color:var(--dim);background:var(--panel)}
+.btn:active{transform:translateY(1px)}
+
+/* facts strip — what the repository actually contains */
+.facts{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));
+  gap:1px;background:var(--line-soft);border:1px solid var(--line-soft);
+  border-radius:4px;overflow:hidden;margin-top:2.6rem;
+}
+.fact{background:var(--panel);padding:1rem 1.05rem}
+.fact dt{font:400 .66rem/1 var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--dim)}
+.fact dd{margin:.55rem 0 0;font:600 1.32rem/1 var(--mono);letter-spacing:-.02em}
+.fact dd small{display:block;margin-top:.4rem;font:400 .72rem/1.35 var(--sans);color:var(--muted);letter-spacing:0}
+
+/* ── the patch bay: signature element ── */
+.bay{border:1px solid var(--line);border-radius:5px;background:var(--panel);overflow:hidden}
+.bay-top{
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+  padding:.75rem 1rem;border-bottom:1px solid var(--line-soft);background:var(--panel-2);
+}
+.bay-title{font:500 .72rem/1 var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
+.bay-keys{display:flex;gap:.45rem;flex-wrap:wrap}
+.key{
+  font:500 .76rem/1 var(--mono);color:var(--paper);background:var(--raise);
+  border:1px solid var(--line);border-radius:3px;padding:.5rem .72rem;cursor:pointer;
+  transition:border-color .15s,background .15s,color .15s;
+}
+.key:hover{border-color:var(--in);color:var(--in)}
+.key[aria-pressed="true"]{background:var(--in);border-color:var(--in);color:#06231E;font-weight:600}
+.key.reset:hover{border-color:var(--dim);color:var(--paper)}
+#bayCanvas{display:block;width:100%;height:360px;touch-action:manipulation}
+@media (max-width:720px){#bayCanvas{height:300px}}
+.bay-status{
+  display:flex;align-items:center;gap:.7rem;padding:.75rem 1rem;
+  border-top:1px solid var(--line-soft);background:var(--panel-2);min-height:46px;
+}
+.tick{width:6px;height:6px;border-radius:50%;background:var(--dim);flex:none;transition:background .2s}
+.tick.in{background:var(--in)}
+.tick.out{background:var(--out)}
+#bayNote{font:400 .78rem/1.4 var(--mono);color:var(--muted)}
+#bayNote b{color:var(--paper);font-weight:500}
+
+/* isolation ledger — who was told what */
+.ledger{display:grid;gap:1px;background:var(--line-soft);border:1px solid var(--line-soft);border-radius:4px;overflow:hidden;margin-top:1.15rem}
+.lrow{
+  background:var(--panel);padding:.85rem 1rem;display:flex;align-items:center;
+  justify-content:space-between;gap:1rem;flex-wrap:wrap;transition:background .25s;
+}
+.lrow[data-told="yes"]{background:var(--panel-2)}
+.lrow-id{display:flex;align-items:baseline;gap:.6rem;min-width:0}
+.lrow-id strong{font:600 .86rem/1 var(--sans);letter-spacing:-.01em}
+.lrow-id span{font:400 .72rem/1 var(--mono);color:var(--dim)}
+.chip{
+  font:500 .71rem/1 var(--mono);padding:.36rem .6rem;border-radius:3px;
+  border:1px solid var(--line);color:var(--dim);white-space:nowrap;
+}
+.chip.told{border-color:color-mix(in srgb,var(--in) 45%,transparent);color:var(--in);
+  background:color-mix(in srgb,var(--in) 9%,transparent)}
+.chip.blind{color:var(--dim)}
+
+/* ── code ── */
+.code{
+  border:1px solid var(--line);border-radius:4px;background:var(--panel);overflow:hidden;
+}
+.code-top{
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  padding:.6rem .9rem;border-bottom:1px solid var(--line-soft);background:var(--panel-2);
+  font:400 .7rem/1 var(--mono);color:var(--dim);letter-spacing:.06em;
+}
+.code pre{
+  margin:0;padding:1rem;overflow-x:auto;
+  font:400 .78rem/1.68 var(--mono);color:#C9D2DC;tab-size:2;
+}
+@media (max-width:560px){.code pre{font-size:.72rem}}
+.code pre .k{color:var(--in)}
+.code pre .s{color:#B7C89A}
+.code pre .c{color:var(--dim)}
+.code pre .n{color:var(--out)}
+.code pre .h{color:#9BB4D4}
+
+/* ── generic panels & grids ── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line-soft);
+  border:1px solid var(--line-soft);border-radius:4px;overflow:hidden}
+@media (max-width:900px){.grid-2{grid-template-columns:1fr}.grid-3{grid-template-columns:1fr}}
+.cell{background:var(--panel);padding:1.4rem 1.3rem;display:flex;flex-direction:column;gap:.6rem}
+.cell p{font-size:.9rem;color:var(--muted);line-height:1.6}
+.cell .tag{font:500 .66rem/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+
+/* ── the retry ladder: a real sequence, so it gets a real timeline ── */
+.ladder{display:flex;flex-direction:column;gap:0;border-left:1px solid var(--line);margin-left:.4rem}
+.rung{position:relative;padding:.62rem 0 .62rem 1.5rem;display:flex;align-items:baseline;gap:.9rem}
+.rung dd{flex:1 1 auto;min-width:0}
+@media (max-width:560px){.rung{flex-wrap:wrap}}
+.rung::before{content:'';position:absolute;left:-3.5px;top:1.02rem;width:6px;height:6px;border-radius:50%;
+  background:var(--panel);border:1px solid var(--dim)}
+.rung.live::before{background:var(--in);border-color:var(--in)}
+.rung.dead.on::before{background:var(--alarm);border-color:var(--alarm)}
+.rung dt{font:500 .8rem/1 var(--mono);color:var(--paper);min-width:5.2rem}
+.rung dd{margin:0;font-size:.85rem;color:var(--muted)}
+.rung.dead dd{color:var(--paper)}
+
+/* ── money out: gated three times ── */
+.gates{display:grid;gap:1px;background:var(--line-soft);border:1px solid var(--line-soft);border-radius:4px;overflow:hidden}
+.gate{background:var(--panel);padding:1.25rem 1.3rem;display:grid;grid-template-columns:auto 1fr;gap:1.1rem;align-items:start}
+.gate-n{font:600 .78rem/1 var(--mono);color:var(--out);border:1px solid color-mix(in srgb,var(--out) 40%,transparent);
+  border-radius:3px;padding:.42rem .55rem;background:color-mix(in srgb,var(--out) 8%,transparent)}
+.gate h3{margin-bottom:.4rem}
+.gate p{font-size:.88rem;color:var(--muted)}
+
+/* ── tables ── */
+.tbl{width:100%;border-collapse:collapse;font-size:.86rem}
+.tbl th{
+  text-align:left;font:500 .66rem/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);padding:.7rem .9rem;border-bottom:1px solid var(--line);white-space:nowrap;
+}
+.tbl td{padding:.78rem .9rem;border-bottom:1px solid var(--line-soft);color:var(--muted);vertical-align:top}
+.tbl td:first-child{font:500 .8rem/1.4 var(--mono);color:var(--paper);white-space:nowrap}
+.tbl tr:last-child td{border-bottom:0}
+.tbl tr.flag td{color:var(--paper)}
+.tbl tr.flag td:first-child{color:var(--alarm)}
+.scroll-x{overflow-x:auto;border:1px solid var(--line);border-radius:4px;background:var(--panel)}
+
+/* ── event vocabulary ── */
+.vocab{display:flex;flex-wrap:wrap;gap:.4rem}
+.ev{font:400 .74rem/1 var(--mono);padding:.44rem .62rem;border-radius:3px;
+  border:1px solid var(--line-soft);background:var(--panel);color:var(--muted)}
+.ev.pay{color:var(--in);border-color:color-mix(in srgb,var(--in) 26%,transparent)}
+.ev.pout{color:var(--out);border-color:color-mix(in srgb,var(--out) 26%,transparent)}
+
+/* ── honest status ── */
+.status-note{
+  border:1px solid color-mix(in srgb,var(--out) 32%,transparent);border-radius:4px;
+  background:color-mix(in srgb,var(--out) 6%,transparent);padding:1.3rem 1.35rem;
+}
+.status-note h3{color:var(--out);margin-bottom:.55rem}
+.status-note p{font-size:.9rem;color:var(--muted);line-height:1.62}
+.status-note p + p{margin-top:.8rem}
+
+
+/* ── simulators: panels that run the repository's own rules ── */
+.sim{border:1px solid var(--line);border-radius:5px;background:var(--panel);overflow:hidden}
+.sim-top{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+  padding:.75rem 1rem;border-bottom:1px solid var(--line-soft);background:var(--panel-2)}
+.sim-title{font:500 .72rem/1 var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
+.sim-hint{font:400 .7rem/1 var(--mono);color:var(--dim)}
+.sim-keys{display:flex;flex-wrap:wrap;gap:.45rem;padding:.9rem 1rem 0}
+.sim-foot{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;padding:.8rem 1rem;
+  border-top:1px solid var(--line-soft);background:var(--panel-2);min-height:46px}
+.sim-foot p{font:400 .78rem/1.45 var(--mono);color:var(--muted);flex:1 1 16rem;margin:0}
+.sim-foot p b{color:var(--paper);font-weight:500}
+.sim-run{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;padding:1rem;
+  border-top:1px solid var(--line-soft)}
+.sim-actions{display:flex;gap:.5rem;flex-wrap:wrap}
+.sim-run .btn{padding:.62rem .95rem}
+.sim .ladder{margin:1rem 1rem 0 1.4rem}
+.sim .gates{border:0;border-radius:0}
+.gate{grid-template-columns:auto 1fr auto;align-items:start}
+.limit{display:flex;align-items:center;gap:.55rem;flex-wrap:wrap;margin-top:.8rem;
+  font:400 .74rem/1 var(--mono);color:var(--dim)}
+.limit b{color:var(--paper);font-weight:500}
+.limit > span:first-child{letter-spacing:.1em;text-transform:uppercase;font-size:.66rem}
+.limit input,.fld input,.fld textarea{
+  font:400 .8rem/1.5 var(--mono);color:var(--paper);background:var(--ink);
+  border:1px solid var(--line);border-radius:3px;padding:.42rem .55rem;width:9rem;
+}
+.limit input:focus,.fld input:focus,.fld textarea:focus{border-color:var(--in);outline:none}
+
+/* switch */
+.sw{display:inline-flex;align-items:center;gap:.55rem;background:none;border:0;cursor:pointer;padding:.2rem;
+  font:500 .68rem/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.sw i{width:34px;height:19px;border-radius:10px;background:var(--raise);border:1px solid var(--line);
+  position:relative;transition:background .18s,border-color .18s;flex:none}
+.sw i::after{content:'';position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;
+  background:var(--dim);transition:transform .18s,background .18s}
+.sw[aria-checked="true"]{color:var(--out)}
+.sw[aria-checked="true"] i{background:color-mix(in srgb,var(--out) 22%,transparent);border-color:var(--out)}
+.sw[aria-checked="true"] i::after{transform:translateX(15px);background:var(--out)}
+.sw.refused i{border-color:var(--alarm);animation:nudge .3s}
+@keyframes nudge{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+
+/* retry ladder states */
+.rung .rstate{font:500 .7rem/1 var(--mono);color:var(--dim);margin-left:auto;white-space:nowrap}
+.rung{opacity:.62;transition:opacity .2s}
+.rung.on{opacity:1}
+.rung.fail::before{background:var(--alarm);border-color:var(--alarm)}
+.rung.fail .rstate{color:var(--alarm)}
+.rung.pass::before{background:var(--in);border-color:var(--in)}
+.rung.pass .rstate{color:var(--in)}
+.rung.stopped .rstate{color:var(--out)}
+
+/* signature check */
+.sig-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1rem;padding:1rem 1rem 0}
+.fld{display:flex;flex-direction:column;gap:.42rem}
+.fld > span{font:400 .66rem/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.fld input{width:100%}
+.fld-wide{padding:1rem}
+.fld textarea{width:100%;resize:vertical;min-height:5rem;line-height:1.6}
+.sig-out{padding:0 1rem 1rem;display:flex;flex-direction:column;gap:.5rem}
+.sig-row{display:grid;grid-template-columns:8.5rem 1fr;gap:.8rem;align-items:baseline}
+@media (max-width:620px){.sig-row{grid-template-columns:1fr;gap:.2rem}}
+.sig-row > span{font:400 .66rem/1.4 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.sig-row code{font:400 .76rem/1.5 var(--mono);color:#C9D2DC;word-break:break-all;
+  background:var(--ink);border:1px solid var(--line-soft);border-radius:3px;padding:.35rem .5rem}
+.verdict{font:600 .7rem/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;
+  padding:.42rem .6rem;border-radius:3px;border:1px solid var(--line);color:var(--dim);flex:none}
+.verdict.ok{color:var(--in);border-color:color-mix(in srgb,var(--in) 45%,transparent);
+  background:color-mix(in srgb,var(--in) 9%,transparent)}
+.verdict.bad{color:var(--alarm);border-color:color-mix(in srgb,var(--alarm) 45%,transparent);
+  background:color-mix(in srgb,var(--alarm) 9%,transparent)}
+
+
+/* ── language toggle ── */
+.lang{display:inline-flex;border:1px solid var(--line);border-radius:3px;overflow:hidden;flex:none}
+.lang button{
+  font:500 .7rem/1 var(--mono);letter-spacing:.08em;color:var(--muted);
+  background:transparent;border:0;padding:.5rem .6rem;cursor:pointer;transition:background .15s,color .15s;
+}
+.lang button + button{border-left:1px solid var(--line)}
+.lang button:hover{color:var(--paper)}
+.lang button[aria-pressed="true"]{background:var(--in);color:#06231E;font-weight:600}
+@media (max-width:420px){.lang button{padding:.5rem .45rem}}
+
+/* ── footer ── */
+footer{border-top:1px solid var(--line-soft);padding:3rem 0 3.5rem;color:var(--dim)}
+.foot{display:flex;justify-content:space-between;gap:1.6rem;flex-wrap:wrap;align-items:flex-start}
+.foot a{color:var(--muted);text-decoration:none;font:400 .82rem/2 var(--mono);display:block}
+.foot a:hover{color:var(--paper)}
+.foot h4{margin:0 0 .5rem;font:500 .66rem/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.foot-note{margin-top:2.4rem;padding-top:1.6rem;border-top:1px solid var(--line-soft);
+  font:400 .78rem/1.6 var(--mono);color:var(--dim);display:flex;gap:1rem;justify-content:space-between;flex-wrap:wrap}
+</style>
+</head>
+<body>
+
+<header>
+  <nav class="nav">
+    <a class="brand" href="#top">
+      <svg class="mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M3 5h5l4 7 4-7h5" stroke="#7E8A99" stroke-width="1.6" stroke-linecap="round"/>
+        <path d="M3 19h5l4-7 4 7h5" stroke="#63D3BE" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      <b>Pay<span class="mx">Mux</span></b>
+    </a>
+    <div class="navlinks">
+      <a href="#bay">isolation</a>
+      <a href="#events">events</a>
+      <a href="#payouts">money out</a>
+      <a href="#api">api</a>
+      <a href="#inside">inside</a>
+      <a href="#start">quick start</a>
+    </div>
+    <a class="ghost" href="https://github.com/Javapixa-Creative-Studio/PayMux" target="_blank" rel="noopener noreferrer">
+      GitHub ↗
+    </a>
+  </nav>
+</header>
+
+<main id="top">
+
+  <!-- ══ HERO ══ -->
+  <section class="hero">
+    <div class="wrap">
+      <span class="eyebrow">Apache-2.0 · Go 1.25 · PostgreSQL 15+</span>
+      <h1 style="margin-top:1.1rem">
+        One merchant account.<br>
+        <span>Every product you run.</span>
+      </h1>
+      <p class="lede">
+        Payment gateway configuration is merchant-wide. One notification URL serves everything you
+        build, so the second application forces a choice between coupling your products together
+        or inventing <code class="mono" style="color:var(--paper)">order_id</code> prefix conventions.
+        PayMux takes ownership of the gateway integration instead: your applications talk to PayMux,
+        PayMux talks to Midtrans, and because PayMux opened every transaction it knows exactly who
+        owns each notification.
+      </p>
+
+      <div class="cta">
+        <a class="btn btn-primary" href="#start">Run it yourself</a>
+        <a class="btn btn-secondary" href="https://github.com/Javapixa-Creative-Studio/PayMux" target="_blank" rel="noopener noreferrer">Read the source ↗</a>
+      </div>
+
+      <dl class="facts">
+        <div class="fact"><dt>Gateway</dt><dd>Midtrans<small>Snap and Core API, one adapter</small></dd></div>
+        <div class="fact"><dt>Event types</dt><dd>23<small>Payments, refunds, subscriptions, payouts</small></dd></div>
+        <div class="fact"><dt>Delivery attempts</dt><dd>7<small>Then dead, visible, and replayable</small></dd></div>
+        <div class="fact"><dt>Endpoints</dt><dd>30<small>Under <span class="mono">/api/v1</span>, one bearer key</small></dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ══ THE PATCH BAY — signature ══ -->
+  <section class="section" id="bay">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Isolation</span>
+        <h2>Send a payment. Watch who gets told.</h2>
+        <p class="lede">
+          Three applications, one Midtrans account. Open a payment from any of them and follow it out
+          to the gateway and back. The notification returns to exactly one application, and the
+          other two are never told it happened.
+        </p>
+      </div>
+
+      <div class="bay">
+        <div class="bay-top">
+          <span class="bay-title">Routing bay · sandbox</span>
+          <div class="bay-keys">
+            <button class="key" data-app="0" aria-pressed="false">Kopi Rakyat pays</button>
+            <button class="key" data-app="1" aria-pressed="false">Margin Notes pays</button>
+            <button class="key" data-app="2" aria-pressed="false">Third app pays</button>
+            <button class="key reset" id="bayReset">Reset</button>
+          </div>
+        </div>
+        <canvas id="bayCanvas" role="img"
+          aria-label="A routing diagram: three applications on the left connect through PayMux in the centre to Midtrans on the right. When a payment is sent, the gateway notification returns through PayMux to only the application that opened it."></canvas>
+        <div class="bay-status">
+          <span class="tick" id="bayTick"></span>
+          <p id="bayNote">Pick an application to open a payment.</p>
+        </div>
+      </div>
+
+      <div class="ledger" id="bayLedger">
+        <div class="lrow" data-told="no" data-row="0">
+          <span class="lrow-id"><strong>Kopi Rakyat</strong><span>app_01 &middot; checkout in a dialog</span></span>
+          <span class="chip blind">nothing delivered</span>
+        </div>
+        <div class="lrow" data-told="no" data-row="1">
+          <span class="lrow-id"><strong>Margin Notes</strong><span>app_02 &middot; redirect to the gateway</span></span>
+          <span class="chip blind">nothing delivered</span>
+        </div>
+        <div class="lrow" data-told="no" data-row="2">
+          <span class="lrow-id"><strong>Third app</strong><span>app_03 &middot; the one you add next</span></span>
+          <span class="chip blind">nothing delivered</span>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-top:2.6rem;align-items:start">
+        <div style="display:flex;flex-direction:column;gap:1.5rem">
+          <p class="voice">
+            Because PayMux creates every transaction, it knows with certainty which application owns
+            each notification: no prefix parsing, no guessing.
+            <cite>README — Why</cite>
+          </p>
+          <p style="font-size:.9rem;color:var(--muted);max-width:52ch">
+            Two of these applications ship with the repository as browsable storefronts. Kopi Rakyat
+            sells coffee in a checkout dialog, Margin Notes sells books through a gateway redirect.
+            It is one binary run twice — the only difference between the two shops is exactly the
+            difference PayMux sees: two API keys.
+          </p>
+        </div>
+        <div class="code">
+          <div class="code-top"><span>the event your endpoint receives</span><span>POST · signed</span></div>
+<pre><span class="c">// headers</span>
+<span class="h">PayMux-Event-Id</span>:    evt_01K…
+<span class="h">PayMux-Delivery-Id</span>: dlv_01K…
+<span class="h">PayMux-Event-Type</span>:  payment.paid
+<span class="h">PayMux-Timestamp</span>:   1756195200
+<span class="h">PayMux-Signature</span>:   v1=&lt;hex hmac-sha256&gt;
+<span class="h">PayMux-Attempt</span>:     1
+
+{
+  <span class="k">"id"</span>: <span class="s">"evt_01K…"</span>,
+  <span class="k">"type"</span>: <span class="s">"payment.paid"</span>,
+  <span class="k">"gateway"</span>: <span class="s">"midtrans"</span>,
+  <span class="k">"application_id"</span>: <span class="s">"app_01K…"</span>,
+  <span class="k">"payment_id"</span>: <span class="s">"pay_01K…"</span>,
+  <span class="k">"application_order_id"</span>: <span class="s">"INV-000123"</span>,
+  <span class="k">"gateway_order_id"</span>: <span class="s">"pmx_01K…"</span>,
+  <span class="k">"status"</span>: <span class="s">"PAID"</span>,
+  <span class="k">"gateway_status"</span>: <span class="s">"settlement"</span>,
+  <span class="k">"amount"</span>: <span class="n">150000</span>,
+  <span class="k">"currency"</span>: <span class="s">"IDR"</span>,
+  <span class="k">"gateway_data"</span>: { <span class="c">/* the gateway's own payload */</span> }
+}</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ TAKING A PAYMENT ══ -->
+  <section class="section" id="payments">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Taking a payment</span>
+        <h2>Your backend calls PayMux instead of Midtrans.</h2>
+        <p class="lede">
+          One bearer key, one endpoint. You get back the Snap token and the redirect URL your
+          frontend needs, and the Midtrans server key never leaves PayMux.
+        </p>
+      </div>
+
+      <div class="grid-2" style="align-items:start">
+        <div class="code">
+          <div class="code-top"><span>request</span><span>POST /api/v1/payments</span></div>
+<pre>curl -X POST https://your-paymux-host/api/v1/payments \
+  -H <span class="s">"Authorization: Bearer pmx_test_…"</span> \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -H <span class="s">"Idempotency-Key: order-INV-000123"</span> \
+  -d <span class="s">'{</span>
+    <span class="k">"application_order_id"</span>: <span class="s">"INV-000123"</span>,
+    <span class="k">"amount"</span>: <span class="n">150000</span>,
+    <span class="k">"currency"</span>: <span class="s">"IDR"</span>,
+    <span class="k">"customer"</span>: {
+      <span class="k">"first_name"</span>: <span class="s">"John"</span>,
+      <span class="k">"email"</span>: <span class="s">"john@example.com"</span>,
+      <span class="k">"phone"</span>: <span class="s">"+628123456789"</span>
+    },
+    <span class="k">"items"</span>: [
+      { <span class="k">"id"</span>: <span class="s">"PROD-001"</span>, <span class="k">"name"</span>: <span class="s">"Example Product"</span>,
+        <span class="k">"price"</span>: <span class="n">150000</span>, <span class="k">"quantity"</span>: <span class="n">1</span> }
+    ]
+  <span class="s">}'</span></pre>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:1.4rem">
+          <div class="code">
+            <div class="code-top"><span>response</span><span>201</span></div>
+<pre>{
+  <span class="k">"id"</span>: <span class="s">"pay_01K…"</span>,
+  <span class="k">"gateway"</span>: <span class="s">"midtrans"</span>,
+  <span class="k">"application_order_id"</span>: <span class="s">"INV-000123"</span>,
+  <span class="k">"gateway_order_id"</span>: <span class="s">"pmx_01K…"</span>,
+  <span class="k">"status"</span>: <span class="s">"PENDING"</span>,
+  <span class="k">"snap_token"</span>: <span class="s">"…"</span>,
+  <span class="k">"redirect_url"</span>: <span class="s">"https://app.sandbox.midtrans…"</span>,
+  <span class="k">"expires_at"</span>: <span class="c">null</span>
+}</pre>
+          </div>
+          <div class="grid-3" style="grid-template-columns:1fr">
+            <div class="cell">
+              <span class="tag">Idempotency</span>
+              <p>A retry with the same <span class="mono" style="color:var(--paper)">Idempotency-Key</span>
+              returns the original payment rather than opening a second transaction. Reusing a key with
+              a different body is rejected as a conflict.</p>
+            </div>
+            <div class="cell">
+              <span class="tag">Keys are scoped to an environment</span>
+              <p>A <span class="mono" style="color:var(--paper)">pmx_test_…</span> key works against a
+              sandbox gateway account and <span class="mono" style="color:var(--paper)">pmx_live_…</span>
+              against a production one. PayMux refuses the mismatch rather than letting a test credential
+              move real money.</p>
+            </div>
+            <div class="cell">
+              <span class="tag">Amounts</span>
+              <p>Integers in the currency&rsquo;s minor unit. For IDR that is one rupiah, so
+              <span class="mono" style="color:var(--paper)">150000</span> is Rp 150.000.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ EVENTS & DELIVERY ══ -->
+  <section class="section" id="events">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Events and delivery</span>
+        <h2>Normalized, signed, and retried until you answer.</h2>
+        <p class="lede">
+          PayMux verifies the gateway&rsquo;s notification, attributes it to its owner, and turns it into
+          one of 23 event types. Every delivery is signed with your destination&rsquo;s own HMAC-SHA256
+          secret over
+          <span class="mono" style="color:var(--paper)">&lt;timestamp&gt;.&lt;delivery id&gt;.&lt;raw body&gt;</span>.
+        </p>
+      </div>
+
+      <div class="vocab" style="margin-bottom:2.8rem">
+        <span class="ev pay">payment.created</span><span class="ev pay">payment.pending</span>
+        <span class="ev pay">payment.authorized</span><span class="ev pay">payment.paid</span>
+        <span class="ev pay">payment.failed</span><span class="ev pay">payment.canceled</span>
+        <span class="ev pay">payment.expired</span><span class="ev pay">payment.refunded</span>
+        <span class="ev pay">payment.partially_refunded</span>
+        <span class="ev">refund.created</span><span class="ev">refund.completed</span><span class="ev">refund.failed</span>
+        <span class="ev">subscription.created</span><span class="ev">subscription.updated</span>
+        <span class="ev">subscription.enabled</span><span class="ev">subscription.disabled</span>
+        <span class="ev">subscription.canceled</span>
+        <span class="ev pout">payout.requested</span><span class="ev pout">payout.approved</span>
+        <span class="ev pout">payout.rejected</span><span class="ev pout">payout.submitted</span>
+        <span class="ev pout">payout.completed</span><span class="ev pout">payout.failed</span>
+      </div>
+
+      <div class="grid-2" style="align-items:start">
+        <div>
+          <div class="sim">
+            <div class="sim-top">
+              <span class="sim-title">Delivery simulator</span>
+              <span class="sim-hint">real schedule, accelerated</span>
+            </div>
+            <div class="sim-keys">
+              <button class="key" data-resp="200">Your endpoint returns 200</button>
+              <button class="key" data-resp="500">500, every time</button>
+              <button class="key" data-resp="recover">500, then recovers</button>
+              <button class="key" data-resp="400">400 Bad Request</button>
+            </div>
+            <dl class="ladder" id="ladder">
+              <div class="rung" data-n="1"><dt>immediately</dt><dd>the first attempt</dd><span class="rstate"></span></div>
+              <div class="rung" data-n="2"><dt>+1 min</dt><dd>quick, because most failures are momentary</dd><span class="rstate"></span></div>
+              <div class="rung" data-n="3"><dt>+5 min</dt><dd>&nbsp;</dd><span class="rstate"></span></div>
+              <div class="rung" data-n="4"><dt>+15 min</dt><dd>&nbsp;</dd><span class="rstate"></span></div>
+              <div class="rung" data-n="5"><dt>+1 hour</dt><dd>&nbsp;</dd><span class="rstate"></span></div>
+              <div class="rung" data-n="6"><dt>+6 hours</dt><dd>&nbsp;</dd><span class="rstate"></span></div>
+              <div class="rung" data-n="7"><dt>+24 hours</dt><dd>a destination down for a working day still gets its delivery</dd><span class="rstate"></span></div>
+              <div class="rung dead" data-n="dead"><dt>dead</dt><dd>visible in the dashboard, and replayable</dd><span class="rstate"></span></div>
+            </dl>
+            <div class="sim-foot">
+              <span class="tick" id="delTick"></span>
+              <p id="delNote">Seven attempts, then the delivery is marked dead.</p>
+            </div>
+          </div>
+          <p style="margin-top:1.4rem;font-size:.88rem;color:var(--muted);max-width:52ch">
+            Each delay carries up to &plusmn;10% jitter, so a destination coming back online is not hit by
+            every pending delivery at the same instant. A
+            <span class="mono" style="color:var(--paper)">4xx</span> other than 408, 425 or 429 stops the
+            retries immediately: your endpoint has said the request itself is wrong, and repeating it
+            will not change that.
+          </p>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:1.5rem">
+          <div class="code">
+            <div class="code-top"><span>verify against the raw body, before parsing</span><span>Go</span></div>
+<pre>mac := hmac.<span class="k">New</span>(sha256.New, []byte(secret))
+fmt.<span class="k">Fprintf</span>(mac, <span class="s">"%s.%s."</span>, timestamp, deliveryID)
+mac.<span class="k">Write</span>(body)
+expected := <span class="s">"v1="</span> + hex.<span class="k">EncodeToString</span>(mac.Sum(<span class="c">nil</span>))
+ok := hmac.<span class="k">Equal</span>([]byte(expected), []byte(header))</pre>
+          </div>
+          <p class="voice">
+            Treat the event as at-least-once: PayMux retries until you answer 2xx, so make your handler
+            idempotent on <span class="mono" style="font-style:normal;font-size:.9em">id</span>.
+            <cite>README &mdash; Verifying the signature</cite>
+          </p>
+        </div>
+      </div>
+
+      <div class="sim" style="margin-top:2.6rem">
+        <div class="sim-top">
+          <span class="sim-title">Signature check</span>
+          <span class="sim-hint">real HMAC-SHA256, computed in your browser</span>
+        </div>
+        <div class="sig-grid">
+          <label class="fld"><span>destination secret</span>
+            <input type="text" id="sigSecret" value="whsec_2f8c1d9a4b6e7f30" spellcheck="false"></label>
+          <label class="fld"><span>PayMux-Timestamp</span>
+            <input type="text" id="sigTs" value="1756195200" spellcheck="false"></label>
+          <label class="fld"><span>PayMux-Delivery-Id</span>
+            <input type="text" id="sigDid" value="dlv_01KA7QZ3M9XF2N" spellcheck="false"></label>
+        </div>
+        <label class="fld fld-wide"><span>raw request body &mdash; edit it and the signature stops matching</span>
+          <textarea id="sigBody" rows="4" spellcheck="false">{"id":"evt_01KA7QZ3M9XF2N","type":"payment.paid","gateway":"midtrans","application_order_id":"INV-000123","status":"PAID","amount":150000,"currency":"IDR"}</textarea>
+        </label>
+        <div class="sig-out">
+          <div class="sig-row"><span>signed string</span><code id="sigString">&mdash;</code></div>
+          <div class="sig-row"><span>computed</span><code id="sigComputed">&mdash;</code></div>
+          <div class="sig-row"><span>header sent</span><code id="sigHeader">&mdash;</code></div>
+        </div>
+        <div class="sim-foot">
+          <span class="verdict" id="sigVerdict">checking</span>
+          <p id="sigNote">The signed string is the timestamp, the delivery id and the raw body, joined by dots.</p>
+          <div class="sim-actions" style="margin-left:auto">
+            <button class="key" id="sigTamper">Change the amount</button>
+            <button class="key reset" id="sigRestore">Restore</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ MONEY OUT ══ -->
+  <section class="section" id="payouts">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow" style="color:var(--out)">Money out</span>
+        <h2>A payout has no backstop, so it is off in three places.</h2>
+        <p class="lede">
+          Everything above moves money inward, where the worst case of a mistake is a payment that
+          gets refunded through the gateway that took it. A disbursement leaves the merchant balance
+          for an account the caller names, and there is no chargeback on it. A payout happens only
+          when all three of these are true.
+        </p>
+      </div>
+
+      <div class="sim">
+        <div class="sim-top">
+          <span class="sim-title">Payout simulator</span>
+          <span class="sim-hint">the refusals below are PayMux&rsquo;s real ones</span>
+        </div>
+
+        <div class="gates">
+          <div class="gate">
+            <span class="gate-n">01</span>
+            <div>
+              <h3>The gateway account holds disbursement credentials</h3>
+              <p>Midtrans issues these separately from the payment server key, and only after approving
+              the account for disbursement. PayMux seals them under their own encryption context, so a
+              leak of the payment key is not a leak of this one.</p>
+            </div>
+            <button class="sw" role="switch" aria-checked="false" data-gate="creds"><i></i><span>off</span></button>
+          </div>
+          <div class="gate">
+            <span class="gate-n">02</span>
+            <div>
+              <h3>The application is permitted to disburse</h3>
+              <p>Off by default, and deliberately the first thing checked: everything else about a payout
+              is irrelevant if the application was never allowed to make one.</p>
+              <label class="limit">
+                <span>daily limit</span>
+                <input type="number" id="simLimit" value="1000000" min="0" step="50000" inputmode="numeric">
+                <span class="mono">IDR &middot; <b id="simInflight">750.000</b> already in flight today</span>
+              </label>
+            </div>
+            <button class="sw" role="switch" aria-checked="false" data-gate="enabled"><i></i><span>off</span></button>
+          </div>
+          <div class="gate">
+            <span class="gate-n">03</span>
+            <div>
+              <h3>Somebody approves it</h3>
+              <p>An approver cannot approve their own request &mdash; the database refuses it, not a handler.
+              Turn approval off and PayMux insists on a spending limit in its place.</p>
+            </div>
+            <button class="sw" role="switch" aria-checked="true" data-gate="approval"><i></i><span>on</span></button>
+          </div>
+        </div>
+
+        <div class="sim-run">
+          <label class="limit">
+            <span>amount</span>
+            <input type="number" id="simAmount" value="250000" min="0" step="50000" inputmode="numeric">
+            <span class="mono">IDR to <b>supplier-a</b></span>
+          </label>
+          <div class="sim-actions">
+            <button class="btn btn-primary" id="simSend">Request payout</button>
+            <button class="btn btn-secondary" id="simReset">Reset</button>
+          </div>
+        </div>
+
+        <div class="code" style="border:0;border-top:1px solid var(--line-soft);border-radius:0">
+          <div class="code-top"><span>response</span><span id="simStatus">&mdash;</span></div>
+<pre id="simOut">Turn the gates on and request a payout.</pre>
+        </div>
+        <div class="sim-foot">
+          <span class="tick" id="simTick"></span>
+          <p id="simNote">Nothing has been sent.</p>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-top:2.6rem;align-items:start">
+        <div style="display:flex;flex-direction:column;gap:1.5rem">
+          <p class="voice" style="border-left-color:color-mix(in srgb,var(--out) 45%,transparent)">
+            Inbound, sharing a merchant account is harmless: application A cannot take application B&rsquo;s
+            money. Outbound, every application with an API key spends from the same balance. Without
+            limits, one leaked API key drains what every other application collected.
+            <cite style="color:var(--out)">README &mdash; Why the per-application limit is not optional</cite>
+          </p>
+          <p style="font-size:.88rem;color:var(--muted);max-width:52ch">
+            The daily limit counts payouts still in flight, including ones whose outcome is unknown,
+            because money the gateway already has cannot be spent twice. A payout also names a
+            <strong style="color:var(--paper);font-weight:500">beneficiary</strong>, never a raw account
+            number: a destination is reviewed once and reused, so a typo cannot send money to a stranger.
+          </p>
+          <div class="code">
+            <div class="code-top"><span>202 means accepted, not sent</span><span>POST /api/v1/payouts</span></div>
+<pre>{
+  <span class="k">"application_payout_id"</span>: <span class="s">"PO-0042"</span>,
+  <span class="k">"beneficiary_alias"</span>: <span class="s">"supplier-a"</span>,
+  <span class="k">"amount"</span>: <span class="n">250000</span>
+}</pre>
+          </div>
+        </div>
+
+        <div>
+          <h3 style="margin-bottom:1.1rem">The state that matters</h3>
+          <div class="scroll-x">
+            <table class="tbl">
+              <thead><tr><th>Status</th><th>Means</th></tr></thead>
+              <tbody>
+                <tr><td>REQUESTED</td><td>Waiting on a person. Nothing sent.</td></tr>
+                <tr><td>APPROVED</td><td>Released, queued. Still nothing sent.</td></tr>
+                <tr><td>SUBMITTED</td><td>The gateway has it. PayMux can no longer stop it.</td></tr>
+                <tr class="flag"><td>UNRESOLVED</td><td>Sent, and PayMux cannot tell what happened. Never re-issue one of these: a new payout carries a new idempotency key, and the gateway would treat it as a second instruction. PayMux resolves it by re-sending under the original key.</td></tr>
+                <tr><td>COMPLETED</td><td>The beneficiary was paid.</td></tr>
+                <tr><td>FAILED</td><td>It did not happen; the funds stayed put.</td></tr>
+                <tr><td>REJECTED</td><td>Refused before anything was attempted.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p style="margin-top:1.2rem;font-size:.88rem;color:var(--muted);max-width:52ch">
+            There is deliberately no event for a payout whose outcome PayMux cannot determine. That state
+            says something about PayMux rather than about the payout. Applications hear from us when
+            there is an answer.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ API SURFACE ══ -->
+  <section class="section" id="api">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">The API</span>
+        <h2>Thirty endpoints, one bearer key.</h2>
+        <p class="lede">
+          Applications authenticate with <span class="mono" style="color:var(--paper)">Authorization: Bearer pmx_live_…</span>.
+          The full contract is the OpenAPI specification in the repository.
+        </p>
+      </div>
+
+      <div class="grid-2" style="align-items:start">
+        <div class="code">
+          <div class="code-top"><span>application API</span><span>/api/v1</span></div>
+<pre><span class="c"># payments</span>
+POST   /payments
+GET    /payments
+GET    /payments/{id}
+POST   /payments/{id}/sync
+POST   /payments/{id}/cancel
+POST   /payments/{id}/expire
+POST   /payments/{id}/snap/cancel
+POST   /payments/{id}/refunds
+GET    /payments/{id}/refunds
+
+<span class="c"># subscriptions</span>
+POST   /subscriptions
+GET    /subscriptions
+GET    /subscriptions/{id}
+PATCH  /subscriptions/{id}
+POST   /subscriptions/{id}/enable
+POST   /subscriptions/{id}/disable
+POST   /subscriptions/{id}/cancel
+
+<span class="c"># events and deliveries</span>
+GET    /events
+GET    /deliveries
+POST   /deliveries/{id}/retry
+GET    /gateway/capabilities</pre>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:1.5rem">
+          <div class="code">
+            <div class="code-top"><span>money out</span><span>/api/v1</span></div>
+<pre>POST   /beneficiaries
+GET    /beneficiaries
+GET    /beneficiaries/{id}
+PATCH  /beneficiaries/{id}
+DELETE /beneficiaries/{id}
+POST   /beneficiaries/{id}/verify
+GET    /payout-banks
+
+POST   /payouts
+GET    /payouts
+GET    /payouts/{id}</pre>
+          </div>
+          <div class="code">
+            <div class="code-top"><span>operational</span><span>unauthenticated &mdash; keep off the public network</span></div>
+<pre>POST   /webhooks/midtrans   <span class="c"># the notification URL</span>
+GET    /health              <span class="c"># liveness</span>
+GET    /ready               <span class="c"># readiness, incl. database</span>
+GET    /metrics             <span class="c"># Prometheus</span></pre>
+          </div>
+          <div class="cell" style="border:1px solid var(--line);border-radius:4px">
+            <span class="tag">Gateway-specific options are namespaced and validated</span>
+            <p>Common parameters are normalized. Anything Midtrans-specific goes in a
+            <span class="mono" style="color:var(--paper)">gateway_options.midtrans</span> block, and
+            unknown fields are rejected rather than forwarded: PayMux never passes an unvalidated blob
+            to a payment gateway under your merchant credentials.</p>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:2.2rem">
+        <div class="cell" style="border:1px solid var(--line);border-radius:4px;background:var(--panel)">
+          <span class="tag">The metric worth paging on</span>
+          <p style="max-width:64ch"><span class="mono" style="color:var(--alarm)">paymux_payouts_total{status="UNRESOLVED"}</span>
+          above zero means money may have moved without PayMux knowing. Labels across all eleven metric
+          families are deliberately coarse &mdash; route patterns rather than paths, status classes rather
+          than codes &mdash; because a payment identifier in a label would make the series unbounded.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ INSIDE ══ -->
+  <section class="section" id="inside">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Inside</span>
+        <h2>Two Go binaries and a database.</h2>
+        <p class="lede">
+          No broker, no cache, no queue service. The delivery queue is a table, and the worker leases
+          from it. Gateway-specific code lives only in the adapter, which is what makes a second
+          gateway a matter of writing an adapter rather than rewriting the core.
+        </p>
+      </div>
+
+      <div class="grid-2" style="align-items:start">
+        <div class="code">
+          <div class="code-top"><span>repository layout</span><span>116 Go files</span></div>
+<pre>apps/
+  api/          <span class="c">application API, admin API, callbacks</span>
+  worker/       <span class="c">webhook delivery and housekeeping</span>
+  dashboard/    <span class="c">React 19 + TypeScript + Vite</span>
+
+internal/
+  api/          <span class="c">handlers, routing, the public wire format</span>
+  application/  <span class="c">applications, API keys, destinations</span>
+  auth/         <span class="c">admin sessions, API-key authentication</span>
+  payment/      <span class="c">the payment lifecycle and idempotency</span>
+  payout/       <span class="c">beneficiaries, limits, approval, reconciliation</span>
+  subscription/ <span class="c">recurring billing</span>
+  notification/ <span class="c">inbound callbacks: verify, attribute, apply</span>
+  event/        <span class="c">the normalized event model</span>
+  delivery/     <span class="c">the durable queue, sender and worker</span>
+  gateway/      <span class="c">adapter contract, normalized vocabulary</span>
+    midtrans/   <span class="c">everything Midtrans-specific</span>
+  storage/      <span class="c">pgx pool, migrations, query helpers</span>
+  crypto/       <span class="c">at-rest encryption, hashing, HMAC</span>
+  netsafe/      <span class="c">SSRF protection for outbound webhooks</span>
+  money/        <span class="c">exact minor-unit conversion</span></pre>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:1.4rem">
+          <div class="grid-3" style="grid-template-columns:1fr">
+            <div class="cell">
+              <span class="tag">What secrets are done with</span>
+              <p>Gateway server keys and webhook secrets are sealed with AES-256-GCM. API keys are stored
+              as SHA-256 hashes and the plaintext is shown once, at creation. Administrator passwords use
+              Argon2id. PayMux never stores card numbers, CVVs or any raw card credential.</p>
+            </div>
+            <div class="cell">
+              <span class="tag">Outbound destinations are checked twice</span>
+              <p>Webhook destinations are blocked from private, loopback, link-local and cloud-metadata
+              ranges, and checked again at connection time, so a hostname cannot change its answer between
+              validation and delivery.</p>
+            </div>
+            <div class="cell">
+              <span class="tag">Inbound callbacks are verified first</span>
+              <p>Midtrans notifications are verified against the documented signature before anything is
+              applied to a payment.</p>
+            </div>
+          </div>
+
+          <div class="cell" style="border:1px solid var(--line);border-radius:4px">
+            <span class="tag">The dashboard</span>
+            <p>Payments, refunds, payouts, events, deliveries, notifications, applications, subscriptions,
+            gateways and settings &mdash; plus an <strong style="color:var(--paper);font-weight:500">Integration</strong>
+            guide written for the developer building against your instance, with examples that name your
+            instance&rsquo;s real address so they can be copied rather than adapted. Appearance follows the
+            operating system with an explicit override. Below 900px tables become cards and below 760px
+            navigation moves to a bottom tab bar, so an operator can triage a failing delivery from a phone.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ THE HONEST BIT ══ -->
+  <section class="section" id="status">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Status</span>
+        <h2>What is not proven yet.</h2>
+      </div>
+      <div class="grid-2" style="align-items:start">
+        <div class="status-note">
+          <h3>Disbursement has never reached a real gateway</h3>
+          <p>It is implemented end to end, and every path to the gateway has been exercised &mdash; but only
+          against refused placeholder credentials, because Midtrans gates Iris behind separate merchant
+          approval. Real sandbox keys are the only way to confirm the final hop.</p>
+          <p>Everything on the inbound side &mdash; payments, refunds, subscriptions, notifications, events and
+          delivery &mdash; runs against the Midtrans sandbox, and the integration tests exercise the whole path:
+          three applications sharing one gateway account, a payment taken by one of them, and the signed
+          event reaching only its owner.</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:1.4rem">
+          <div class="cell" style="border:1px solid var(--line);border-radius:4px">
+            <span class="tag">One gateway today</span>
+            <p>PayMux is Midtrans-first and its architecture is gateway-agnostic. The long-term goal is one
+            integration for applications and several payment gateways behind it. Nothing on this page claims
+            a gateway that is not in the repository.</p>
+          </div>
+          <div class="cell" style="border:1px solid var(--line);border-radius:4px">
+            <span class="tag">Before it handles a real transaction</span>
+            <p>PayMux serves plain HTTP and expects TLS termination in front of it. Read
+            <span class="mono" style="color:var(--paper)">docs/production.md</span> first: it covers the
+            encryption key&rsquo;s recovery characteristics (there are none), the settings whose defaults are
+            wrong for production, backups, what to alert on, and what PayMux deliberately does not do.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ GET IT ══ -->
+  <section class="section" id="start">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Get PayMux</span>
+        <h2>Two binaries, a database, and your own gateway keys.</h2>
+        <p class="lede">
+          PayMux is self-hosted: you run it, you hold the keys, and nothing about your merchant
+          account passes through anyone else. Requirements are Docker, or Go 1.25+ and PostgreSQL 15+.
+        </p>
+      </div>
+
+      <div class="grid-2" style="align-items:start">
+        <div class="code">
+          <div class="code-top"><span>install</span><span>bash</span></div>
+<pre>git clone https://github.com/Javapixa-Creative-Studio/PayMux.git
+cd PayMux
+cp .env.example .env
+
+<span class="c"># generate the key that seals every gateway credential</span>
+openssl rand -hex 32
+
+docker compose up -d</pre>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:1.4rem">
+          <div class="cell" style="border:1px solid var(--line);border-radius:4px">
+            <span class="tag">Then connect your gateway</span>
+            <p>Add your Midtrans merchant ID, client key and server key in the dashboard, and press
+            <strong style="color:var(--paper);font-weight:500">Test connection</strong>. PayMux asks the
+            gateway for a transaction that cannot exist: an answer of &ldquo;no such transaction&rdquo; proves the
+            credentials were accepted, and nothing is left behind in your merchant account. Create an
+            application, an API key and a webhook destination, then point the gateway&rsquo;s Payment
+            Notification URL at <span class="mono" style="color:var(--paper)">/webhooks/midtrans</span>
+            on your deployment.</p>
+          </div>
+          <div class="cell" style="border:1px solid var(--line);border-radius:4px">
+            <span class="tag">Two storefronts to prove it</span>
+            <p>The repository ships a demo profile with two independent shops that collect into one
+            merchant account and cannot see each other&rsquo;s orders. It is the claim on this page, running,
+            in about a minute. Setup is in <span class="mono" style="color:var(--paper)">examples/README.md</span>.</p>
+          </div>
+          <div class="cta" style="margin-top:.2rem">
+            <a class="btn btn-primary" href="https://github.com/Javapixa-Creative-Studio/PayMux" target="_blank" rel="noopener noreferrer">Clone the repository &#8599;</a>
+            <a class="btn btn-secondary" href="https://github.com/Javapixa-Creative-Studio/PayMux/blob/main/docs/production.md" target="_blank" rel="noopener noreferrer">Read the production notes &#8599;</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div style="max-width:30ch">
+        <a class="brand" href="#top" style="margin-bottom:.9rem">
+          <svg class="mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M3 5h5l4 7 4-7h5" stroke="#7E8A99" stroke-width="1.6" stroke-linecap="round"/>
+            <path d="M3 19h5l4-7 4 7h5" stroke="#63D3BE" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+          <b>Pay<span class="mx">Mux</span></b>
+        </a>
+        <p style="font-size:.85rem;color:var(--dim);line-height:1.6">
+          Open-source payment gateway multiplexer and webhook router, by Javapixa Creative Studio.
+        </p>
+      </div>
+      <div>
+        <h4>Repository</h4>
+        <a href="https://github.com/Javapixa-Creative-Studio/PayMux" target="_blank" rel="noopener noreferrer">Source</a>
+        <a href="https://github.com/Javapixa-Creative-Studio/PayMux/blob/main/README.md" target="_blank" rel="noopener noreferrer">README</a>
+        <a href="https://github.com/Javapixa-Creative-Studio/PayMux/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer">Contributing</a>
+      </div>
+      <div>
+        <h4>Documentation</h4>
+        <a href="https://github.com/Javapixa-Creative-Studio/PayMux/blob/main/docs/openapi.yaml" target="_blank" rel="noopener noreferrer">OpenAPI</a>
+        <a href="https://github.com/Javapixa-Creative-Studio/PayMux/blob/main/docs/production.md" target="_blank" rel="noopener noreferrer">Production</a>
+        <a href="https://github.com/Javapixa-Creative-Studio/PayMux/tree/main/examples" target="_blank" rel="noopener noreferrer">Examples</a>
+      </div>
+      <div>
+        <h4>Security</h4>
+        <a href="https://github.com/Javapixa-Creative-Studio/PayMux/blob/main/SECURITY.md" target="_blank" rel="noopener noreferrer">Reporting</a>
+        <a href="https://github.com/Javapixa-Creative-Studio/PayMux/blob/main/CODE_OF_CONDUCT.md" target="_blank" rel="noopener noreferrer">Code of conduct</a>
+        <a href="https://github.com/Javapixa-Creative-Studio/PayMux/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">Apache-2.0</a>
+      </div>
+    </div>
+    <div class="foot-note">
+      <span>Apache-2.0 &middot; Midtrans-first, gateway-agnostic</span>
+      <span>Not affiliated with Midtrans</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ─────────────────────────────────────────────────────────────
+   The routing bay.
+   Three applications, one gateway. A payment goes out, the
+   notification comes back, and it lands in exactly one lane.
+   ───────────────────────────────────────────────────────────── */
+(function () {
+  var canvas = document.getElementById('bayCanvas');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var note = document.getElementById('bayNote');
+  var tickDot = document.getElementById('bayTick');
+  var keys = Array.prototype.slice.call(document.querySelectorAll('.key[data-app]'));
+  var rows = Array.prototype.slice.call(document.querySelectorAll('.lrow'));
+  note.setAttribute('aria-live', 'polite');
+
+  var C = {
+    paper: '#E9EAE4', muted: '#7E8A99', dim: '#5A6673',
+    line: '#232D3A', panel: '#10151C', panel2: '#151C26', raise: '#1B2430',
+    in: '#63D3BE', out: '#F0A65C'
+  };
+  var T = function (x) { return window.__T ? window.__T(x) : x; };
+  var APPS = ['Kopi Rakyat', 'Margin Notes', 'Third app'];
+  var IDS  = ['app_01', 'app_02', 'app_03'];
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  var SEQ = [
+    { seg: 'a2m',  ms: 750, dir: 'out', note: '<b>POST /api/v1/payments</b> &mdash; {app} opens a payment with its own key.' },
+    { seg: 'm2g',  ms: 700, dir: 'out', note: 'PayMux opens the Snap transaction and mints <b>gateway_order_id pmx_01K…</b>' },
+    { seg: 'hold', ms: 850, dir: 'out', note: 'The customer pays in the Midtrans sandbox.' },
+    { seg: 'g2m',  ms: 700, dir: 'in',  note: '<b>POST /webhooks/midtrans</b> &mdash; one notification URL for the whole merchant account. Signature verified.' },
+    { seg: 'attr', ms: 950, dir: 'in',  note: 'PayMux opened this transaction, so it knows who owns it. <b>No prefix parsing, no guessing.</b>' },
+    { seg: 'm2a',  ms: 800, dir: 'in',  note: '<b>payment.paid</b> delivered to {app}, signed with that destination&rsquo;s own secret.' },
+    { seg: 'end',  ms: 1,   dir: 'in',  note: 'Delivered to <b>{app}</b>. The other two applications were never told it happened.' }
+  ];
+
+  var app = null, step = -1, stepStart = 0, t = 0, running = false, settled = false;
+  var L = {};
+
+  function layout() {
+    var w = canvas.clientWidth, h = canvas.clientHeight;
+    var pad = 14;
+    var appW = Math.max(92, Math.min(w * 0.21, 148));
+    var appH = 38;
+    var muxW = Math.max(78, Math.min(w * 0.15, 112));
+    var muxH = Math.min(h * 0.46, 104);
+    var gwW = Math.max(90, Math.min(w * 0.18, 128));
+    var gwH = 44;
+    L = {
+      w: w, h: h, appW: appW, appH: appH, appX: pad,
+      appY: [h * 0.19 - appH / 2, h * 0.5 - appH / 2, h * 0.81 - appH / 2],
+      muxX: w / 2 - muxW / 2, muxY: h / 2 - muxH / 2, muxW: muxW, muxH: muxH,
+      gwX: w - gwW - pad, gwY: h / 2 - gwH / 2, gwW: gwW, gwH: gwH,
+      small: w < 620
+    };
+  }
+
+  function resize() {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var w = canvas.clientWidth, h = canvas.clientHeight;
+    if (!w || !h) return;
+    var cw = Math.round(w * dpr), ch = Math.round(h * dpr);
+    if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    layout();
+    draw();
+  }
+
+  function rr(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function node(x, y, w, h, label, sub, opts) {
+    opts = opts || {};
+    rr(x + 0.5, y + 0.5, w - 1, h - 1, 3);
+    ctx.fillStyle = opts.fill || C.panel2;
+    ctx.fill();
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = opts.stroke || C.line;
+    ctx.stroke();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    var fs = L.small ? 10 : 11.5;
+    ctx.font = '500 ' + fs + "px 'IBM Plex Mono', monospace";
+    ctx.fillStyle = opts.color || C.paper;
+    ctx.fillText(label, x + w / 2, sub ? y + h / 2 - 7 : y + h / 2);
+    if (sub) {
+      ctx.font = '400 ' + (fs - 1.5) + "px 'IBM Plex Mono', monospace";
+      ctx.fillStyle = opts.subColor || C.dim;
+      ctx.fillText(sub, x + w / 2, y + h / 2 + 8);
+    }
+  }
+
+  /* anchors */
+  function appOut(i) { return { x: L.appX + L.appW, y: L.appY[i] + L.appH / 2 }; }
+  function muxL() { return { x: L.muxX, y: L.muxY + L.muxH / 2 }; }
+  function muxR() { return { x: L.muxX + L.muxW, y: L.muxY + L.muxH / 2 }; }
+  function gwL() { return { x: L.gwX, y: L.gwY + L.gwH / 2 }; }
+
+  function curve(a, b) {
+    var dx = (b.x - a.x) * 0.45;
+    return [a, { x: a.x + dx, y: a.y }, { x: b.x - dx, y: b.y }, b];
+  }
+  function at(p, u) {
+    var v = 1 - u;
+    return {
+      x: v * v * v * p[0].x + 3 * v * v * u * p[1].x + 3 * v * u * u * p[2].x + u * u * u * p[3].x,
+      y: v * v * v * p[0].y + 3 * v * v * u * p[1].y + 3 * v * u * u * p[2].y + u * u * u * p[3].y
+    };
+  }
+  function rail(p, color, width, dashed) {
+    ctx.beginPath();
+    ctx.moveTo(p[0].x, p[0].y);
+    ctx.bezierCurveTo(p[1].x, p[1].y, p[2].x, p[2].y, p[3].x, p[3].y);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.setLineDash(dashed ? [3, 4] : []);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  function dot(pt, color) {
+    ctx.beginPath();
+    ctx.arc(pt.x, pt.y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(pt.x, pt.y, 8, 0, Math.PI * 2);
+    ctx.strokeStyle = color;
+    ctx.globalAlpha = 0.28;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  function currentSeg() { return step >= 0 && step < SEQ.length ? SEQ[step] : null; }
+
+  function draw() {
+    ctx.clearRect(0, 0, L.w, L.h);
+    var s = currentSeg();
+    var dir = s ? s.dir : null;
+    var signal = (settled || dir === 'in') ? C.in : C.out;
+
+    /* rails: application lanes */
+    for (var i = 0; i < 3; i++) {
+      var p = curve(appOut(i), muxL());
+      var live = app === i && (running || settled);
+      rail(p, live ? (settled ? C.in : signal) : C.line, live ? 1.4 : 1, !live && app !== null);
+      if (live) { ctx.globalAlpha = 0.16; rail(p, signal, 4, false); ctx.globalAlpha = 1; }
+    }
+    /* rail: gateway trunk */
+    var trunk = curve(muxR(), gwL());
+    rail(trunk, (running || settled) ? signal : C.line, (running || settled) ? 1.4 : 1, false);
+
+    /* the trunk carries the one thing every product has to share */
+    if (!L.small) {
+      var mid = { x: (muxR().x + gwL().x) / 2, y: muxR().y };
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'alphabetic';
+      ctx.font = "400 9.5px 'IBM Plex Mono', monospace";
+      ctx.fillStyle = (s && s.seg === 'g2m') ? C.in : C.dim;
+      ctx.fillText('/webhooks/midtrans', mid.x, mid.y - 14);
+      ctx.fillStyle = C.dim;
+      ctx.fillText(T('one URL for the whole merchant account'), mid.x, mid.y + 22);
+    }
+
+    /* nodes: applications */
+    for (var j = 0; j < 3; j++) {
+      var isActive = app === j;
+      var told = settled && isActive;
+      var blind = settled && !isActive;
+      node(L.appX, L.appY[j], L.appW, L.appH, T(APPS[j]),
+        told ? 'payment.paid' : (blind ? T('not told') : IDS[j]),
+        {
+          stroke: told ? C.in : (isActive && running ? signal : C.line),
+          fill: blind ? C.panel : C.panel2,
+          color: blind ? C.dim : C.paper,
+          subColor: told ? C.in : C.dim
+        });
+    }
+
+    /* node: PayMux */
+    var attributing = s && s.seg === 'attr';
+    node(L.muxX, L.muxY, L.muxW, L.muxH, 'PayMux', null, {
+      stroke: attributing ? C.in : ((running || settled) ? C.line : C.line),
+      fill: C.raise
+    });
+    ctx.textAlign = 'center';
+    ctx.font = '400 ' + (L.small ? 8.5 : 9.5) + "px 'IBM Plex Mono', monospace";
+    ctx.fillStyle = attributing ? C.in : C.dim;
+    ctx.fillText(attributing ? T('attributing') : T('router'), L.muxX + L.muxW / 2, L.muxY + L.muxH / 2 + 16);
+    if (attributing) {
+      var pulse = 0.5 + 0.5 * Math.sin(t * Math.PI * 3);
+      ctx.globalAlpha = 0.10 + pulse * 0.22;
+      rr(L.muxX - 5, L.muxY - 5, L.muxW + 10, L.muxH + 10, 5);
+      ctx.strokeStyle = C.in; ctx.lineWidth = 1; ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    /* node: gateway */
+    var holding = s && s.seg === 'hold';
+    node(L.gwX, L.gwY, L.gwW, L.gwH, 'Midtrans', holding ? 'settlement' : T('one account'), {
+      stroke: holding ? C.out : C.line,
+      subColor: holding ? C.out : C.dim
+    });
+
+    /* the packet */
+    if (running && s) {
+      var pt = null;
+      if (s.seg === 'a2m') pt = at(curve(appOut(app), muxL()), t);
+      else if (s.seg === 'm2g') pt = at(trunk, t);
+      else if (s.seg === 'g2m') pt = at(trunk, 1 - t);
+      else if (s.seg === 'm2a') pt = at(curve(appOut(app), muxL()), 1 - t);
+      if (pt) dot(pt, signal);
+    }
+  }
+
+  function setNote() {
+    var s = currentSeg();
+    if (!s) return;
+    note.innerHTML = s.note.replace(/\{app\}/g, '<b>' + T(APPS[app]) + '</b>');
+    tickDot.className = 'tick ' + s.dir;
+    if (s.seg === 'end') settle();
+  }
+
+  function settle() {
+    settled = true;
+    rows.forEach(function (r, i) {
+      var told = i === app;
+      r.setAttribute('data-told', told ? 'yes' : 'no');
+      var chip = r.querySelector('.chip');
+      chip.className = 'chip ' + (told ? 'told' : 'blind');
+      chip.textContent = told ? 'payment.paid · delivered' : 'no visibility';
+    });
+  }
+
+  function frame(now) {
+    if (!running) return;
+    var s = currentSeg();
+    t = Math.min(1, (now - stepStart) / Math.max(1, s.ms));
+    draw();
+    if (t >= 1) {
+      step++;
+      if (step >= SEQ.length) { running = false; t = 0; draw(); return; }
+      stepStart = now; t = 0; setNote();
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function reset(soft) {
+    running = false; settled = false; step = -1; t = 0;
+    if (!soft) app = null;
+    keys.forEach(function (k) { k.setAttribute('aria-pressed', 'false'); });
+    rows.forEach(function (r) {
+      r.setAttribute('data-told', 'no');
+      var chip = r.querySelector('.chip');
+      chip.className = 'chip blind';
+      chip.textContent = 'nothing delivered';
+    });
+    tickDot.className = 'tick';
+    if (!soft) note.textContent = 'Pick an application to open a payment.';
+    draw();
+  }
+
+  function run(i) {
+    reset(true);
+    app = i;
+    keys.forEach(function (k) {
+      k.setAttribute('aria-pressed', String(Number(k.dataset.app) === i));
+    });
+    if (reduce.matches) {
+      step = SEQ.length - 1; setNote(); running = false; draw(); return;
+    }
+    step = 0; stepStart = performance.now(); t = 0; running = true;
+    setNote();
+    requestAnimationFrame(frame);
+  }
+
+  keys.forEach(function (k) {
+    k.addEventListener('click', function () { run(Number(k.dataset.app)); });
+  });
+  document.getElementById('bayReset').addEventListener('click', function () { reset(false); });
+
+  /* clicking an application on the canvas does the same thing */
+  canvas.addEventListener('click', function (e) {
+    var r = canvas.getBoundingClientRect();
+    var x = e.clientX - r.left, y = e.clientY - r.top;
+    for (var i = 0; i < 3; i++) {
+      if (x >= L.appX && x <= L.appX + L.appW && y >= L.appY[i] && y <= L.appY[i] + L.appH) { run(i); return; }
+    }
+  });
+
+  window.addEventListener('paymux:lang', function () { draw(); });
+  if (window.ResizeObserver) new ResizeObserver(resize).observe(canvas);
+  else window.addEventListener('resize', resize);
+  window.addEventListener('load', resize);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
+  resize();
+})();
+</script>
+
+<script>
+/* ─────────────────────────────────────────────────────────────
+   Delivery simulator.
+   Seven attempts on the schedule in internal/delivery/model.go,
+   accelerated. A 4xx that is not 408, 425 or 429 stops the retries.
+   ───────────────────────────────────────────────────────────── */
+(function () {
+  var ladder = document.getElementById('ladder');
+  if (!ladder) return;
+  var rungs = Array.prototype.slice.call(ladder.querySelectorAll('.rung'));
+  var note = document.getElementById('delNote');
+  var tick = document.getElementById('delTick');
+  var keys = Array.prototype.slice.call(document.querySelectorAll('.sim-keys .key[data-resp]'));
+  var timer = null;
+  note.setAttribute('aria-live', 'polite');
+
+  function clear() {
+    if (timer) { clearTimeout(timer); timer = null; }
+    rungs.forEach(function (r) { r.className = 'rung' + (r.dataset.n === 'dead' ? ' dead' : ''); r.querySelector('.rstate').textContent = ''; });
+    tick.className = 'tick';
+  }
+
+  function mark(n, cls, text) {
+    var r = rungs.filter(function (x) { return x.dataset.n === String(n); })[0];
+    if (!r) return;
+    r.classList.add('on');
+    if (cls) r.classList.add(cls);
+    r.querySelector('.rstate').textContent = text || '';
+  }
+
+  function run(mode) {
+    clear();
+    keys.forEach(function (k) { k.setAttribute('aria-pressed', String(k.dataset.resp === mode)); });
+    var step = 1;
+    var recoverAt = 4;
+
+    function next() {
+      if (mode === '200') {
+        mark(1, 'pass', '200 · delivered');
+        tick.className = 'tick in';
+        note.innerHTML = 'Delivered on the first attempt. Nothing is retried.';
+        return;
+      }
+      if (mode === '400') {
+        mark(1, 'fail', '400');
+        rungs[1].classList.add('on', 'stopped');
+        rungs[1].querySelector('.rstate').textContent = 'not attempted';
+        tick.className = 'tick out';
+        note.innerHTML = '<b>Retries stopped.</b> A 4xx other than 408, 425 or 429 says the request itself is wrong, and repeating it will not change that.';
+        return;
+      }
+      if (mode === 'recover' && step === recoverAt) {
+        mark(step, 'pass', '200 · delivered');
+        tick.className = 'tick in';
+        note.innerHTML = 'Delivered on attempt <b>' + recoverAt + '</b>, ' +
+          'fifteen minutes after the first failure. The widening schedule is what buys that.';
+        return;
+      }
+      mark(step, 'fail', mode === 'recover' ? '503' : '500');
+      tick.className = 'tick out';
+      note.innerHTML = 'Attempt <b>' + step + '</b> of 7 failed. Next retry in ' +
+        rungs[step] .querySelector('dt').textContent.replace('+', '') + '.';
+      step++;
+      if (step > 7) {
+        timer = setTimeout(function () {
+          var d = rungs[7];
+          d.classList.add('on', 'fail');
+          d.querySelector('.rstate').textContent = 'replayable';
+          tick.className = 'tick';
+          note.innerHTML = '<b>Dead</b> after seven attempts. It stays visible in the dashboard and can be replayed by hand.';
+        }, 600);
+        return;
+      }
+      timer = setTimeout(next, 600);
+    }
+    next();
+  }
+
+  keys.forEach(function (k) { k.addEventListener('click', function () { run(k.dataset.resp); }); });
+})();
+
+/* ─────────────────────────────────────────────────────────────
+   Signature check.
+   The same construction PayMux signs with: HMAC-SHA256 over
+   <timestamp>.<delivery id>.<raw body>, keyed by the destination secret.
+   ───────────────────────────────────────────────────────────── */
+(function () {
+  var body = document.getElementById('sigBody');
+  if (!body) return;
+  var secret = document.getElementById('sigSecret');
+  var ts = document.getElementById('sigTs');
+  var did = document.getElementById('sigDid');
+  var outString = document.getElementById('sigString');
+  var outComputed = document.getElementById('sigComputed');
+  var outHeader = document.getElementById('sigHeader');
+  var verdict = document.getElementById('sigVerdict');
+  var note = document.getElementById('sigNote');
+  var ORIGINAL = body.value;
+  var sent = null;
+  note.setAttribute('aria-live', 'polite');
+
+  var subtle = window.crypto && window.crypto.subtle;
+
+  function hex(buf) {
+    return Array.prototype.map.call(new Uint8Array(buf), function (b) {
+      return ('0' + b.toString(16)).slice(-2);
+    }).join('');
+  }
+
+  async function sign(signed) {
+    var enc = new TextEncoder();
+    var key = await subtle.importKey('raw', enc.encode(secret.value), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+    return 'v1=' + hex(await subtle.sign('HMAC', key, enc.encode(signed)));
+  }
+
+  function ellipsis(s, n) { return s.length > n ? s.slice(0, n) + '…' : s; }
+
+  async function update(resign) {
+    if (!subtle) {
+      verdict.textContent = 'unavailable';
+      note.textContent = 'Live signing needs a secure context. The construction is shown in the Go snippet above.';
+      return;
+    }
+    var signed = ts.value + '.' + did.value + '.' + body.value;
+    outString.textContent = ellipsis(signed, 150);
+    var computed = await sign(signed);
+    if (resign || sent === null) sent = computed;
+    outComputed.textContent = computed;
+    outHeader.textContent = sent;
+    var ok = computed === sent;
+    verdict.className = 'verdict ' + (ok ? 'ok' : 'bad');
+    verdict.textContent = ok ? 'accept' : 'reject';
+    note.innerHTML = ok
+      ? 'The body matches what was signed, so the delivery is genuine. Verify against the <b>raw</b> body, before parsing.'
+      : '<b>One byte changed and the signature no longer matches.</b> PayMux signs the exact bytes it sent, so a rewritten amount cannot pass.';
+  }
+
+  [secret, ts, did].forEach(function (el) {
+    el.addEventListener('input', function () { update(true); });
+  });
+  body.addEventListener('input', function () { update(false); });
+
+  document.getElementById('sigTamper').addEventListener('click', function () {
+    body.value = body.value.indexOf('"amount":150000') >= 0
+      ? body.value.replace('"amount":150000', '"amount":15000')
+      : body.value.replace('"amount":15000', '"amount":1500');
+    update(false);
+  });
+  document.getElementById('sigRestore').addEventListener('click', function () {
+    body.value = ORIGINAL;
+    update(false);
+  });
+
+  update(true);
+})();
+
+/* ─────────────────────────────────────────────────────────────
+   Payout simulator.
+   Refusal order and wire responses follow internal/payout/errors.go
+   and the mapping in internal/api/errors.go.
+   ───────────────────────────────────────────────────────────── */
+(function () {
+  var send = document.getElementById('simSend');
+  if (!send) return;
+  var out = document.getElementById('simOut');
+  var status = document.getElementById('simStatus');
+  var note = document.getElementById('simNote');
+  var tick = document.getElementById('simTick');
+  var amount = document.getElementById('simAmount');
+  var limit = document.getElementById('simLimit');
+  var INFLIGHT = 750000;
+  var gates = { creds: false, enabled: false, approval: true };
+  var switches = Array.prototype.slice.call(document.querySelectorAll('.sw[data-gate]'));
+  note.setAttribute('aria-live', 'polite');
+
+  function idr(n) { return n.toLocaleString('de-DE'); }
+
+  function paint(el, on) {
+    el.setAttribute('aria-checked', String(on));
+    el.querySelector('span').textContent = on ? 'on' : 'off';
+  }
+
+  switches.forEach(function (el) {
+    paint(el, gates[el.dataset.gate]);
+    el.addEventListener('click', function () {
+      var g = el.dataset.gate;
+      var next = !gates[g];
+      /* PayMux refuses to run without approval unless a spending limit stands in its place */
+      if (g === 'approval' && next === false && !(Number(limit.value) > 0)) {
+        el.classList.remove('refused');
+        void el.offsetWidth;
+        el.classList.add('refused');
+        tick.className = 'tick out';
+        note.innerHTML = '<b>Refused.</b> Approval cannot be turned off without a daily spending limit. Something has to bound what one leaked API key can spend.';
+        return;
+      }
+      gates[g] = next;
+      paint(el, next);
+    });
+  });
+
+  function respond(code, label, payload, tone, sentence) {
+    status.textContent = code;
+    out.textContent = JSON.stringify(payload, null, 2);
+    tick.className = 'tick ' + (tone || '');
+    note.innerHTML = sentence;
+  }
+
+  send.addEventListener('click', function () {
+    var amt = Number(amount.value) || 0;
+    var lim = Number(limit.value) || 0;
+
+    if (!gates.enabled) {
+      return respond(403, 'FORBIDDEN', {
+        error: {
+          code: 'FORBIDDEN',
+          message: 'This application is not permitted to disburse. Turn payouts on for it first.',
+          request_id: 'req_01KA7QZ3M9XF2N'
+        }
+      }, 'out', 'Checked first, deliberately: everything else about a payout is irrelevant if the application was never allowed to make one. <b>Nothing sent.</b>');
+    }
+
+    if (!gates.creds) {
+      return respond(412, 'disbursement_not_configured', {
+        error: {
+          code: 'disbursement_not_configured',
+          message: 'This gateway account has no disbursement credentials.',
+          request_id: 'req_01KA7QZ3M9XF2N'
+        }
+      }, 'out', 'Midtrans issues disbursement credentials separately, and only after approving the account for it. <b>Nothing sent.</b>');
+    }
+
+    if (lim > 0 && INFLIGHT + amt > lim) {
+      return respond(422, 'VALIDATION_FAILED', {
+        error: {
+          code: 'VALIDATION_FAILED',
+          message: "The amount exceeds this application's daily payout limit.",
+          fields: { amount: 'exceeds the daily limit' },
+          request_id: 'req_01KA7QZ3M9XF2N'
+        }
+      }, 'out', 'Rp ' + idr(INFLIGHT) + ' is already in flight today. The limit counts payouts whose outcome is still unknown, because money the gateway already has cannot be spent twice. <b>Nothing sent.</b>');
+    }
+
+    if (gates.approval) {
+      return respond(202, 'REQUESTED', {
+        id: 'pyt_01KA7QZ3M9XF2N',
+        application_payout_id: 'PO-0042',
+        beneficiary_alias: 'supplier-a',
+        amount: amt,
+        currency: 'IDR',
+        status: 'REQUESTED'
+      }, 'in', '<b>202 means accepted, not sent.</b> A payout awaiting approval has moved nothing, and the approver cannot be the person who requested it.');
+    }
+
+    respond(201, 'APPROVED', {
+      id: 'pyt_01KA7QZ3M9XF2N',
+      application_payout_id: 'PO-0042',
+      beneficiary_alias: 'supplier-a',
+      amount: amt,
+      currency: 'IDR',
+      status: 'APPROVED'
+    }, 'in', 'Released without a person, because approval is off and a spending limit stands in its place. Next stop is <b>SUBMITTED</b>, after which PayMux can no longer stop it.');
+  });
+
+  document.getElementById('simReset').addEventListener('click', function () {
+    gates = { creds: false, enabled: false, approval: true };
+    switches.forEach(function (el) { el.classList.remove('refused'); paint(el, gates[el.dataset.gate]); });
+    amount.value = 250000;
+    limit.value = 1000000;
+    status.innerHTML = '&mdash;';
+    out.textContent = 'Turn the gates on and request a payout.';
+    tick.className = 'tick';
+    note.textContent = 'Nothing has been sent.';
+  });
+
+  document.getElementById('simInflight').textContent = idr(INFLIGHT);
+})();
+</script>
+
+<script>
+/* ─────────────────────────────────────────────────────────────
+   English and Indonesian.
+   The page ships in English; Indonesian is applied over it, keyed
+   by the English text already in the document. Technical vocabulary
+   an Indonesian backend developer would say in English — webhook,
+   endpoint, payout, gateway — stays in English on purpose.
+   ───────────────────────────────────────────────────────────── */
+(function () {
+  var ID = {
+    /* ── chrome ── */
+    'isolation': 'isolasi',
+    'events': 'event',
+    'money out': 'uang keluar',
+    'api': 'api',
+    'inside': 'arsitektur',
+    'quick start': 'mulai',
+
+    /* ── hero ── */
+    'One merchant account. Every product you run.':
+      'Satu akun merchant.<br> <span>Semua produk yang Anda jalankan.</span>',
+    'Payment gateway configuration is merchant-wide. One notification URL serves everything you build, so the second application forces a choice between coupling your products together or inventing order_id prefix conventions. PayMux takes ownership of the gateway integration instead: your applications talk to PayMux, PayMux talks to Midtrans, and because PayMux opened every transaction it knows exactly who owns each notification.':
+      'Pengaturan payment gateway berlaku untuk satu akun merchant, bukan per aplikasi. Satu notification URL dipakai bersama semua produk Anda, jadi begitu ada aplikasi kedua, pilihannya tinggal dua: menyatukan semua produk jadi satu, atau mengarang aturan prefix <code class="mono" style="color:var(--paper)">order_id</code> sendiri. PayMux mengambil alih integrasi gateway-nya. Aplikasi Anda cukup bicara ke PayMux, PayMux yang bicara ke Midtrans. Dan karena PayMux yang membuka setiap transaksi, dia tahu persis notifikasi ini punya siapa.',
+    'Run it yourself': 'Jalankan sendiri',
+    'Read the source ↗': 'Baca kodenya ↗',
+    'Gateway': 'Gateway',
+    'Snap and Core API, one adapter': 'Snap dan Core API, satu adapter',
+    'Event types': 'Jenis event',
+    'Payments, refunds, subscriptions, payouts': 'Pembayaran, refund, langganan, payout',
+    'Delivery attempts': 'Percobaan kirim',
+    'Then dead, visible, and replayable': 'Lalu berhenti, tetap tercatat, bisa dikirim ulang',
+    'Endpoints': 'Endpoint',
+    'Under /api/v1, one bearer key': 'Di bawah <span class="mono">/api/v1</span>, satu bearer key',
+
+    /* ── isolation ── */
+    'Isolation': 'Isolasi',
+    'Send a payment. Watch who gets told.': 'Kirim pembayaran. Lihat siapa yang dapat kabarnya.',
+    'Three applications, one Midtrans account. Open a payment from any of them and follow it out to the gateway and back. The notification returns to exactly one application, and the other two are never told it happened.':
+      'Tiga aplikasi, satu akun Midtrans. Buka pembayaran dari salah satunya, lalu ikuti jalannya sampai ke gateway dan kembali lagi. Notifikasinya hanya sampai ke satu aplikasi. Dua yang lain tidak pernah tahu transaksi itu ada.',
+    'Routing bay · sandbox': 'Panel routing · sandbox',
+    'Kopi Rakyat pays': 'Kopi Rakyat bayar',
+    'Margin Notes pays': 'Margin Notes bayar',
+    'Third app pays': 'Aplikasi ketiga bayar',
+    'Reset': 'Atur ulang',
+    'app_01 · checkout in a dialog': 'app_01 · checkout lewat dialog',
+    'app_02 · redirect to the gateway': 'app_02 · redirect ke gateway',
+    'Third app': 'Aplikasi ketiga',
+    'app_03 · the one you add next': 'app_03 · yang berikutnya Anda tambah',
+    'nothing delivered': 'belum ada kiriman',
+    'Because PayMux creates every transaction, it knows with certainty which application owns each notification: no prefix parsing, no guessing. README — Why':
+      'Karena PayMux yang membuat setiap transaksi, dia tahu persis notifikasi ini milik aplikasi mana. Tidak perlu membaca prefix, tidak perlu menebak.<cite>README — Why</cite>',
+    'Two of these applications ship with the repository as browsable storefronts. Kopi Rakyat sells coffee in a checkout dialog, Margin Notes sells books through a gateway redirect. It is one binary run twice — the only difference between the two shops is exactly the difference PayMux sees: two API keys.':
+      'Dua dari aplikasi ini ikut di dalam repo, sebagai toko yang bisa Anda buka sendiri. Kopi Rakyat jualan kopi dengan checkout berupa dialog, Margin Notes jualan buku lewat redirect ke gateway. Keduanya binary yang sama, dijalankan dua kali. Satu-satunya pembeda antara kedua toko itu sama persis dengan yang dilihat PayMux: dua API key yang berbeda.',
+    'the event your endpoint receives': 'event yang diterima endpoint Anda',
+    'POST · signed': 'POST · ditandatangani',
+
+    /* ── taking a payment ── */
+    'Taking a payment': 'Menerima pembayaran',
+    'Your backend calls PayMux instead of Midtrans.': 'Backend Anda memanggil PayMux, bukan Midtrans.',
+    'One bearer key, one endpoint. You get back the Snap token and the redirect URL your frontend needs, and the Midtrans server key never leaves PayMux.':
+      'Satu bearer key, satu endpoint. Anda dapat Snap token dan redirect URL yang dibutuhkan frontend. Server key Midtrans tidak pernah keluar dari PayMux.',
+    'request': 'request',
+    'response': 'response',
+    'Idempotency': 'Idempotensi',
+    'A retry with the same Idempotency-Key returns the original payment rather than opening a second transaction. Reusing a key with a different body is rejected as a conflict.':
+      'Kirim ulang dengan <span class="mono" style="color:var(--paper)">Idempotency-Key</span> yang sama, yang kembali pembayaran yang lama — bukan transaksi baru. Kalau key-nya sama tapi isinya beda, request-nya ditolak sebagai konflik.',
+    'Keys are scoped to an environment': 'Key terikat pada satu environment',
+    'A pmx_test_… key works against a sandbox gateway account and pmx_live_… against a production one. PayMux refuses the mismatch rather than letting a test credential move real money.':
+      'Key <span class="mono" style="color:var(--paper)">pmx_test_…</span> hanya jalan dengan akun gateway sandbox, <span class="mono" style="color:var(--paper)">pmx_live_…</span> hanya dengan production. Kalau tertukar, PayMux menolak — daripada kredensial test dipakai memindahkan uang sungguhan.',
+    'Amounts': 'Nominal',
+    'Integers in the currency’s minor unit. For IDR that is one rupiah, so 150000 is Rp 150.000.':
+      'Angka bulat dalam satuan terkecil mata uangnya. Untuk IDR itu rupiah, jadi <span class="mono" style="color:var(--paper)">150000</span> berarti Rp 150.000.',
+
+    /* ── events and delivery ── */
+    'Events and delivery': 'Event dan pengiriman',
+    'Normalized, signed, and retried until you answer.': 'Dirapikan, ditandatangani, dikirim ulang sampai Anda menjawab.',
+    'PayMux verifies the gateway’s notification, attributes it to its owner, and turns it into one of 23 event types. Every delivery is signed with your destination’s own HMAC-SHA256 secret over <timestamp>.<delivery id>.<raw body>.':
+      'PayMux memverifikasi notifikasi dari gateway, menentukan siapa pemiliknya, lalu mengubahnya jadi salah satu dari 23 jenis event. Setiap pengiriman ditandatangani pakai secret HMAC-SHA256 milik destination Anda sendiri, atas <span class="mono" style="color:var(--paper)">&lt;timestamp&gt;.&lt;delivery id&gt;.&lt;raw body&gt;</span>.',
+    'Delivery simulator': 'Simulator pengiriman',
+    'real schedule, accelerated': 'jadwal asli, dipercepat',
+    'Your endpoint returns 200': 'Endpoint Anda jawab 200',
+    '500, every time': '500, terus-terusan',
+    '500, then recovers': '500, lalu pulih',
+    '400 Bad Request': '400 Bad Request',
+    'immediately': 'langsung',
+    '+1 min': '+1 mnt',
+    '+5 min': '+5 mnt',
+    '+15 min': '+15 mnt',
+    '+1 hour': '+1 jam',
+    '+6 hours': '+6 jam',
+    '+24 hours': '+24 jam',
+    'dead': 'berhenti',
+    'the first attempt': 'percobaan pertama',
+    'quick, because most failures are momentary': 'cepat, karena kebanyakan gangguan cuma sebentar',
+    'a destination down for a working day still gets its delivery': 'server yang mati satu hari kerja penuh pun masih kebagian kirimannya',
+    'visible in the dashboard, and replayable': 'tetap tercatat di dashboard, bisa dikirim ulang',
+    'Seven attempts, then the delivery is marked dead.': 'Tujuh percobaan, lalu pengirimannya ditandai berhenti.',
+    'Each delay carries up to ±10% jitter, so a destination coming back online is not hit by every pending delivery at the same instant. A 4xx other than 408, 425 or 429 stops the retries immediately: your endpoint has said the request itself is wrong, and repeating it will not change that.':
+      'Tiap jeda diberi jitter sampai ±10%, supaya server yang baru hidup lagi tidak langsung dihantam semua kiriman tertunda sekaligus. Kode <span class="mono" style="color:var(--paper)">4xx</span> selain 408, 425, dan 429 langsung menghentikan percobaan ulang: endpoint Anda sudah bilang request-nya memang salah, dan mengulanginya tidak akan mengubah apa pun.',
+    'verify against the raw body, before parsing': 'verifikasi terhadap raw body, sebelum di-parse',
+    'Treat the event as at-least-once: PayMux retries until you answer 2xx, so make your handler idempotent on id. README — Verifying the signature':
+      'Anggap setiap event bisa datang lebih dari sekali: PayMux terus mengulang sampai Anda menjawab 2xx, jadi buat handler Anda idempoten terhadap <span class="mono" style="font-style:normal;font-size:.9em">id</span>.<cite>README — Verifying the signature</cite>',
+    'Signature check': 'Cek signature',
+    'real HMAC-SHA256, computed in your browser': 'HMAC-SHA256 asli, dihitung langsung di browser Anda',
+    'destination secret': 'secret destination',
+    'raw request body — edit it and the signature stops matching': 'raw request body — ubah sedikit saja, signature-nya langsung tidak cocok',
+    'signed string': 'string yang ditandatangani',
+    'computed': 'hasil hitung',
+    'header sent': 'header yang dikirim',
+    'checking': 'memeriksa',
+    'accept': 'terima',
+    'reject': 'tolak',
+    'The signed string is the timestamp, the delivery id and the raw body, joined by dots.':
+      'String yang ditandatangani terdiri dari timestamp, delivery id, dan raw body, disambung dengan titik.',
+    'Change the amount': 'Ubah nominalnya',
+    'Restore': 'Kembalikan',
+
+    /* ── money out ── */
+    'Money out': 'Uang keluar',
+    'A payout has no backstop, so it is off in three places.': 'Uang yang keluar tidak bisa ditarik balik, jadi dikunci di tiga tempat.',
+    'Everything above moves money inward, where the worst case of a mistake is a payment that gets refunded through the gateway that took it. A disbursement leaves the merchant balance for an account the caller names, and there is no chargeback on it. A payout happens only when all three of these are true.':
+      'Semua yang di atas soal uang masuk. Kalau ada yang salah, paling buruk pembayarannya tinggal di-refund lewat gateway yang menerimanya. Disbursement beda: uangnya keluar dari saldo merchant ke rekening yang disebut si pemanggil, dan tidak ada chargeback untuk itu. Payout baru jalan kalau ketiga syarat ini terpenuhi semua.',
+    'Payout simulator': 'Simulator payout',
+    'the refusals below are PayMux’s real ones': 'penolakan di bawah ini persis seperti aslinya',
+    'The gateway account holds disbursement credentials': 'Akun gateway punya kredensial disbursement',
+    'Midtrans issues these separately from the payment server key, and only after approving the account for disbursement. PayMux seals them under their own encryption context, so a leak of the payment key is not a leak of this one.':
+      'Midtrans menerbitkannya terpisah dari server key pembayaran, dan baru dikeluarkan setelah akun Anda disetujui untuk disbursement. PayMux menyimpannya dengan kunci enkripsi tersendiri, jadi bocornya payment key tidak otomatis membocorkan yang ini.',
+    'The application is permitted to disburse': 'Aplikasinya diizinkan mencairkan dana',
+    'Off by default, and deliberately the first thing checked: everything else about a payout is irrelevant if the application was never allowed to make one.':
+      'Mati dari awal, dan sengaja jadi hal pertama yang dicek: syarat lain tidak ada gunanya kalau aplikasinya memang tidak pernah diizinkan mencairkan dana.',
+    'daily limit': 'limit harian',
+    'Somebody approves it': 'Ada yang menyetujui',
+    'An approver cannot approve their own request — the database refuses it, not a handler. Turn approval off and PayMux insists on a spending limit in its place.':
+      'Yang menyetujui tidak boleh orang yang mengajukan — dan yang menolak database-nya langsung, bukan kode handler. Kalau persetujuan Anda matikan, PayMux menuntut limit pengeluaran sebagai gantinya.',
+    'amount': 'nominal',
+    'Request payout': 'Ajukan payout',
+    'Turn the gates on and request a payout.': 'Nyalakan ketiga syaratnya, lalu ajukan payout.',
+    'Nothing has been sent.': 'Belum ada yang dikirim.',
+    'Inbound, sharing a merchant account is harmless: application A cannot take application B’s money. Outbound, every application with an API key spends from the same balance. Without limits, one leaked API key drains what every other application collected. README — Why the per-application limit is not optional':
+      'Untuk uang masuk, berbagi akun merchant aman-aman saja: aplikasi A tidak bisa mengambil uang aplikasi B. Untuk uang keluar, semua aplikasi yang punya API key belanja dari saldo yang sama. Tanpa limit, satu API key yang bocor bisa menghabiskan uang yang dikumpulkan aplikasi lain.<cite style="color:var(--out)">README — Why the per-application limit is not optional</cite>',
+    'The daily limit counts payouts still in flight, including ones whose outcome is unknown, because money the gateway already has cannot be spent twice. A payout also names a beneficiary, never a raw account number: a destination is reviewed once and reused, so a typo cannot send money to a stranger.':
+      'Limit harian ikut menghitung payout yang masih jalan, termasuk yang hasilnya belum jelas, karena uang yang sudah dipegang gateway tidak bisa dibelanjakan dua kali. Payout juga selalu menyebut <strong style="color:var(--paper);font-weight:500">beneficiary</strong>, bukan nomor rekening mentah: satu tujuan diperiksa sekali lalu dipakai berulang, jadi salah ketik tidak bisa mengirim uang ke orang yang tidak dikenal.',
+    '202 means accepted, not sent': '202 artinya diterima, bukan terkirim',
+    'The state that matters': 'Status yang penting',
+    'Status': 'Status',
+    'Means': 'Artinya',
+    'Waiting on a person. Nothing sent.': 'Menunggu orang. Belum ada yang dikirim.',
+    'Released, queued. Still nothing sent.': 'Sudah disetujui, masuk antrean. Tetap belum dikirim.',
+    'The gateway has it. PayMux can no longer stop it.': 'Sudah di tangan gateway. PayMux tidak bisa lagi membatalkan.',
+    'Sent, and PayMux cannot tell what happened. Never re-issue one of these: a new payout carries a new idempotency key, and the gateway would treat it as a second instruction. PayMux resolves it by re-sending under the original key.':
+      'Sudah dikirim, tapi PayMux tidak tahu hasilnya. Jangan pernah mengajukan ulang yang ini: payout baru membawa idempotency key baru, dan gateway akan menganggapnya perintah kedua. PayMux menyelesaikannya sendiri dengan mengirim ulang memakai key yang lama.',
+    'The beneficiary was paid.': 'Uangnya sampai ke beneficiary.',
+    'It did not happen; the funds stayed put.': 'Tidak jadi; uangnya tetap di tempat.',
+    'Refused before anything was attempted.': 'Ditolak sebelum sempat dicoba.',
+    'There is deliberately no event for a payout whose outcome PayMux cannot determine. That state says something about PayMux rather than about the payout. Applications hear from us when there is an answer.':
+      'Sengaja tidak ada event untuk payout yang hasilnya belum bisa dipastikan PayMux. Status itu bercerita tentang PayMux, bukan tentang payout-nya. Aplikasi baru kami kabari setelah ada jawaban pastinya.',
+
+    /* ── api ── */
+    'The API': 'API',
+    'Thirty endpoints, one bearer key.': 'Tiga puluh endpoint, satu bearer key.',
+    'Applications authenticate with Authorization: Bearer pmx_live_…. The full contract is the OpenAPI specification in the repository.':
+      'Aplikasi mengautentikasi diri lewat <span class="mono" style="color:var(--paper)">Authorization: Bearer pmx_live_…</span>. Kontrak lengkapnya ada di spesifikasi OpenAPI di dalam repo.',
+    'application API': 'API aplikasi',
+    'operational': 'operasional',
+    'unauthenticated — keep off the public network': 'tanpa autentikasi — jangan diekspos ke internet',
+    'Gateway-specific options are namespaced and validated': 'Opsi khusus gateway punya namespace sendiri dan divalidasi',
+    'Common parameters are normalized. Anything Midtrans-specific goes in a gateway_options.midtrans block, and unknown fields are rejected rather than forwarded: PayMux never passes an unvalidated blob to a payment gateway under your merchant credentials.':
+      'Parameter umum sudah dirapikan. Yang khusus Midtrans masuk ke blok <span class="mono" style="color:var(--paper)">gateway_options.midtrans</span>, dan field yang tidak dikenal ditolak, bukan diteruskan: PayMux tidak pernah meneruskan data mentah yang belum divalidasi ke payment gateway dengan kredensial merchant Anda.',
+    'The metric worth paging on': 'Metrik yang pantas membangunkan Anda',
+    'paymux_payouts_total{status="UNRESOLVED"} above zero means money may have moved without PayMux knowing. Labels across all eleven metric families are deliberately coarse — route patterns rather than paths, status classes rather than codes — because a payment identifier in a label would make the series unbounded.':
+      '<span class="mono" style="color:var(--alarm)">paymux_payouts_total{status="UNRESOLVED"}</span> di atas nol artinya ada uang yang mungkin sudah berpindah tanpa diketahui PayMux. Label di sebelas famili metrik sengaja dibuat kasar — pola route, bukan path; kelas status, bukan kode angka — karena satu ID pembayaran di dalam label akan membuat jumlah seri-nya meledak.',
+
+    /* ── inside ── */
+    'Inside': 'Arsitektur',
+    'Two Go binaries and a database.': 'Dua binary Go dan satu database.',
+    'No broker, no cache, no queue service. The delivery queue is a table, and the worker leases from it. Gateway-specific code lives only in the adapter, which is what makes a second gateway a matter of writing an adapter rather than rewriting the core.':
+      'Tanpa broker, tanpa cache, tanpa layanan antrean. Antrean pengirimannya cuma sebuah tabel, dan worker mengambil tugas dari situ. Kode khusus gateway hanya ada di adapter-nya. Itu sebabnya menambah gateway kedua cukup dengan menulis adapter baru, bukan membongkar intinya.',
+    'repository layout': 'struktur repo',
+    '116 Go files': '116 berkas Go',
+    'What secrets are done with': 'Bagaimana secret disimpan',
+    'Gateway server keys and webhook secrets are sealed with AES-256-GCM. API keys are stored as SHA-256 hashes and the plaintext is shown once, at creation. Administrator passwords use Argon2id. PayMux never stores card numbers, CVVs or any raw card credential.':
+      'Server key gateway dan secret webhook dienkripsi dengan AES-256-GCM. API key disimpan sebagai hash SHA-256, dan teks aslinya cuma ditampilkan sekali, waktu dibuat. Password administrator pakai Argon2id. PayMux tidak pernah menyimpan nomor kartu, CVV, atau data kartu mentah apa pun.',
+    'Outbound destinations are checked twice': 'Alamat webhook dicek dua kali',
+    'Webhook destinations are blocked from private, loopback, link-local and cloud-metadata ranges, and checked again at connection time, so a hostname cannot change its answer between validation and delivery.':
+      'Destination webhook ditolak kalau mengarah ke rentang private, loopback, link-local, atau cloud-metadata. Pengecekannya diulang lagi saat koneksi dibuka, supaya sebuah hostname tidak bisa berubah jawaban antara saat divalidasi dan saat benar-benar dikirimi data.',
+    'Inbound callbacks are verified first': 'Callback masuk diverifikasi dulu',
+    'Midtrans notifications are verified against the documented signature before anything is applied to a payment.':
+      'Notifikasi Midtrans diverifikasi terhadap signature resminya sebelum apa pun diterapkan ke sebuah pembayaran.',
+    'The dashboard': 'Dashboard',
+    'Payments, refunds, payouts, events, deliveries, notifications, applications, subscriptions, gateways and settings — plus an Integration guide written for the developer building against your instance, with examples that name your instance’s real address so they can be copied rather than adapted. Appearance follows the operating system with an explicit override. Below 900px tables become cards and below 760px navigation moves to a bottom tab bar, so an operator can triage a failing delivery from a phone.':
+      'Pembayaran, refund, payout, event, pengiriman, notifikasi, aplikasi, langganan, gateway, dan pengaturan — plus panduan <strong style="color:var(--paper);font-weight:500">Integration</strong> yang ditulis untuk developer yang menyambungkan aplikasinya ke instance Anda, lengkap dengan contoh yang sudah memakai alamat instance Anda sendiri, jadi tinggal disalin. Temanya ikut sistem operasi, dan bisa dikunci terang atau gelap. Di bawah 900px tabel berubah jadi kartu, di bawah 760px navigasinya pindah ke tab bar bawah, supaya pengiriman yang gagal bisa ditangani dari HP.',
+
+    /* ── status ── */
+    'What is not proven yet.': 'Yang belum terbukti.',
+    'Disbursement has never reached a real gateway': 'Disbursement belum pernah sampai ke gateway sungguhan',
+    'It is implemented end to end, and every path to the gateway has been exercised — but only against refused placeholder credentials, because Midtrans gates Iris behind separate merchant approval. Real sandbox keys are the only way to confirm the final hop.':
+      'Kodenya sudah lengkap dari hulu ke hilir, dan semua jalur menuju gateway sudah diuji — tapi baru melawan kredensial palsu yang memang pasti ditolak, karena Midtrans mengunci Iris di balik persetujuan merchant terpisah. Cuma key sandbox asli yang bisa memastikan langkah terakhirnya benar-benar jalan.',
+    'Everything on the inbound side — payments, refunds, subscriptions, notifications, events and delivery — runs against the Midtrans sandbox, and the integration tests exercise the whole path: three applications sharing one gateway account, a payment taken by one of them, and the signed event reaching only its owner.':
+      'Semua yang di sisi uang masuk — pembayaran, refund, langganan, notifikasi, event, dan pengiriman — sudah diuji melawan sandbox Midtrans. Test integrasinya menjalankan seluruh alurnya: tiga aplikasi berbagi satu akun gateway, satu pembayaran masuk lewat salah satunya, dan event bertanda tangan itu cuma sampai ke pemiliknya.',
+    'One gateway today': 'Satu gateway untuk sekarang',
+    'PayMux is Midtrans-first and its architecture is gateway-agnostic. The long-term goal is one integration for applications and several payment gateways behind it. Nothing on this page claims a gateway that is not in the repository.':
+      'PayMux mendahulukan Midtrans, tapi arsitekturnya tidak terikat ke gateway mana pun. Tujuan jangka panjangnya satu integrasi untuk aplikasi Anda, dengan beberapa payment gateway di belakangnya. Tidak ada satu pun klaim di halaman ini soal gateway yang belum ada di repo.',
+    'Before it handles a real transaction': 'Sebelum dipakai untuk transaksi sungguhan',
+    'PayMux serves plain HTTP and expects TLS termination in front of it. Read docs/production.md first: it covers the encryption key’s recovery characteristics (there are none), the settings whose defaults are wrong for production, backups, what to alert on, and what PayMux deliberately does not do.':
+      'PayMux melayani HTTP biasa dan mengharapkan TLS diterminasi di depannya. Baca <span class="mono" style="color:var(--paper)">docs/production.md</span> dulu: isinya soal apa yang terjadi kalau encryption key hilang (jawabannya: tidak ada yang bisa diselamatkan), setelan yang nilai default-nya salah untuk production, backup, apa yang perlu dipasangi alert, dan apa saja yang sengaja tidak dikerjakan PayMux.',
+
+    /* ── get it ── */
+    'Get PayMux': 'Dapatkan PayMux',
+    'Two binaries, a database, and your own gateway keys.': 'Dua binary, satu database, dan gateway key milik Anda sendiri.',
+    'PayMux is self-hosted: you run it, you hold the keys, and nothing about your merchant account passes through anyone else. Requirements are Docker, or Go 1.25+ and PostgreSQL 15+.':
+      'PayMux Anda hosting sendiri: Anda yang menjalankan, Anda yang pegang key-nya, dan tidak ada satu pun data akun merchant Anda yang lewat pihak lain. Butuhnya Docker, atau Go 1.25+ dan PostgreSQL 15+.',
+    'install': 'instalasi',
+    'Then connect your gateway': 'Lalu sambungkan gateway Anda',
+    'Add your Midtrans merchant ID, client key and server key in the dashboard, and press Test connection. PayMux asks the gateway for a transaction that cannot exist: an answer of “no such transaction” proves the credentials were accepted, and nothing is left behind in your merchant account. Create an application, an API key and a webhook destination, then point the gateway’s Payment Notification URL at /webhooks/midtrans on your deployment.':
+      'Masukkan merchant ID, client key, dan server key Midtrans Anda di dashboard, lalu tekan <strong style="color:var(--paper);font-weight:500">Test connection</strong>. PayMux menanyakan sebuah transaksi yang mustahil ada ke gateway: kalau jawabannya “transaksi tidak ditemukan”, berarti kredensialnya diterima — dan tidak ada sampah yang tertinggal di akun merchant Anda. Setelah itu buat satu aplikasi, satu API key, dan satu webhook destination, lalu arahkan Payment Notification URL di Midtrans ke <span class="mono" style="color:var(--paper)">/webhooks/midtrans</span> di deployment Anda.',
+    'Two storefronts to prove it': 'Dua toko sebagai buktinya',
+    'The repository ships a demo profile with two independent shops that collect into one merchant account and cannot see each other’s orders. It is the claim on this page, running, in about a minute. Setup is in examples/README.md.':
+      'Repo-nya menyertakan profil demo berisi dua toko terpisah yang uangnya masuk ke satu akun merchant, dan tidak bisa saling melihat pesanan. Itu persis klaim di halaman ini, tapi jalan beneran, dalam waktu sekitar satu menit. Cara menyiapkannya ada di <span class="mono" style="color:var(--paper)">examples/README.md</span>.',
+    'Clone the repository ↗': 'Clone repo-nya ↗',
+    'Read the production notes ↗': 'Baca catatan production ↗',
+
+    /* ── footer ── */
+    'Open-source payment gateway multiplexer and webhook router, by Javapixa Creative Studio.':
+      'Multiplexer payment gateway dan webhook router open-source, dari Javapixa Creative Studio.',
+    'Repository': 'Repo',
+    'Source': 'Kode',
+    'Contributing': 'Kontribusi',
+    'Documentation': 'Dokumentasi',
+    'Production': 'Production',
+    'Examples': 'Contoh',
+    'Security': 'Keamanan',
+    'Reporting': 'Pelaporan',
+    'Code of conduct': 'Kode etik',
+    'Apache-2.0 · Midtrans-first, gateway-agnostic': 'Apache-2.0 · Midtrans lebih dulu, terbuka untuk gateway lain',
+    'Not affiliated with Midtrans': 'Tidak berafiliasi dengan Midtrans',
+
+    /* ── strings the simulators write at runtime ── */
+    'Pick an application to open a payment.': 'Pilih salah satu aplikasi untuk membuka pembayaran.',
+    'router': 'router',
+    'attributing': 'mencocokkan',
+    'one account': 'satu akun',
+    'not told': 'tidak dikabari',
+    'one URL for the whole merchant account': 'satu URL untuk seluruh akun merchant',
+    'The customer pays in the Midtrans sandbox.': 'Pelanggannya membayar di sandbox Midtrans.',
+    'Delivered on the first attempt. Nothing is retried.': 'Terkirim di percobaan pertama. Tidak ada yang perlu diulang.',
+    'no visibility': 'tidak kelihatan',
+    'payment.paid · delivered': 'payment.paid · terkirim',
+    'not attempted': 'tidak dicoba',
+    'replayable': 'bisa dikirim ulang',
+    'The body matches what was signed, so the delivery is genuine. Verify against the raw body, before parsing.':
+      'Isi body-nya sama dengan yang ditandatangani, jadi kiriman ini asli. Verifikasi selalu terhadap <b>raw</b> body, sebelum di-parse.',
+    'One byte changed and the signature no longer matches. PayMux signs the exact bytes it sent, so a rewritten amount cannot pass.':
+      '<b>Satu byte berubah, signature-nya langsung tidak cocok.</b> PayMux menandatangani byte yang persis dikirimnya, jadi nominal yang diubah di tengah jalan tidak akan lolos.',
+    'Live signing needs a secure context. The construction is shown in the Go snippet above.':
+      'Perhitungan langsung butuh secure context. Cara menyusunnya ada di potongan Go di atas.',
+    'unavailable': 'tidak tersedia',
+    'Retries stopped. A 4xx other than 408, 425 or 429 says the request itself is wrong, and repeating it will not change that.':
+      '<b>Percobaan ulang berhenti.</b> Kode 4xx selain 408, 425, dan 429 artinya request-nya memang salah, dan mengulanginya tidak akan mengubah apa pun.',
+    'Dead after seven attempts. It stays visible in the dashboard and can be replayed by hand.':
+      '<b>Berhenti</b> setelah tujuh percobaan. Datanya tetap ada di dashboard dan bisa dikirim ulang manual.',
+    'Refused. Approval cannot be turned off without a daily spending limit. Something has to bound what one leaked API key can spend.':
+      '<b>Ditolak.</b> Persetujuan tidak bisa dimatikan tanpa limit pengeluaran harian. Harus ada yang membatasi berapa banyak uang yang bisa dihabiskan satu API key kalau bocor.',
+    'Checked first, deliberately: everything else about a payout is irrelevant if the application was never allowed to make one. Nothing sent.':
+      'Sengaja dicek paling awal: syarat lain tidak ada gunanya kalau aplikasinya memang tidak pernah diizinkan mencairkan dana. <b>Belum ada yang dikirim.</b>',
+    'Midtrans issues disbursement credentials separately, and only after approving the account for it. Nothing sent.':
+      'Midtrans menerbitkan kredensial disbursement secara terpisah, dan baru setelah akunnya disetujui untuk itu. <b>Belum ada yang dikirim.</b>',
+    '202 means accepted, not sent. A payout awaiting approval has moved nothing, and the approver cannot be the person who requested it.':
+      '<b>202 artinya diterima, bukan terkirim.</b> Payout yang masih menunggu persetujuan belum memindahkan apa pun, dan yang menyetujui tidak boleh orang yang mengajukan.',
+    'Released without a person, because approval is off and a spending limit stands in its place. Next stop is SUBMITTED, after which PayMux can no longer stop it.':
+      'Langsung dilepas tanpa persetujuan orang, karena approval dimatikan dan limit pengeluaran yang menggantikannya. Status berikutnya <b>SUBMITTED</b> — setelah itu PayMux tidak bisa lagi membatalkan.'
+  };
+
+  /* Runtime strings that carry a number or a name. Ordered; first hit wins. */
+  var PATTERNS = [
+    [/^POST \/api\/v1\/payments<\/b> — <b>(.+?)<\/b> opens a payment with its own key\.$/,
+      'POST /api/v1/payments</b> — <b>$1</b> membuka pembayaran pakai key-nya sendiri.'],
+    [/^PayMux opens the Snap transaction and mints <b>gateway_order_id (.+?)<\/b>$/,
+      'PayMux membuka transaksi Snap dan membuat <b>gateway_order_id $1</b>'],
+    [/^POST \/webhooks\/midtrans<\/b> — one notification URL for the whole merchant account\. Signature verified\.$/,
+      'POST /webhooks/midtrans</b> — satu notification URL untuk seluruh akun merchant. Signature-nya sudah diverifikasi.'],
+    [/^PayMux opened this transaction, so it knows who owns it\. <b>No prefix parsing, no guessing\.<\/b>$/,
+      'PayMux yang membuka transaksi ini, jadi dia tahu pemiliknya. <b>Tidak membaca prefix, tidak menebak.</b>'],
+    [/^<b>payment\.paid<\/b> delivered to <b>(.+?)<\/b>, signed with that destination’s own secret\.$/,
+      '<b>payment.paid</b> terkirim ke <b>$1</b>, ditandatangani pakai secret milik destination itu sendiri.'],
+    [/^Delivered to <b>(.+?)<\/b>\. The other two applications were never told it happened\.$/,
+      'Terkirim ke <b>$1</b>. Dua aplikasi lain tidak pernah tahu ini terjadi.'],
+    [/^Attempt <b>(\d+)<\/b> of 7 failed\. Next retry in (.+?)\.$/,
+      'Percobaan <b>$1</b> dari 7 gagal. Percobaan berikutnya $2 lagi.'],
+    [/^Delivered on attempt <b>(\d+)<\/b>, fifteen minutes after the first failure\. The widening schedule is what buys that\.$/,
+      'Terkirim di percobaan <b>$1</b>, lima belas menit setelah gagal yang pertama. Justru karena jedanya makin panjang, kiriman ini akhirnya masuk.'],
+    [/^Rp ([\d.,]+) is already in flight today\. The limit counts payouts whose outcome is still unknown, because money the gateway already has cannot be spent twice\. <b>Nothing sent\.<\/b>$/,
+      'Rp $1 sudah jalan hari ini. Limitnya ikut menghitung payout yang hasilnya belum jelas, karena uang yang sudah dipegang gateway tidak bisa dibelanjakan dua kali. <b>Belum ada yang dikirim.</b>'],
+    [/^(\d+) · delivered$/, '$1 · terkirim'],
+    [/^IDR · <b([^>]*)>([\d.,]+)<\/b> already in flight today$/, 'IDR · <b$1>$2</b> sudah jalan hari ini'],
+    [/^IDR to <b>(.+?)<\/b>$/, 'IDR ke <b>$1</b>']
+  ];
+
+  var META = {
+    en: {
+      title: 'PayMux — one merchant account, every product you run',
+      desc: 'PayMux is an open-source payment gateway multiplexer and webhook router. Several applications share one Midtrans account, each with its own keys, its own signed events, and no way to see another’s payments.'
+    },
+    id: {
+      title: 'PayMux — satu akun merchant, semua produk yang Anda jalankan',
+      desc: 'PayMux adalah multiplexer payment gateway dan webhook router open-source. Beberapa aplikasi bisa berbagi satu akun Midtrans: masing-masing punya key sendiri, menerima event bertanda tangan sendiri, dan tidak bisa melihat pembayaran aplikasi lain.'
+    }
+  };
+
+  var SEL = 'h1,h2,h3,h4,p,#simOut,.lede,.eyebrow,.tag,.sim-title,.sim-hint,.bay-title,.voice,' +
+    '.rung dt,.rung dd,.rung .rstate,.fld>span,.sig-row>span,' +
+    '.code-top span,.tbl th,.tbl td,.foot a,.foot-note span,.navlinks a,.btn,.key,.chip,' +
+    '.lrow-id strong,.lrow-id span,.fact dt,.fact dd small,.limit>span,.verdict';
+
+  var norm = function (s) { return s.replace(/\s+/g, ' ').trim(); };
+  window.__T = function (en) { return (lang === 'id' && ID[en] !== undefined) ? ID[en] : en; };
+  var lang = 'en';
+  var observer = null;
+  var applying = false;
+
+  function nodes() {
+    return Array.prototype.filter.call(document.querySelectorAll(SEL), function (el) {
+      return (!el.closest('pre') || el.id === 'simOut') && !el.querySelector('h1,h2,h3,p,div,pre,table');
+    });
+  }
+
+  function toID(el) {
+    var t = norm(el.textContent);
+    if (ID[t] !== undefined) { el.innerHTML = ID[t]; return true; }
+    var h = norm(el.innerHTML);
+    for (var i = 0; i < PATTERNS.length; i++) {
+      if (PATTERNS[i][0].test(h)) { el.innerHTML = h.replace(PATTERNS[i][0], PATTERNS[i][1]); return true; }
+    }
+    return false;
+  }
+
+  function apply(next) {
+    applying = true;
+    if (observer) observer.disconnect();
+    nodes().forEach(function (el) {
+      if (el.dataset.en === undefined) el.dataset.en = el.innerHTML;
+      if (next === 'id') toID(el);
+      else el.innerHTML = el.dataset.en;
+    });
+    document.documentElement.lang = next;
+    document.title = META[next].title;
+    var m = document.querySelector('meta[name="description"]');
+    if (m) m.setAttribute('content', META[next].desc);
+    Array.prototype.forEach.call(document.querySelectorAll('.lang button'), function (b) {
+      b.setAttribute('aria-pressed', String(b.dataset.lang === next));
+    });
+    lang = next;
+    try { localStorage.setItem('paymux-lang', next); } catch (e) {}
+    applying = false;
+    if (observer) watch();
+    window.dispatchEvent(new CustomEvent('paymux:lang', { detail: next }));
+  }
+
+  /* The simulators write English at runtime; catch it and translate in place. */
+  function watch() {
+    if (lang !== 'id') return;
+    observer.observe(document.body, { subtree: true, childList: true, characterData: true });
+  }
+
+  if (window.MutationObserver) {
+    observer = new MutationObserver(function (recs) {
+      if (applying || lang !== 'id') return;
+      applying = true;
+      observer.disconnect();
+      var touched = [];
+      recs.forEach(function (r) {
+        var el = r.target.nodeType === 1 ? r.target : r.target.parentElement;
+        if (el && touched.indexOf(el) < 0) touched.push(el);
+      });
+      touched.forEach(function (el) {
+        if (el.closest && el.closest('pre') && el.id !== 'simOut') return;
+        if (el.matches && el.matches(SEL)) toID(el);
+        Array.prototype.forEach.call(el.querySelectorAll ? el.querySelectorAll(SEL) : [], function (c) {
+          if (!c.closest('pre') || c.id === 'simOut') toID(c);
+        });
+      });
+      applying = false;
+      watch();
+    });
+  }
+
+  /* toggle */
+  var host = document.querySelector('.nav');
+  if (host) {
+    var box = document.createElement('div');
+    box.className = 'lang';
+    box.setAttribute('role', 'group');
+    box.setAttribute('aria-label', 'Language / Bahasa');
+    ['en', 'id'].forEach(function (code) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.dataset.lang = code;
+      b.textContent = code.toUpperCase();
+      b.setAttribute('aria-pressed', 'false');
+      b.addEventListener('click', function () { if (lang !== code) apply(code); });
+      box.appendChild(b);
+    });
+    host.insertBefore(box, host.lastElementChild);
+  }
+
+  var saved = null;
+  try { saved = localStorage.getItem('paymux-lang'); } catch (e) {}
+  if (!saved) saved = /^id\b/i.test(navigator.language || '') ? 'id' : 'en';
+  apply(saved === 'id' ? 'id' : 'en');
+})();
+</script>
+</body>
+</html>

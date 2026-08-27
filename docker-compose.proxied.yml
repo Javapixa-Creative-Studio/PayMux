@@ -1,0 +1,40 @@
+# For deployments where something else routes to the containers.
+#
+# docker-compose.yml publishes ports on the host, which is what you want on a
+# laptop and wrong nearly everywhere else. A platform like Easypanel, Coolify
+# or Dokploy puts its own reverse proxy on the Docker network and reaches each
+# container directly, so publishing achieves nothing and takes a host port that
+# another project may want. Easypanel says so out loud:
+#
+#   ports is used in api. It might cause conflicts with other services.
+#
+# Layer this file on to drop the published ports and keep the services on the
+# network only:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.proxied.yml up -d
+#
+# or `make up-proxied`. Combine it with the database overlay if you also want
+# compose to run PostgreSQL:
+#
+#   COMPOSE_FILE=docker-compose.yml:docker-compose.postgres.yml:docker-compose.proxied.yml
+#
+# Bind domains to the container port, which is not the number that used to be
+# published: api is 8080 and dashboard is 80. The worker serves unauthenticated
+# Prometheus metrics on 9090 and should get no domain at all.
+#
+# `!reset` needs Compose v2.24 or newer.
+services:
+  api:
+    ports: !reset []
+
+  dashboard:
+    ports: !reset []
+
+  landing:
+    ports: !reset []
+
+  shop-coffee:
+    ports: !reset []
+
+  shop-books:
+    ports: !reset []

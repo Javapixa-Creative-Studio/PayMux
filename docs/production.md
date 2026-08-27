@@ -54,6 +54,69 @@ Do not expose these publicly:
   design, for a scraper on a private network
 - PostgreSQL: the bundled compose file no longer publishes it
 
+### Deploying on a platform that proxies for you
+
+Easypanel, Coolify and Dokploy all run their own reverse proxy on the Docker
+network and reach each container directly. Two things follow.
+
+**Do not publish host ports.** `docker-compose.yml` publishes them, which is
+right on a laptop and wrong here: the platform never uses them, and they take a
+host port another project may want. Easypanel says so plainly:
+
+```text
+ports is used in api. It might cause conflicts with other services.
+```
+
+Layer the overlay that drops them:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.proxied.yml up -d
+```
+
+**Bind domains to the container port, not the published one.**
+
+| Service   | Container port | Domain                                    |
+| --------- | -------------- | ----------------------------------------- |
+| api       | 8080           | yes — also serves `/webhooks/midtrans`    |
+| dashboard | 80             | yes, a second name                        |
+| landing   | 80             | optional, a third                         |
+| worker    | 9090           | **no** — unauthenticated metrics          |
+
+`PAYMUX_HTTP_ADDR` is set to `:8080` by the compose file, so a different value
+in the environment is ignored. The dashboard's container listens on 80 even
+though compose publishes it on 5173, which is the easiest of these to get
+wrong.
+
+### Deploying each service from its Dockerfile
+
+If you would rather not run compose at all, every service builds standalone.
+Set the build context to the repository root in each case, because the Go
+builds copy `go.mod` from there.
+
+| Service   | Dockerfile                          | Port | Needs                                    |
+| --------- | ----------------------------------- | ---- | ---------------------------------------- |
+| api       | `deployments/api.Dockerfile`        | 8080 | the environment below                    |
+| worker    | `deployments/worker.Dockerfile`     | 9090 | the same `DATABASE_URL` and key as api   |
+| dashboard | `deployments/dashboard.Dockerfile`  | 80   | `VITE_API_BASE_URL` as a **build arg**   |
+| landing   | `deployments/landing.Dockerfile`    | 80   | nothing                                  |
+
+The api and the worker are separate services, not two copies of one. They must
+share `DATABASE_URL` and `PAYMUX_ENCRYPTION_KEY` exactly: the api seals webhook
+secrets with that key and the worker is what later unseals them. Differing keys
+fail at delivery time rather than at boot, which is a slow way to find out.
+
+The dashboard's API URL is compiled into its bundle by Vite, so it is a build
+argument rather than a runtime variable:
+
+```bash
+docker build -f deployments/dashboard.Dockerfile   --build-arg VITE_API_BASE_URL=https://pay.example.com -t paymux-dashboard .
+```
+
+Setting it as a runtime environment variable does nothing, and changing it
+means rebuilding the image. Include the scheme: without one the browser reads
+the value as a relative path and every admin call lands on the dashboard's own
+origin.
+
 ### Point the gateway at PayMux
 
 In the Midtrans dashboard set the Payment Notification URL to

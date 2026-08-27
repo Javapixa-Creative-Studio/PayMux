@@ -1,0 +1,59 @@
+# PostgreSQL for people who do not already have one.
+#
+# docker-compose.yml deliberately ships without a database: most deployments
+# already have PostgreSQL, whether that is a managed instance, a server the
+# team already runs, or another service on the same host. Bundling one would
+# mean either ignoring it or running a second database next to it.
+#
+# Layer this file on top to have compose start one instead:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.postgres.yml up -d
+#
+# or, more simply, `make up-postgres`. Set COMPOSE_FILE in .env to make it the
+# default for plain `docker compose` commands:
+#
+#   COMPOSE_FILE=docker-compose.yml:docker-compose.postgres.yml
+#
+# DATABASE_URL is overridden here, so whatever is in .env is ignored while this
+# file is layered on. That is deliberate: the database compose starts is the
+# one the services should talk to.
+name: paymux
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-paymux}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-paymux}
+      POSTGRES_DB: ${POSTGRES_DB:-paymux}
+    # Deliberately not published. The database is reachable on the compose
+    # network by the services that need it; exposing it on the host is a
+    # development convenience that becomes an attack surface in production.
+    # Set POSTGRES_PORT and uncomment to reach it with psql locally.
+    # ports:
+    #   - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-paymux} -d ${POSTGRES_DB:-paymux}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-paymux}:${POSTGRES_PASSWORD:-paymux}@postgres:5432/${POSTGRES_DB:-paymux}?sslmode=disable
+
+  worker:
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-paymux}:${POSTGRES_PASSWORD:-paymux}@postgres:5432/${POSTGRES_DB:-paymux}?sslmode=disable
+
+volumes:
+  postgres-data:

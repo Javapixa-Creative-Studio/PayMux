@@ -26,5 +26,8 @@ COPY --from=build /out/paymux-worker /paymux-worker
 
 USER nonroot:nonroot
 
+# Prometheus metrics only, and unauthenticated. Declared so a platform can see
+# the port; do not give this one a domain.
+EXPOSE 9090
 
 ENTRYPOINT ["/paymux-worker"]

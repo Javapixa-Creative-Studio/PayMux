@@ -68,16 +68,33 @@ echo "PAYMUX_ADMIN_EMAIL=you@example.com" >> .env
 echo "PAYMUX_ADMIN_PASSWORD=a-long-passphrase-you-choose" >> .env
 ```
 
-Start everything:
+Then start it. PayMux does not ship a database, because most deployments
+already have one:
 
 ```bash
-docker compose up -d
+docker compose up -d          # against the PostgreSQL in your DATABASE_URL
 ```
 
-| Service   | URL                     |
-| --------- | ----------------------- |
-| API       | <http://localhost:8080> |
-| Dashboard | <http://localhost:5173> |
+If you would rather compose ran PostgreSQL too, layer the companion file on
+top. It supplies its own `DATABASE_URL`, so the one in `.env` is ignored while
+it is in use:
+
+```bash
+make up-postgres
+# or, without make:
+docker compose -f docker-compose.yml -f docker-compose.postgres.yml up -d
+```
+
+| Service   | URL                     | Container port |
+| --------- | ----------------------- | -------------- |
+| API       | <http://localhost:8080> | 8080           |
+| Dashboard | <http://localhost:5173> | 5173 → 80      |
+
+`make ports` prints the same table plus what is published right now. Bind
+domains to the **container** port: a host like Easypanel, Coolify or a plain
+reverse proxy reaches the container directly, so the published port is not the
+one it wants. The worker serves only Prometheus metrics, unauthenticated, on
+9090 — give it no domain.
 
 Sign in to the dashboard with the bootstrap credentials, then remove them from
 `.env`: they are only used to create the first account.
