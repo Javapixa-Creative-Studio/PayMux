@@ -30,4 +30,4 @@ EXPOSE 80
 # Declared here as well as in docker-compose.yml, so a platform that builds
 # this Dockerfile directly still gets a liveness signal.
 HEALTHCHECK --interval=15s --timeout=5s --retries=5 \
-  CMD ["wget", "-qO-", "http://localhost/"]
+  CMD ["wget", "-qO-", "http://127.0.0.1/"]
