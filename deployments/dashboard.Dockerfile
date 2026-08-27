@@ -6,7 +6,10 @@ FROM node:24-alpine AS build
 WORKDIR /app
 
 COPY apps/dashboard/package.json apps/dashboard/package-lock.json* ./
-RUN npm ci || npm install
+# `npm ci` and nothing else. The fallback that used to be here fired only
+# when the lockfile had drifted from package.json, which is precisely when
+# the build should stop rather than quietly resolve fresh versions.
+RUN npm ci
 
 COPY apps/dashboard/ ./
 
@@ -22,3 +25,8 @@ COPY deployments/dashboard.nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 
 EXPOSE 80
+
+# Declared here as well as in docker-compose.yml, so a platform that builds
+# this Dockerfile directly still gets a liveness signal.
+HEALTHCHECK --interval=15s --timeout=5s --retries=5 \
+  CMD ["wget", "-qO-", "http://localhost/"]

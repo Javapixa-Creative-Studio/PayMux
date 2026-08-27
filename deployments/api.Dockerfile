@@ -27,4 +27,8 @@ COPY --from=build /out/paymux-api /paymux-api
 USER nonroot:nonroot
 EXPOSE 8080
 
+# Exec form: the distroless runtime has no shell to expand a string.
+HEALTHCHECK --interval=10s --timeout=5s --retries=5 \
+  CMD ["/paymux-api", "-healthcheck"]
+
 ENTRYPOINT ["/paymux-api"]

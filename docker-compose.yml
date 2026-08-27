@@ -16,6 +16,8 @@ services:
     build:
       context: .
       dockerfile: deployments/api.Dockerfile
+      args:
+        VERSION: ${VERSION:-dev}
     restart: unless-stopped
     environment:
       PAYMUX_ENV: ${PAYMUX_ENV:-development}
@@ -65,6 +67,8 @@ services:
     build:
       context: .
       dockerfile: deployments/worker.Dockerfile
+      args:
+        VERSION: ${VERSION:-dev}
     restart: unless-stopped
     environment:
       PAYMUX_ENV: ${PAYMUX_ENV:-development}

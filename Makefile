@@ -82,6 +82,12 @@ dashboard-test: ## Run the dashboard tests
 # Local environment
 # ---------------------------------------------------------------------------
 
+# Stamped into the api and worker binaries via -ldflags, so a deployed image
+# reports something better than "dev" in its startup log. Exported because
+# docker-compose.yml interpolates it into the build args.
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+export VERSION
+
 COMPOSE_PG := -f docker-compose.yml -f docker-compose.postgres.yml
 
 .PHONY: up
